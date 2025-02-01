@@ -1,0 +1,10 @@
+# Build
+_build
+build
+
+# STM32CubeMX
+Core
+Drivers
+.mxproject
+startup_stm32f411xe.s
+STM32F411RETx_FLASH.ld
