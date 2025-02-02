@@ -6,5 +6,5 @@ build
 Core
 Drivers
 .mxproject
-startup_stm32f411xe.s
-STM32F411RETx_FLASH.ld
+startup_stm32*.s
+STM32*_FLASH.ld
