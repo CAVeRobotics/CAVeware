@@ -6,6 +6,7 @@
 
 BspTypes_Error_t BspPwm_Start(const BspPwmUser_Timer_t timer, const BspTypes_TimerChannel_t channel);
 BspTypes_Error_t BspPwm_Stop(const BspPwmUser_Timer_t timer, const BspTypes_TimerChannel_t channel);
-BspTypes_Error_t BspPwm_SetDutyCycle(const BspPwmUser_Timer_t timer, const BspTypes_TimerChannel_t channel, const BspTypes_Percent_t percent);
+BspTypes_Error_t BspPwm_SetPeriod(const BspPwmUser_Timer_t timer, const BspTypes_Microsecond_t period);
+BspTypes_Error_t BspPwm_SetDutyCycle(const BspPwmUser_Timer_t timer, const BspTypes_TimerChannel_t channel, const BspTypes_Percent_t duty_cycle);
 
 #endif /* BSP_PWM_H */
