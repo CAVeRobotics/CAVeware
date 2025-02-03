@@ -1,6 +1,6 @@
 # Rover Controller MCU Pinout
 
-Revision 3
+Revision 4
 
 Based on STM32F407ZGTx
 
@@ -59,16 +59,14 @@ Based on STM32F407ZGTx
 | SWDIO                         | SWDIO           | PA13                       |
 | Reset                         | NRST            | NRST                       |
 | SWO                           | SWO             | In Use (Encoder 0 B - PB3) |
-| ADC 1 IN 3                    | ADC             | PA3                        |
-| ADC 1 IN 4                    | ADC             | PA4                        |
-| ADC 1 IN 5                    | ADC             | PA5                        |
+| Gas Sensor                    | ADC             | PA2                        |
+| Temperature Sensor            | ADC             | PA3                        |
 | I2C 1 SCL                     | I2C SCL         | PB6                        |
 | I2C 1 SDA                     | I2C SDA         | PB7                        |
 | I2C 2 SCL                     | I2C SCL         | PF1                        |
 | I2C 2 SDA                     | I2C SDA         | PF0                        |
 | Dust Sensor UART TX           | UART TX         | PG14                       |
 | Dust Sensor UART RX           | UART RX         | PG9                        |
-| Gas Sensor                    | ADC             | PA2                        |
 | BMS                           | ??              | ??                         |
 
 ### OSHWA SPI Naming Conventions
