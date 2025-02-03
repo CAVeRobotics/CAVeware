@@ -1,6 +1,6 @@
 # Rover Controller MCU Pinout
 
-Revision 5
+Revision 6
 
 Based on STM32F407ZGTx
 
@@ -20,10 +20,10 @@ Based on STM32F407ZGTx
 | Steering Servo 3              | PWM               | PB15                       |
 | Camera Servo Pan              | PWM               | PF6                        |
 | Camera Servo Tilt             | PWM               | PF7                        |
-| Encoder 0 A                   | Timer             | PA5                        |
+| Encoder 0 A                   | Timer             | PA15                       |
 | Encoder 0 B                   | Timer             | PB3                        |
-| Encoder 1 A                   | Timer             | PA6                        |
-| Encoder 1 B                   | Timer             | PA7                        |
+| Encoder 1 A                   | Timer             | PB4                        |
+| Encoder 1 B                   | Timer             | PB5                        |
 | Encoder 2 A                   | Timer             | PD12                       |
 | Encoder 2 B                   | Timer             | PD13                       |
 | Encoder 3 A                   | Timer             | PA0-WKUP                   |
