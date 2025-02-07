@@ -8,6 +8,7 @@ Drivers
 .mxproject
 startup_stm32*.s
 STM32*_FLASH.ld
+stm32*_flash.ld
 
 # VS Code
 .vscode
