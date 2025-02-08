@@ -118,7 +118,7 @@ set(BSP_DIR ${CMAKE_SOURCE_DIR}/bsp)
 set(BSP_INC_DIR ${BSP_DIR}/inc)
 set(BSP_SRC_DIR ${BSP_DIR}/src)
 
-set(BSP_SRCS
+set(CORE_SRCS
     ${CORE_SRC_DIR}/main.c
     ${CORE_SRC_DIR}/gpio.c
     ${CORE_SRC_DIR}/tim.c
@@ -128,13 +128,16 @@ set(BSP_SRCS
     ${CORE_SRC_DIR}/system_stm32f4xx.c
     ${CORE_SRC_DIR}/sysmem.c
     ${CORE_SRC_DIR}/syscalls.c
+    ${CMAKE_SOURCE_DIR}/startup_stm32f411xe.s
+)
+
+set(BSP_SRCS
     ${BSP_SRC_DIR}/bsp.c
     ${BSP_SRC_DIR}/bsp_pwm.c
     ${BSP_SRC_DIR}/bsp_pwm_user.c
     ${BSP_SRC_DIR}/bsp_servo.c
     ${BSP_SRC_DIR}/bsp_uart.c
     ${BSP_SRC_DIR}/bsp_uart_user.c
-    ${CMAKE_SOURCE_DIR}/startup_stm32f411xe.s
 )
 
 set(BSP_INC_DIRS
@@ -156,13 +159,24 @@ set(CAVEMAN_CONTROLLER_DIR ${CMAKE_SOURCE_DIR}/caveman_controller)
 set(CAVEMAN_CONTROLLER_INC_DIR ${CAVEMAN_CONTROLLER_DIR}/inc)
 set(CAVEMAN_CONTROLLER_SRC_DIR ${CAVEMAN_CONTROLLER_DIR}/src)
 
-add_executable(caveman ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_controller.c ${BSP_SRCS})
-target_include_directories(caveman PRIVATE ${CAVEMAN_CONTROLLER_INC_DIR} ${BSP_INC_DIRS})
-# target_link_libraries(caveman PRIVATE Bsp)
-target_link_libraries(caveman PRIVATE Hal)
-target_compile_options(caveman PRIVATE "-Werror")
-add_custom_command(TARGET caveman POST_BUILD
-        COMMAND ${CMAKE_SIZE} "${CMAKE_CURRENT_BINARY_DIR}/caveman.elf"
-        COMMAND ${CMAKE_OBJCOPY} -O ihex "${CMAKE_CURRENT_BINARY_DIR}/caveman.elf" "${CMAKE_CURRENT_BINARY_DIR}/caveman.hex"
-        COMMAND ${CMAKE_OBJCOPY} -O binary -S "${CMAKE_CURRENT_BINARY_DIR}/caveman.elf" "${CMAKE_CURRENT_BINARY_DIR}/caveman.bin"
+set(CAVEMAN_CONTROLLER_SRCS
+    ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_controller.c
 )
+
+add_executable(${PROJECT_NAME} ${CAVEMAN_CONTROLLER_SRCS} ${CORE_SRCS} ${BSP_SRCS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${CAVEMAN_CONTROLLER_INC_DIR} ${BSP_INC_DIRS})
+# target_link_libraries(${PROJECT_NAME} PRIVATE Bsp)
+target_link_libraries(${PROJECT_NAME} PRIVATE Hal)
+target_compile_options(${PROJECT_NAME} PRIVATE "-Werror")
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_SIZE} "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.elf"
+        COMMAND ${CMAKE_OBJCOPY} -O ihex "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.elf" "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.hex"
+        COMMAND ${CMAKE_OBJCOPY} -O binary -S "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.elf" "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.bin"
+)
+
+################################################################################
+# CI and tools
+################################################################################
+set(TOOLS_DIR ${CMAKE_SOURCE_DIR}/tools)
+include(${TOOLS_DIR}/cppcheck/cppcheck.cmake)
+include(${TOOLS_DIR}/uncrustify/uncrustify.cmake)

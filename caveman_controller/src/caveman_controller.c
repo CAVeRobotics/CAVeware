@@ -24,36 +24,36 @@ int main(void)
     // Caveman_Log("Starting CAVEMAN...\r\n");
 
     BspServo_Handle_t wheel_0_servo = {
-        .timer = BSP_PWM_USER_TIMER_STEERING_SERVOS,
-        .channel = BSP_TIMER_CHANNEL_1,
+        .timer              = BSP_PWM_USER_TIMER_STEERING_SERVOS,
+        .channel            = BSP_TIMER_CHANNEL_1,
         .minimum_duty_cycle = 0,
         .maximum_duty_cycle = 0.125,
-        .minimum_angle = 0,
-        .maximum_angle = 120,
+        .minimum_angle      = 0,
+        .maximum_angle      = 120,
     };
     BspServo_Handle_t wheel_1_servo = {
-        .timer = BSP_PWM_USER_TIMER_STEERING_SERVOS,
-        .channel = BSP_TIMER_CHANNEL_2,
+        .timer              = BSP_PWM_USER_TIMER_STEERING_SERVOS,
+        .channel            = BSP_TIMER_CHANNEL_2,
         .minimum_duty_cycle = 0,
         .maximum_duty_cycle = 0.125,
-        .minimum_angle = 0,
-        .maximum_angle = 120,
+        .minimum_angle      = 0,
+        .maximum_angle      = 120,
     };
     BspServo_Handle_t wheel_2_servo = {
-        .timer = BSP_PWM_USER_TIMER_STEERING_SERVOS,
-        .channel = BSP_TIMER_CHANNEL_3,
+        .timer              = BSP_PWM_USER_TIMER_STEERING_SERVOS,
+        .channel            = BSP_TIMER_CHANNEL_3,
         .minimum_duty_cycle = 0,
         .maximum_duty_cycle = 0.125,
-        .minimum_angle = 0,
-        .maximum_angle = 120,
+        .minimum_angle      = 0,
+        .maximum_angle      = 120,
     };
     BspServo_Handle_t wheel_3_servo = {
-        .timer = BSP_PWM_USER_TIMER_STEERING_SERVOS,
-        .channel = BSP_TIMER_CHANNEL_4,
+        .timer              = BSP_PWM_USER_TIMER_STEERING_SERVOS,
+        .channel            = BSP_TIMER_CHANNEL_4,
         .minimum_duty_cycle = 0,
         .maximum_duty_cycle = 0.125,
-        .minimum_angle = 0,
-        .maximum_angle = 120,
+        .minimum_angle      = 0,
+        .maximum_angle      = 120,
     };
 
     BspServo_Start(&wheel_0_servo);

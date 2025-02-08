@@ -48,7 +48,7 @@ Bsp_Error_t BspPwm_Stop(const BspPwmUser_Timer_t timer, const Bsp_TimerChannel_t
 
 Bsp_Error_t BspPwm_SetPeriod(const BspPwmUser_Timer_t timer, const Bsp_Microsecond_t period)
 {
-    Bsp_Error_t error = BSP_ERROR_NONE;
+    Bsp_Error_t       error           = BSP_ERROR_NONE;
     Bsp_Microsecond_t period_adjusted = period - 1;
 
     if (timer >= BSP_PWM_USER_TIMER_MAX)
@@ -81,8 +81,8 @@ Bsp_Error_t BspPwm_SetDutyCycle(const BspPwmUser_Timer_t timer, const Bsp_TimerC
     }
     else
     {
-        TIM_TypeDef *timer_instance = BspPwmUser_TimerConfigTable[timer].timer_handle->Instance;
-        uint32_t capture_compare = (uint32_t)(timer_instance->ARR * duty_cycle);
+        TIM_TypeDef *timer_instance  = BspPwmUser_TimerConfigTable[timer].timer_handle->Instance;
+        uint32_t     capture_compare = (uint32_t)(timer_instance->ARR * duty_cycle);
 
         switch (channel)
         {

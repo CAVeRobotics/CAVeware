@@ -7,10 +7,10 @@
 
 #define BSP_UNUSED(x) (void)(x)
 
-typedef double Bsp_Percent_t;
+typedef double   Bsp_Percent_t;
 typedef uint32_t Bsp_Microsecond_t;
 
-typedef TIM_HandleTypeDef Bsp_TimerHandle_t;
+typedef TIM_HandleTypeDef  Bsp_TimerHandle_t;
 typedef UART_HandleTypeDef Bsp_UartHandle_t;
 
 typedef enum

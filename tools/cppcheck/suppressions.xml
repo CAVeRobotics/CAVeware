@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<suppressions>
+
+    <!-- Suppress missing includes -->
+    <suppress>
+        <id>missingInclude</id>
+    </suppress>
+    <suppress>
+        <id>missingIncludeSystem</id>
+    </suppress>
+
+    <!-- Suppress unused functions -->
+    <suppress>
+        <id>unusedFunction</id>
+    </suppress>
+
+</suppressions>
