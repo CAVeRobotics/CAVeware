@@ -42,8 +42,7 @@ set(TARGET_FLAGS "-mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard ")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TARGET_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic -fdata-sections -ffunction-sections")
 if(CMAKE_BUILD_TYPE MATCHES Debug)
-    # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g3")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Og -g -gdwarf-2")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g3")
 endif()
 if(CMAKE_BUILD_TYPE MATCHES Release)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os -g0")
@@ -61,20 +60,16 @@ set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -Wl,--print-memory-usage")
 
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -Wl,--start-group -lstdc++ -lsupc++ -Wl,--end-group")
 
-# TODO may want to enable logging at a less verbose level in Release builds
-# TODO update for STM32F407xx
-# add_compile_definitions(
-#     USE_HAL_DRIVER 
-# 	STM32F411xE
-#     $<$<CONFIG:Debug>:DEBUG>
-#     $<$<CONFIG:Debug>:LOGGER> # Enable logging in debug mode
-# )
+add_compile_definitions(
+	USE_HAL_DRIVER 
+	STM32F411xE
+    $<$<CONFIG:Debug>:DEBUG>
+)
 
 ################################################################################
-# STM32 generated code library
+# STM32 HAL library
 ################################################################################
 # TODO just GLOB for HAL and Core sources
-# TODO move main to caveman_controller
 # TODO update for STM32F407xx
 set(DRIVERS_DIR ${CMAKE_SOURCE_DIR}/Drivers)
 set(CMSIS_DIR ${DRIVERS_DIR}/CMSIS)
@@ -85,12 +80,6 @@ set(HAL_DRIVER_SRC_DIR ${HAL_DRIVER_DIR}/Src)
 set(CORE_DIR ${CMAKE_SOURCE_DIR}/Core)
 set(CORE_INC_DIR ${CORE_DIR}/Inc)
 set(CORE_SRC_DIR ${CORE_DIR}/Src)
-set(BSP_DIR ${CMAKE_SOURCE_DIR}/bsp)
-set(BSP_INC_DIR ${BSP_DIR}/inc)
-set(BSP_SRC_DIR ${BSP_DIR}/src)
-set(CAVEMAN_CONTROLLER_DIR ${CMAKE_SOURCE_DIR}/caveman_controller)
-set(CAVEMAN_CONTROLLER_INC_DIR ${CAVEMAN_CONTROLLER_DIR}/inc)
-set(CAVEMAN_CONTROLLER_SRC_DIR ${CAVEMAN_CONTROLLER_DIR}/src)
 
 set(HAL_SRCS
     ${HAL_DRIVER_SRC_DIR}/stm32f4xx_hal_tim.c
@@ -111,32 +100,26 @@ set(HAL_SRCS
     ${HAL_DRIVER_SRC_DIR}/stm32f4xx_hal_exti.c
 )
 
-set(HALCORE_INC_DIRS
+set(HAL_INC_DIRS
     ${CMSIS_INC_DIR}
     ${CMSIS_DIR}/Device/ST/STM32F4xx/Include
     ${HAL_DRIVER_INC_DIR}
     ${HAL_DRIVER_INC_DIR}/Legacy
     ${CORE_INC_DIR}
-    ${BSP_INC_DIR}
-    ${CAVEMAN_CONTROLLER_INC_DIR}
 )
 
-add_compile_definitions(
-	USE_HAL_DRIVER 
-	STM32F411xE
-    $<$<CONFIG:Debug>:DEBUG>
-)
+add_library(Hal ${HAL_SRCS})
+target_include_directories(Hal PUBLIC ${HAL_INC_DIRS})
 
-add_library(bar ${HAL_SRCS})
-target_include_directories(bar PUBLIC ${HALCORE_INC_DIRS})
+################################################################################
+# BSP library
+################################################################################
+set(BSP_DIR ${CMAKE_SOURCE_DIR}/bsp)
+set(BSP_INC_DIR ${BSP_DIR}/inc)
+set(BSP_SRC_DIR ${BSP_DIR}/src)
 
-add_executable(foo
+set(BSP_SRCS
     ${CORE_SRC_DIR}/main.c
-    ${BSP_SRC_DIR}/bsp_pwm.c
-    ${BSP_SRC_DIR}/bsp_pwm_user.c
-    ${BSP_SRC_DIR}/bsp_servo.c
-    ${CMAKE_SOURCE_DIR}/startup_stm32f411xe.s
-    ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_controller.c
     ${CORE_SRC_DIR}/gpio.c
     ${CORE_SRC_DIR}/tim.c
     ${CORE_SRC_DIR}/usart.c
@@ -145,12 +128,41 @@ add_executable(foo
     ${CORE_SRC_DIR}/system_stm32f4xx.c
     ${CORE_SRC_DIR}/sysmem.c
     ${CORE_SRC_DIR}/syscalls.c
+    ${BSP_SRC_DIR}/bsp.c
+    ${BSP_SRC_DIR}/bsp_pwm.c
+    ${BSP_SRC_DIR}/bsp_pwm_user.c
+    ${BSP_SRC_DIR}/bsp_servo.c
+    ${BSP_SRC_DIR}/bsp_uart.c
+    ${BSP_SRC_DIR}/bsp_uart_user.c
+    ${CMAKE_SOURCE_DIR}/startup_stm32f411xe.s
 )
-target_compile_options(foo PRIVATE "-Werror")
-# target_include_directories(foo PUBLIC ${HALCORE_INC_DIRS})
-target_link_libraries(foo PRIVATE bar)
-add_custom_command(TARGET foo POST_BUILD
-        COMMAND ${CMAKE_SIZE} "${CMAKE_CURRENT_BINARY_DIR}/foo.elf"
-        COMMAND ${CMAKE_OBJCOPY} -O ihex "${CMAKE_CURRENT_BINARY_DIR}/foo.elf" "${CMAKE_CURRENT_BINARY_DIR}/foo.hex"
-        COMMAND ${CMAKE_OBJCOPY} -O binary -S "${CMAKE_CURRENT_BINARY_DIR}/foo.elf" "${CMAKE_CURRENT_BINARY_DIR}/foo.bin"
+
+set(BSP_INC_DIRS
+    ${HAL_INC_DIRS}
+    ${CORE_INC_DIR}
+    ${BSP_INC_DIR}
+)
+
+# TODO compile BSP as a separate library
+# add_library(Bsp ${BSP_SRCS})
+# target_include_directories(Bsp PUBLIC ${BSP_INC_DIRS})
+# target_link_libraries(Bsp PRIVATE Hal)
+# target_compile_options(Bsp PRIVATE "-Werror")
+
+################################################################################
+# CAVEMAN controller firmware
+################################################################################
+set(CAVEMAN_CONTROLLER_DIR ${CMAKE_SOURCE_DIR}/caveman_controller)
+set(CAVEMAN_CONTROLLER_INC_DIR ${CAVEMAN_CONTROLLER_DIR}/inc)
+set(CAVEMAN_CONTROLLER_SRC_DIR ${CAVEMAN_CONTROLLER_DIR}/src)
+
+add_executable(caveman ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_controller.c ${BSP_SRCS})
+target_include_directories(caveman PRIVATE ${CAVEMAN_CONTROLLER_INC_DIR} ${BSP_INC_DIRS})
+# target_link_libraries(caveman PRIVATE Bsp)
+target_link_libraries(caveman PRIVATE Hal)
+target_compile_options(caveman PRIVATE "-Werror")
+add_custom_command(TARGET caveman POST_BUILD
+        COMMAND ${CMAKE_SIZE} "${CMAKE_CURRENT_BINARY_DIR}/caveman.elf"
+        COMMAND ${CMAKE_OBJCOPY} -O ihex "${CMAKE_CURRENT_BINARY_DIR}/caveman.elf" "${CMAKE_CURRENT_BINARY_DIR}/caveman.hex"
+        COMMAND ${CMAKE_OBJCOPY} -O binary -S "${CMAKE_CURRENT_BINARY_DIR}/caveman.elf" "${CMAKE_CURRENT_BINARY_DIR}/caveman.bin"
 )

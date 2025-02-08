@@ -4,9 +4,9 @@
 
 static double BspServo_Map(const double value, const double in_min, const double in_max, const double out_min, const double out_max);
 
-BspTypes_Error_t BspServo_Start(BspServo_Handle_t *const handle)
+Bsp_Error_t BspServo_Start(BspServo_Handle_t *const handle)
 {
-    BspTypes_Error_t error = BSP_TYPES_ERROR_NULL;
+    Bsp_Error_t error = BSP_ERROR_NULL;
 
     if (NULL != handle)
     {
@@ -16,16 +16,16 @@ BspTypes_Error_t BspServo_Start(BspServo_Handle_t *const handle)
     return error;
 }
 
-BspTypes_Error_t BspServo_SetDutyCycle(BspServo_Handle_t *const handle, const BspTypes_Percent_t duty_cycle)
+Bsp_Error_t BspServo_SetDutyCycle(BspServo_Handle_t *const handle, const Bsp_Percent_t duty_cycle)
 {
-    BspTypes_Error_t error = BSP_TYPES_ERROR_NULL;
+    Bsp_Error_t error = BSP_ERROR_NULL;
 
     if (NULL == handle)
     {
     }
     else if ((duty_cycle > handle->maximum_duty_cycle) || (duty_cycle < handle->minimum_duty_cycle))
     {
-        error = BSP_TYPES_ERROR_VALUE;
+        error = BSP_ERROR_VALUE;
     }
     else
     {
@@ -35,16 +35,16 @@ BspTypes_Error_t BspServo_SetDutyCycle(BspServo_Handle_t *const handle, const Bs
     return error;
 }
 
-BspTypes_Error_t BspServo_SetAngle(BspServo_Handle_t *const handle, const double angle)
+Bsp_Error_t BspServo_SetAngle(BspServo_Handle_t *const handle, const double angle)
 {
-    BspTypes_Error_t error = BSP_TYPES_ERROR_NULL;
+    Bsp_Error_t error = BSP_ERROR_NULL;
 
     if (NULL == handle)
     {
     }
     else if ((angle > handle->maximum_angle) || (angle < handle->minimum_angle))
     {
-        error = BSP_TYPES_ERROR_VALUE;
+        error = BSP_ERROR_VALUE;
     }
     else
     {
