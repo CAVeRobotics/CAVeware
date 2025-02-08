@@ -5,15 +5,19 @@
 To setup Uncrustify in a local repository, follow these steps:
 
 1. Initialize and update submodules
+
    `git submodule update --init`
 
 2. Navigate to `uncrustify` directory
+
    `cd tools/uncrustify/uncrustify`
 
 3. Configure CMake build
+
    `cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build`
 
 4. Build `uncrustify`
+
    `cmake --build build --config Release`
 
 Uncrustify can now be run from the repository root with `cmake --build build -t uncrustify` assuming CMake has been configured with build directory `build`.
