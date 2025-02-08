@@ -38,5 +38,5 @@ add_custom_target(
     -L 1
     --check
     ${UNCRUSTIFY_SOURCES}
-    2> uncrustify-report.txt
+    2> uncrustify_report.txt
 )
