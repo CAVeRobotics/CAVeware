@@ -1,6 +1,6 @@
 # Rover Controller MCU Pinout
 
-Revision 6
+Revision 7
 
 Based on STM32F407ZGTx
 
@@ -33,15 +33,15 @@ Based on STM32F407ZGTx
 | IMU SDO                       | SPI POCI (MISO)   | PC2                        |
 | IMU CS                        | SPI CS            | PC13                       |
 | IMU INT1                      | Digital Interrupt | PC14                       |
-| IMU INT2                      | Digital Interrupt | PH0                        |
+| IMU INT2                      | Digital Interrupt | PE0                        |
 | General Fault LED             | Digital Output    | PF14                       |
 | Motor Fault LED               | Digital Output    | PG0                        |
 | Low Battery LED               | Digital Output    | PG2                        |
 | Battery Charged LED           | Digital Output    | PG3                        |
 | Jetson Comms LED              | Digital Output    | PE1                        |
-| Jetson Fault LED              | Digital Output    | PH1                        |
+| Jetson Fault LED              | Digital Output    | PF5                        |
 | Wifi Status LED               | Digital Output    | PG10                       |
-| IMU Status LED                | Digital Output    | PE0                        |
+| IMU Status LED                | Digital Output    | PD0                        |
 | Encoders Status LED           | Digital Output    | PE7                        |
 | Board Temp LED                | Digital Output    | PE10                       |
 | Board Humidity LED            | Digital Output    | PE12                       |
@@ -76,7 +76,8 @@ Based on STM32F407ZGTx
 | Jetson UART RX                | UART RX           | PA10                       |
 | Dust Sensor UART TX           | UART TX           | PG14                       |
 | Dust Sensor UART RX           | UART RX           | PG9                        |
-| BMS                           | ??                | ??                         |
+| HSE IN                        | HSE               | PH0                        |
+| HSE OUT                       | HSE               | PH1                        |
 
 ### OSHWA SPI Naming Conventions
 
