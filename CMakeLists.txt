@@ -20,6 +20,8 @@ set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}g++)
 set(CMAKE_LINKER ${TOOLCHAIN_PREFIX}g++)
 set(CMAKE_OBJCOPY ${TOOLCHAIN_PREFIX}objcopy)
 set(CMAKE_SIZE ${TOOLCHAIN_PREFIX}size)
+set(CMAKE_AR ${TOOLCHAIN_PREFIX}ar)
+set(CMAKE_RANLIB ${TOOLCHAIN_PREFIX}ranlib)
 
 set(CMAKE_EXECUTABLE_SUFFIX_ASM ".elf")
 set(CMAKE_EXECUTABLE_SUFFIX_C ".elf")
@@ -107,20 +109,6 @@ set(HAL_SRCS
     ${HAL_DRIVER_SRC_DIR}/stm32f4xx_hal_cortex.c
     ${HAL_DRIVER_SRC_DIR}/stm32f4xx_hal.c
     ${HAL_DRIVER_SRC_DIR}/stm32f4xx_hal_exti.c
-    ${CORE_SRC_DIR}/main.c
-    ${CORE_SRC_DIR}/gpio.c
-    ${CORE_SRC_DIR}/tim.c
-    ${CORE_SRC_DIR}/usart.c
-    ${CORE_SRC_DIR}/stm32f4xx_it.c
-    ${CORE_SRC_DIR}/stm32f4xx_hal_msp.c
-    ${CORE_SRC_DIR}/system_stm32f4xx.c
-    ${CORE_SRC_DIR}/sysmem.c
-    ${CORE_SRC_DIR}/syscalls.c
-    ${BSP_SRC_DIR}/bsp_pwm.c
-    ${BSP_SRC_DIR}/bsp_pwm_user.c
-    ${BSP_SRC_DIR}/bsp_servo.c
-    ${CMAKE_SOURCE_DIR}/startup_stm32f411xe.s
-    ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_controller.c
 )
 
 set(HALCORE_INC_DIRS
@@ -139,8 +127,28 @@ add_compile_definitions(
     $<$<CONFIG:Debug>:DEBUG>
 )
 
-add_executable(foo ${HAL_SRCS})
-target_include_directories(foo PUBLIC ${HALCORE_INC_DIRS})
+add_library(bar ${HAL_SRCS})
+target_include_directories(bar PUBLIC ${HALCORE_INC_DIRS})
+
+add_executable(foo
+    ${CORE_SRC_DIR}/main.c
+    ${BSP_SRC_DIR}/bsp_pwm.c
+    ${BSP_SRC_DIR}/bsp_pwm_user.c
+    ${BSP_SRC_DIR}/bsp_servo.c
+    ${CMAKE_SOURCE_DIR}/startup_stm32f411xe.s
+    ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_controller.c
+    ${CORE_SRC_DIR}/gpio.c
+    ${CORE_SRC_DIR}/tim.c
+    ${CORE_SRC_DIR}/usart.c
+    ${CORE_SRC_DIR}/stm32f4xx_it.c
+    ${CORE_SRC_DIR}/stm32f4xx_hal_msp.c
+    ${CORE_SRC_DIR}/system_stm32f4xx.c
+    ${CORE_SRC_DIR}/sysmem.c
+    ${CORE_SRC_DIR}/syscalls.c
+)
+target_compile_options(foo PRIVATE "-Werror")
+# target_include_directories(foo PUBLIC ${HALCORE_INC_DIRS})
+target_link_libraries(foo PRIVATE bar)
 add_custom_command(TARGET foo POST_BUILD
         COMMAND ${CMAKE_SIZE} "${CMAKE_CURRENT_BINARY_DIR}/foo.elf"
         COMMAND ${CMAKE_OBJCOPY} -O ihex "${CMAKE_CURRENT_BINARY_DIR}/foo.elf" "${CMAKE_CURRENT_BINARY_DIR}/foo.hex"
