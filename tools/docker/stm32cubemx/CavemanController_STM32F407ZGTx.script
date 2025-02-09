@@ -1,0 +1,3 @@
+config load /CavemanController/CavemanController_STM32F407ZGTx.ioc
+project generate
+exit

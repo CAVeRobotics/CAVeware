@@ -1,0 +1,5 @@
+services:
+  stm32f4:
+    build: .
+    volumes:
+      - ./../../../:/CavemanController/
