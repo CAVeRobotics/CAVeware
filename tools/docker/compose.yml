@@ -1,0 +1,15 @@
+services:
+  arm-build:
+    build:
+      context: ./arm-build
+      dockerfile: Dockerfile
+    volumes:
+      - ./../../:/CavemanController/
+    working_dir: /CavemanController
+  stm32f4:
+    build:
+      context: ./stm32cubemx
+      dockerfile: Dockerfile
+    volumes:
+      - ./../../:/CavemanController/
+    working_dir: /CavemanController

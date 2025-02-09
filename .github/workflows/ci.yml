@@ -13,7 +13,7 @@ jobs:
       - name: STM32CubeMX Generate Code
         uses: docker://d3lta12/stm32cubemx-stm32f4
         with:
-          args: /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q tools/docker/stm32cubemx/CavemanController_nucleo64_ci.script
+          args: /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q CavemanController_nucleo64.script
       - name: Cache CMake files
         id: cache-cmake
         uses: actions/cache@v4
@@ -49,7 +49,7 @@ jobs:
   #     - name: STM32CubeMX Generate Code
   #       uses: docker://d3lta12/stm32cubemx-stm32f4
   #       with:
-  #         args: /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q tools/docker/stm32cubemx/CavemanController_nucleo64_ci.script
+  #         args: /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q CavemanController_nucleo64.script
   #     - name: Install sonar-scanner and build-wrapper
   #       uses: sonarsource/sonarcloud-github-c-cpp@v3
   #     - name: Cache CMake files
@@ -86,7 +86,7 @@ jobs:
       - name: STM32CubeMX Generate Code
         uses: docker://d3lta12/stm32cubemx-stm32f4
         with:
-          args: /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q tools/docker/stm32cubemx/CavemanController_nucleo64_ci.script
+          args: /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q CavemanController_nucleo64.script
       - name: Cache CMake files
         id: cache-cmake
         uses: actions/cache@v4
