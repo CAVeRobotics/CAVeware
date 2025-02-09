@@ -9,10 +9,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: "recursive"
+      # TODO cache STM32CubeMX generated code, re-build cache on ioc changes
       - name: STM32CubeMX Generate Code
         uses: docker://d3lta12/stm32cubemx-stm32f4
         with:
-          args: /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q tools/docker/stm32cubemx/CavemanController_nucleo64.script
+          args: /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q tools/docker/stm32cubemx/CavemanController_nucleo64_ci.script
       - name: Cache CMake files
         id: cache-cmake
         uses: actions/cache@v4
