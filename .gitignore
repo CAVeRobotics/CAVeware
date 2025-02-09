@@ -9,6 +9,7 @@ Drivers
 startup_stm32*.s
 STM32*_FLASH.ld
 stm32*_flash.ld
+en.stm32*
 
 # VS Code
 .vscode

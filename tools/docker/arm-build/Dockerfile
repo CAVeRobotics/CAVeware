@@ -1,5 +1,5 @@
-# Update image and install tools, dependencies
-FROM build-tools-alpine:latest AS base
+# Update base image and install tools, dependencies
+FROM d3lta12/alpine-build-tools:latest AS base
 RUN apk -U upgrade
 
 # Install GNU Compiler Collection for arm-none-eabi targets
