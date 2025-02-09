@@ -10,8 +10,9 @@ jobs:
         with:
           submodules: "recursive"
       - name: STM32CubeMX Generate Code
-        uses: d3lta12/stm32cubemx-stm32f4
-        run: /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q tools/docker/stm32cubemx/CavemanController_nucleo64.script
+        uses: docker://d3lta12/stm32cubemx-stm32f4
+        with:
+          args: /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q tools/docker/stm32cubemx/CavemanController_nucleo64.script
       - name: Cache CMake files
         id: cache-cmake
         uses: actions/cache@v4
