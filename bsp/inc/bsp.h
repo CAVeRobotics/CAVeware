@@ -8,6 +8,7 @@
 #define BSP_UNUSED(x) (void)(x)
 
 typedef double   Bsp_Percent_t;
+typedef uint32_t Bsp_Millisecond_t;
 typedef uint32_t Bsp_Microsecond_t;
 
 typedef TIM_HandleTypeDef  Bsp_TimerHandle_t;
@@ -33,6 +34,7 @@ typedef enum
 } Bsp_TimerChannel_t;
 
 void Bsp_Initialize(void);
+Bsp_Millisecond_t Bsp_GetTick(void);
 
 /* TODO util functions such map and delay? */
 
