@@ -7,5 +7,6 @@
 #include "bsp_uart_user.h"
 
 Bsp_Error_t BspUart_Transmit(const BspUartUser_Uart_t uart, const uint8_t *const data, const size_t size);
+Bsp_Error_t BspUart_Receive(const BspUartUser_Uart_t uart, uint8_t *const data, const size_t size);
 
 #endif /* BSP_UART_H */

@@ -1,8 +1,8 @@
 #ifndef BSP_PWM_H
 #define BSP_PWM_H
 
-#include "bsp_pwm_user.h"
 #include "bsp.h"
+#include "bsp_pwm_user.h"
 
 Bsp_Error_t BspPwm_Start(const BspPwmUser_Timer_t timer, const Bsp_TimerChannel_t channel);
 Bsp_Error_t BspPwm_Stop(const BspPwmUser_Timer_t timer, const Bsp_TimerChannel_t channel);

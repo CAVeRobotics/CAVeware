@@ -8,6 +8,7 @@
 #endif /* BSP_LOGGER */
 
 #include "bsp.h"
+#include "bsp_tick.h"
 
 #define BSP_LOGGER_ANSI_RESET  "\x1B[0m"
 #define BSP_LOGGER_ANSI_RED    "\x1B[0;31m"
@@ -27,7 +28,7 @@ static const char *kBspLogger_AnsiColorLut[] = {
     BSP_LOGGER_ANSI_RED, BSP_LOGGER_ANSI_YELLOW, BSP_LOGGER_ANSI_GREEN, BSP_LOGGER_ANSI_BLUE, BSP_LOGGER_ANSI_PURPLE
 };
 
-static const char *kBspLogger_PrefixFormat  = "%s[%010u] %s: ";
+static const char *kBspLogger_PrefixFormat  = "%s[%010u] [%s] ";
 static const char *kBspLogger_PostfixFormat = "%s\r\n";
 
 static BspLogger_Mode_t  BspLogger_Mode  = BSP_LOGGER_MODE_PRINT;
@@ -102,7 +103,7 @@ void BspLogger_Log(const char *const tag, const BspLogger_Level_t level, char *c
 #ifdef BSP_LOGGER
 static inline void BspLogger_Print(const char *const tag, const BspLogger_Level_t level, const char *const format, va_list args)
 {
-    printf(kBspLogger_PrefixFormat, kBspLogger_AnsiColorLut[level], Bsp_GetTick(), tag);
+    printf(kBspLogger_PrefixFormat, kBspLogger_AnsiColorLut[level], BspTick_GetTick(), tag);
     vprintf(format, args);
     printf(kBspLogger_PostfixFormat, BSP_LOGGER_ANSI_RESET);
 }
@@ -111,7 +112,7 @@ static inline void BspLogger_Custom(const char *const tag, const BspLogger_Level
 {
     int64_t size;
 
-    size = snprintf(BspLogger_CustomLogBuffer, BspLogger_CustomLogBufferSize, kBspLogger_PrefixFormat, kBspLogger_AnsiColorLut[level], Bsp_GetTick(), tag);
+    size = snprintf(BspLogger_CustomLogBuffer, BspLogger_CustomLogBufferSize, kBspLogger_PrefixFormat, kBspLogger_AnsiColorLut[level], BspTick_GetTick(), tag);
     if (size > 0L)
     {
         BspLogger_CustomLog(BspLogger_CustomLogBuffer, (size_t)size);

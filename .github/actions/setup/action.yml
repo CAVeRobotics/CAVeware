@@ -1,0 +1,21 @@
+name: Setup
+runs:
+  using: "composite"
+  steps:
+    # TODO cache STM32CubeMX generated code, re-build cache on ioc changes
+    - name: STM32CubeMX Generate Code
+      uses: docker://d3lta12/stm32cubemx-stm32f4
+      with:
+        args: /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q CavemanController_nucleo64.script
+    - name: Cache CMake files
+      id: cache-cmake
+      uses: actions/cache@v4
+      env:
+        cache-name: cache-cmake
+      with:
+        path: ./build
+        key: ${{ env.cache-name }}-${{ hashFiles('**/CMakeLists.txt', '**.cmake') }}
+    - name: Generate CMake cache
+      if: ${{ steps.cache-cmake.outputs.cache-hit != 'true' }}
+      run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+      shell: sh

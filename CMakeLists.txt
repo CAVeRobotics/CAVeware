@@ -135,11 +135,16 @@ set(CORE_SRCS
 
 set(BSP_SRCS
     ${BSP_SRC_DIR}/bsp.c
+    ${BSP_SRC_DIR}/bsp_encoder.c
+    ${BSP_SRC_DIR}/bsp_encoder_user.c
     ${BSP_SRC_DIR}/bsp_logger.c
     ${BSP_SRC_DIR}/bsp_logger_user.c
+    ${BSP_SRC_DIR}/bsp_motor.c
     ${BSP_SRC_DIR}/bsp_pwm.c
     ${BSP_SRC_DIR}/bsp_pwm_user.c
     ${BSP_SRC_DIR}/bsp_servo.c
+    ${BSP_SRC_DIR}/bsp_tick.c
+    ${BSP_SRC_DIR}/bsp_tick_user.c
     ${BSP_SRC_DIR}/bsp_uart.c
     ${BSP_SRC_DIR}/bsp_uart_user.c
 )
@@ -159,6 +164,17 @@ set(BSP_INC_DIRS
 ################################################################################
 # CAVEMAN controller firmware
 ################################################################################
+set(ROVER_DIR ${CMAKE_SOURCE_DIR}/rover)
+set(ROVER_INC_DIR ${ROVER_DIR}/inc)
+set(ROVER_SRC_DIR ${ROVER_DIR}/src)
+
+set(ROVER_SRCS
+    ${ROVER_SRC_DIR}/rover_4ws.c
+    ${ROVER_SRC_DIR}/rover_4ws_config.c
+    ${ROVER_SRC_DIR}/rover_camera.c
+    ${ROVER_SRC_DIR}/rover_camera_config.c
+)
+
 set(CAVEMAN_CONTROLLER_DIR ${CMAKE_SOURCE_DIR}/caveman_controller)
 set(CAVEMAN_CONTROLLER_INC_DIR ${CAVEMAN_CONTROLLER_DIR}/inc)
 set(CAVEMAN_CONTROLLER_SRC_DIR ${CAVEMAN_CONTROLLER_DIR}/src)

@@ -3,7 +3,6 @@
 #include <stdint.h>
 
 #include "gpio.h"
-#include "stm32f4xx_hal.h"
 #include "tim.h"
 #include "usart.h"
 
@@ -22,14 +21,29 @@ void Bsp_Initialize(void)
 
     MX_GPIO_Init();
     MX_USART2_UART_Init();
+    MX_TIM1_Init();
+    MX_TIM2_Init();
     MX_TIM3_Init();
     MX_TIM4_Init();
+    MX_TIM5_Init();
+    MX_TIM10_Init();
 
     BspLoggerUser_RegisterCustomLogger();
     BSP_LOGGER_LOG_DEBUG(kBsp_LogTag, "Initialized");
 }
 
-Bsp_Millisecond_t Bsp_GetTick(void)
+double Bsp_Map(const double value, const double in_min, const double in_max, const double out_min, const double out_max)
 {
-    return HAL_GetTick();
+    double capped_value = value;
+
+    if (value < in_min)
+    {
+        capped_value = in_min;
+    }
+    if (value > in_max)
+    {
+        capped_value = in_max;
+    }
+
+    return (capped_value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
