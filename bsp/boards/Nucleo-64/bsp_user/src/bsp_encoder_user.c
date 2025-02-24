@@ -4,7 +4,7 @@
 
 #include "bsp.h"
 
-BspEncoderUser_Handle_t BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_MAX] = {
+Bsp_Encoder_t BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_MAX] = {
     [BSP_ENCODER_USER_TIMER_0] = {
         .timer_handle             = &htim3,
         .pulses_per_period        = 0,
@@ -37,9 +37,9 @@ BspEncoderUser_Handle_t BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_MAX] =
     },
 };
 
-BspEncoderUser_Handle_t *BspEncoderUser_GetEncoderHandle(const Bsp_TimerHandle_t *const timer_handle)
+Bsp_Encoder_t *BspEncoderUser_GetEncoderHandle(const Bsp_TimerHandle_t *const timer_handle)
 {
-    BspEncoderUser_Handle_t *encoder_handle = NULL;
+    Bsp_Encoder_t *encoder_handle = NULL;
 
     if (timer_handle == BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].timer_handle)
     {

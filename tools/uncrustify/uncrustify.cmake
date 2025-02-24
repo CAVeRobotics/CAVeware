@@ -15,8 +15,7 @@ else()
 endif()
 
 message(STATUS "Adding files to Uncrustify")
-set(UNCRUSTIFY_SOURCES ${BSP_SRCS} ${ROVER_SRCS} ${CAVEMAN_CONTROLLER_SRCS})
-foreach(INC_DIR ${BSP_INC_DIR} ${ROVER_INC_DIR} ${CAVEMAN_CONTROLLER_INC_DIR})
+foreach(INC_DIR ${UNCRUSTIFY_INC_DIRS})
     file(GLOB INC_DIR_H_SRCS LIST_DIRECTORIES false CONFIGURE_DEPENDS
         "${INC_DIR}/*.h"
     )

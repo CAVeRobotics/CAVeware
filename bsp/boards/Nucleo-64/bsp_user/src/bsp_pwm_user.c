@@ -4,7 +4,7 @@
 
 #include "bsp.h"
 
-const BspPwmUser_TimerConfig_t BspPwmUser_TimerConfigTable[BSP_PWM_USER_TIMER_MAX] = {
+const Bsp_PwmConfig_t BspPwmUser_TimerConfigTable[BSP_PWM_USER_TIMER_MAX] = {
     [BSP_PWM_USER_TIMER_MOTORS] = {
         .timer_handle = &htim1, .max_channel = BSP_TIMER_CHANNEL_4
     },

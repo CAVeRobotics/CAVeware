@@ -16,7 +16,6 @@ else()
 endif()
 
 message(STATUS "Adding files to Cppcheck")
-set(CPPCHECK_SOURCES ${BSP_SRCS} ${ROVER_SRCS} ${CAVEMAN_CONTROLLER_SRCS})
 
 add_custom_target(
     cppcheck

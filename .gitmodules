@@ -4,3 +4,6 @@
 [submodule "tools/cppcheck/cppcheck"]
 	path = tools/cppcheck/cppcheck
 	url = git@github.com:danmar/cppcheck.git
+[submodule "external/CAVeTalk"]
+	path = external/CAVeTalk
+	url = git@github.com:CAVEMaN-SeniorDesign/CAVeTalk.git

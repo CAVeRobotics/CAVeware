@@ -110,24 +110,28 @@ static inline void BspLogger_Print(const char *const tag, const BspLogger_Level_
 
 static inline void BspLogger_Custom(const char *const tag, const BspLogger_Level_t level, const char *const format, va_list args)
 {
-    int64_t size;
+    size_t  bytes_written = 0U;
+    int64_t size          = snprintf(BspLogger_CustomLogBuffer, BspLogger_CustomLogBufferSize, kBspLogger_PrefixFormat, kBspLogger_AnsiColorLut[level], BspTick_GetTick(), tag);
 
-    size = snprintf(BspLogger_CustomLogBuffer, BspLogger_CustomLogBufferSize, kBspLogger_PrefixFormat, kBspLogger_AnsiColorLut[level], BspTick_GetTick(), tag);
-    if (size > 0L)
+    if ((size > 0L) && (size < BspLogger_CustomLogBufferSize))
     {
-        BspLogger_CustomLog(BspLogger_CustomLogBuffer, (size_t)size);
+        bytes_written += (size_t)size;
+
+        size = vsnprintf((BspLogger_CustomLogBuffer + bytes_written), (BspLogger_CustomLogBufferSize - bytes_written), format, args);
     }
 
-    size = vsnprintf(BspLogger_CustomLogBuffer, BspLogger_CustomLogBufferSize, format, args);
-    if (size > 0L)
+    if ((size > 0L) && (size < (BspLogger_CustomLogBufferSize - bytes_written)))
     {
-        BspLogger_CustomLog(BspLogger_CustomLogBuffer, (size_t)size);
+        bytes_written += (size_t)size;
+
+        size = snprintf((BspLogger_CustomLogBuffer + bytes_written), (BspLogger_CustomLogBufferSize - bytes_written), kBspLogger_PostfixFormat, BSP_LOGGER_ANSI_RESET);
     }
 
-    size = snprintf(BspLogger_CustomLogBuffer, BspLogger_CustomLogBufferSize, kBspLogger_PostfixFormat, BSP_LOGGER_ANSI_RESET);
-    if (size > 0L)
+    if ((size > 0L) && (size < (BspLogger_CustomLogBufferSize - bytes_written)))
     {
-        BspLogger_CustomLog(BspLogger_CustomLogBuffer, (size_t)size);
+        bytes_written += (size_t)size;
     }
+
+    BspLogger_CustomLog(BspLogger_CustomLogBuffer, bytes_written);
 }
 #endif /* BSP_LOGGER */

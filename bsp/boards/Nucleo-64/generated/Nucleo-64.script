@@ -1,0 +1,3 @@
+config load Nucleo-64.ioc
+project generate
+exit

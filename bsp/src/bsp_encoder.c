@@ -10,14 +10,14 @@
 
 #define BSP_ENCODER_PI                     3.14159265358979323846
 #define BSP_ENCODER_RADIANS_PER_ROTATION   (2 * BSP_ENCODER_PI)
-#define BSP_ENCODER_PHASES                 ((BspEncoderUser_Pulse_t)2)
+#define BSP_ENCODER_PHASES                 ((Bsp_EncoderPulse_t)2)
 #define BSP_ENCODER_MICROSECOND_TO_SECONDS ((double)10e6)
 
 extern void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef *tim_encoderHandle);
 
-static void BspEncoder_SamplePulses(BspEncoderUser_Handle_t *const handle);
+static void BspEncoder_SamplePulses(Bsp_Encoder_t *const handle);
 static void BspEncoder_TimerCallback(Bsp_TimerHandle_t *handle);
-static inline void BspEncoder_TimerCallbackHandler(BspEncoderUser_Handle_t *const handle);
+static inline void BspEncoder_TimerCallbackHandler(Bsp_Encoder_t *const handle);
 
 Bsp_Error_t BspEncoder_Start(const BspEncoderUser_Timer_t timer)
 {
@@ -33,7 +33,7 @@ Bsp_Error_t BspEncoder_Start(const BspEncoderUser_Timer_t timer)
     }
     else
     {
-        BspEncoderUser_Handle_t *handle = &BspEncoderUser_HandleTable[timer];
+        Bsp_Encoder_t *handle = &BspEncoderUser_HandleTable[timer];
 
         switch (handle->mode)
         {
@@ -49,7 +49,7 @@ Bsp_Error_t BspEncoder_Start(const BspEncoderUser_Timer_t timer)
         Bsp_TimerHandle_t *timer_handle = handle->timer_handle;
         timer_handle->PeriodElapsedCallback = BspEncoder_TimerCallback;
 
-        handle->pulses_per_period        = (BspEncoderUser_Pulse_t)((BspEncoderUser_Pulse_t)__HAL_TIM_GET_AUTORELOAD(timer_handle) + (BspEncoderUser_Pulse_t)1);
+        handle->pulses_per_period        = (Bsp_EncoderPulse_t)((Bsp_EncoderPulse_t)__HAL_TIM_GET_AUTORELOAD(timer_handle) + (Bsp_EncoderPulse_t)1);
         handle->sampling                 = false;
         handle->pulse_offset             = 0U;
         handle->previous_periods_elapsed = 0;
@@ -80,9 +80,9 @@ Bsp_Error_t BspEncoder_Sample(const BspEncoderUser_Timer_t timer)
     }
     else
     {
-        BspEncoderUser_Handle_t *handle          = &BspEncoderUser_HandleTable[timer];
-        Bsp_Microsecond_t        previous_time   = handle->time;
-        BspEncoderUser_Pulse_t   previous_pulses = handle->pulses;
+        Bsp_Encoder_t *    handle          = &BspEncoderUser_HandleTable[timer];
+        Bsp_Microsecond_t  previous_time   = handle->time;
+        Bsp_EncoderPulse_t previous_pulses = handle->pulses;
 
         BspEncoder_SamplePulses(handle);
 
@@ -94,7 +94,7 @@ Bsp_Error_t BspEncoder_Sample(const BspEncoderUser_Timer_t timer)
     return error;
 }
 
-static void BspEncoder_SamplePulses(BspEncoderUser_Handle_t *const handle)
+static void BspEncoder_SamplePulses(Bsp_Encoder_t *const handle)
 {
     if ((NULL != handle) && (NULL != handle->timer_handle))
     {
@@ -105,8 +105,8 @@ static void BspEncoder_SamplePulses(BspEncoderUser_Handle_t *const handle)
         handle->previous_periods_elapsed = handle->periods_elapsed;
         handle->sampling                 = false;
 
-        handle->pulses  = (BspEncoderUser_Pulse_t)((BspEncoderUser_Pulse_t)handle->previous_periods_elapsed * handle->pulses_per_period);
-        handle->pulses += (BspEncoderUser_Pulse_t)handle->pulse_offset;
+        handle->pulses  = (Bsp_EncoderPulse_t)((Bsp_EncoderPulse_t)handle->previous_periods_elapsed * handle->pulses_per_period);
+        handle->pulses += (Bsp_EncoderPulse_t)handle->pulse_offset;
         handle->pulses *= BSP_ENCODER_PHASES;
     }
 }
@@ -116,7 +116,7 @@ static void BspEncoder_TimerCallback(Bsp_TimerHandle_t *handle)
     BspEncoder_TimerCallbackHandler(BspEncoderUser_GetEncoderHandle(handle));
 }
 
-static inline void BspEncoder_TimerCallbackHandler(BspEncoderUser_Handle_t *const handle)
+static inline void BspEncoder_TimerCallbackHandler(Bsp_Encoder_t *const handle)
 {
     if ((NULL != handle) && (NULL != handle->timer_handle))
     {
