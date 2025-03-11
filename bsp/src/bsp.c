@@ -21,9 +21,14 @@ void Bsp_Initialize(void)
     BspUser_Initialize();
 
     /* Initialize custom logger */
-    BspUart_Start(BSP_UART_USER_LOG, NULL, NULL);
+    BspUart_Start(BSP_UART_USER_LOG);
     BspLoggerUser_RegisterCustomLogger();
     BSP_LOGGER_LOG_DEBUG(kBsp_LogTag, "Initialized");
+}
+
+void Bsp_Delay(const Bsp_Millisecond_t delay)
+{
+    HAL_Delay(delay);
 }
 
 double Bsp_Map(const double value, const double in_min, const double in_max, const double out_min, const double out_max)

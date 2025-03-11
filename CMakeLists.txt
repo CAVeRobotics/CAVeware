@@ -15,6 +15,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 # Project with support for ASM and C languages
 project(CavemanController LANGUAGES C ASM)
 
+# CAVeTalk library
+include(${CMAKE_SOURCE_DIR}/CAVeTalk.cmake)
+
 ################################################################################
 # BSP library
 ################################################################################
@@ -40,6 +43,7 @@ set(ROVER_INC_DIR ${ROVER_DIR}/inc)
 set(ROVER_SRC_DIR ${ROVER_DIR}/src)
 
 set(ROVER_SRCS
+    ${ROVER_SRC_DIR}/rover.c
     ${ROVER_SRC_DIR}/rover_4ws.c
     ${ROVER_SRC_DIR}/rover_4ws_config.c
     ${ROVER_SRC_DIR}/rover_camera.c
@@ -52,6 +56,7 @@ set(CAVEMAN_CONTROLLER_SRC_DIR ${CAVEMAN_CONTROLLER_DIR}/src)
 
 set(CAVEMAN_CONTROLLER_SRCS
     ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_controller.c
+    ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_cavetalk.c
 )
 
 set_source_files_properties(
@@ -65,16 +70,19 @@ add_executable(${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME}
     PRIVATE
         ${CAVEMAN_CONTROLLER_INC_DIR}
+        ${ROVER_INC_DIR}
 )
 
 target_sources(${PROJECT_NAME}
     PRIVATE
         ${CAVEMAN_CONTROLLER_SRCS}
+        ${ROVER_SRCS}
 )
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         Bsp
+        CAVeTalk-c
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

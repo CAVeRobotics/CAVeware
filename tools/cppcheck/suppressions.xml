@@ -14,4 +14,14 @@
         <id>unusedFunction</id>
     </suppress>
 
+    <!-- Suppress static linkage for functions to be used outside of translation unit -->
+    <suppress>
+        <id>staticFunction</id>
+        <symbolName>BspMotor_SetDirection</symbolName>
+    </suppress>
+    <suppress>
+        <id>staticFunction</id>
+        <symbolName>BspMotor_SetDutyCycle</symbolName>
+    </suppress>
+
 </suppressions>

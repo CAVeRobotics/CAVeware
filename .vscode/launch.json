@@ -2,7 +2,60 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Flash and Debug",
+            "name": "Nucleo-64 Flash and Debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Nucleo-64_Debug/CavemanController.elf",
+            "MIMode": "gdb",
+            "cwd": "${workspaceRoot}",
+            "stopAtConnect": true,
+            "stopAtEntry": true,
+            "externalConsole": false,
+            "miDebuggerPath": "/usr/bin/gdb-multiarch",
+            "setupCommands": [
+                {
+                    "description": "Connect to OpenOCD",
+                    "text": "target extended-remote localhost:3333",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Flash program",
+                    "text": "load ${workspaceFolder}/build/Nucleo-64_Debug/CavemanController.elf",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Reset and halt",
+                    "text": "monitor reset halt",
+                    "ignoreFailures": false
+                }
+            ]
+        },
+        {
+            "name": " Nucleo-64 Debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Nucleo-64_Debug/CavemanController.elf",
+            "MIMode": "gdb",
+            "cwd": "${workspaceRoot}",
+            "stopAtConnect": true,
+            "stopAtEntry": true,
+            "externalConsole": false,
+            "miDebuggerPath": "/usr/bin/gdb-multiarch",
+            "setupCommands": [
+                {
+                    "description": "Connect to OpenOCD",
+                    "text": "target extended-remote localhost:3333",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Reset and halt",
+                    "text": "monitor reset halt",
+                    "ignoreFailures": false
+                }
+            ]
+        },
+        {
+            "name": "STM32-E407 Flash and Debug",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/STM32-E407_Debug/CavemanController.elf",
@@ -31,7 +84,7 @@
             ]
         },
         {
-            "name": "Debug",
+            "name": "STM32-E407 Debug",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/STM32-E407_Debug/CavemanController.elf",

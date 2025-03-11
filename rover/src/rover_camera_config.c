@@ -6,7 +6,7 @@
 
 #include "rover.h"
 
-const BspServo_Handle_t RoverCamera_Servos[ROVER_CAMERA_CONFIG_SERVO_MAX] = {
+BspServo_Handle_t RoverCamera_Servos[ROVER_CAMERA_CONFIG_SERVO_MAX] = {
     [ROVER_CAMERA_CONFIG_SERVO_PAN] = {
         .timer              = BSP_PWM_USER_TIMER_CAMERA_SERVOS,
         .channel            = BSP_TIMER_CHANNEL_1,

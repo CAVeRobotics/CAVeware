@@ -7,6 +7,9 @@ runs:
       uses: docker://d3lta12/stm32cubemx-stm32f4
       with:
         args: /bin/bash -c "cd bsp/boards/Nucleo-64/generated && /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q Nucleo-64.script"
+    - name: Generate CAVeTalk Protobufs
+      run: external/CAVeTalk/tools/nanopb/generate.sh
+      shell: sh
     - name: Cache CMake files
       id: cache-cmake
       uses: actions/cache@v4

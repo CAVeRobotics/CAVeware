@@ -1,5 +1,5 @@
 #ifndef BSP_MOTOR_H
-#define BPS_MOTOR_H
+#define BSP_MOTOR_H
 
 #include "bsp.h"
 #include "bsp_pwm_user.h"

@@ -1,9 +1,6 @@
 #include "caveman_controller.h"
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
+#include <stdbool.h>
 
 #include "bsp.h"
 #include "bsp_encoder.h"
@@ -17,40 +14,38 @@
 #include "bsp_uart.h"
 #include "bsp_uart_user.h"
 
+#include "caveman_cavetalk.h"
+#include "rover.h"
+
 static const char *kCaveman_LogTag = "CAVEMAN";
+
+static void Caveman_Initialize(void);
 
 int main(void)
 {
-    Bsp_Initialize();
-    BspTick_Start();
-
-    BSP_LOGGER_LOG_DEBUG(kCaveman_LogTag, "Starting...");
-    BSP_LOGGER_LOG_DEBUG(kCaveman_LogTag, "Test log");
-
-    HAL_Delay(10);
-    BSP_LOGGER_LOG_DEBUG(kCaveman_LogTag, "Another Test log");
+    Caveman_Initialize();
+    Rover_SetMode(ROVER_MODE_RUN);
 
     while (true)
     {
+        Rover_Task();
+        CavemanCaveTalk_Task();
     }
 
-    /* Temporarily instantiate test_motor to remove static analysis errors about unused motor functions */
-    BspMotor_Handle_t test_motor = {
-        .forward_phase.timer   = BSP_PWM_USER_TIMER_MOTORS,
-        .forward_phase.channel = BSP_TIMER_CHANNEL_1,
-        .reverse_phase.timer   = BSP_PWM_USER_TIMER_MOTORS,
-        .reverse_phase.channel = BSP_TIMER_CHANNEL_2,
-        .minimum_duty_cycle    = 0.0,
-        .maximum_duty_cycle    = 1.0,
-        .minimum_speed         = 0.0,
-        .maximum_speed         = 3.14159265, /* TODO determine max motor speed under load */
-        .direction             = BSP_MOTOR_DIRECTION_FORWARD,
-    };
-
-    BspMotor_Start(&test_motor);
-    BspMotor_SetDirection(&test_motor, BSP_MOTOR_DIRECTION_FORWARD);
-    BspMotor_SetDutyCycle(&test_motor, 0.0);
-    BspMotor_Stop(&test_motor);
-
     return 0;
+}
+
+static void Caveman_Initialize(void)
+{
+    Bsp_Initialize();
+    if (BSP_ERROR_NONE != BspTick_Start())
+    {
+        BSP_LOGGER_LOG_ERROR(kCaveman_LogTag, "Failed to start BSP Tick");
+    }
+    Rover_Initialize();
+    if (CAVE_TALK_ERROR_NONE != CavemanCaveTalk_Start())
+    {
+        BSP_LOGGER_LOG_ERROR(kCaveman_LogTag, "Failed to start Rover");
+    }
+    BSP_LOGGER_LOG_DEBUG(kCaveman_LogTag, "Initialized");
 }
