@@ -48,4 +48,6 @@ static void Caveman_Initialize(void)
         BSP_LOGGER_LOG_ERROR(kCaveman_LogTag, "Failed to start Rover");
     }
     BSP_LOGGER_LOG_DEBUG(kCaveman_LogTag, "Initialized");
+
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_0, GPIO_PIN_SET); /* Test IMU LED */
 }
