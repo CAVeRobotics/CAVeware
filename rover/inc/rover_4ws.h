@@ -20,6 +20,8 @@ Rover_Error_t Rover4ws_EnableSteering(void);
 Rover_Error_t Rover4ws_DisableSteering(void);
 Rover_Error_t Rover4ws_StartMotors(void);
 Rover_Error_t Rover4ws_StopMotors(void);
+Rover_Error_t Rover4ws_EnableEncoders(void);
+Rover_Error_t Rover4ws_SampleEncoders(void);
 Rover_Error_t Rover4ws_Drive(const Rover_MetersPerSecond_t speed, const Rover_RadiansPerSecond_t turn_rate);
 
 #endif /* ROVER_4WS_H */

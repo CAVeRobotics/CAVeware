@@ -36,6 +36,16 @@ set_source_files_properties(
 )
 
 ################################################################################
+# Rover config library
+################################################################################
+get_target_property(ROVER_CONFIG_SRCS RoverConfig INTERFACE_SOURCES)
+set_source_files_properties(
+    ${ROVER_CONFIG_SRCS}
+    PROPERTIES
+    COMPILE_OPTIONS "-Werror"
+)
+
+################################################################################
 # CAVEMAN controller firmware
 ################################################################################
 set(ROVER_DIR ${CMAKE_SOURCE_DIR}/rover)
@@ -45,9 +55,7 @@ set(ROVER_SRC_DIR ${ROVER_DIR}/src)
 set(ROVER_SRCS
     ${ROVER_SRC_DIR}/rover.c
     ${ROVER_SRC_DIR}/rover_4ws.c
-    ${ROVER_SRC_DIR}/rover_4ws_config.c
     ${ROVER_SRC_DIR}/rover_camera.c
-    ${ROVER_SRC_DIR}/rover_camera_config.c
 )
 
 set(CAVEMAN_CONTROLLER_DIR ${CMAKE_SOURCE_DIR}/caveman_controller)
@@ -82,6 +90,7 @@ target_sources(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         Bsp
+        RoverConfig
         CAVeTalk-c
 )
 
@@ -95,10 +104,10 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 # CI and tools
 ################################################################################
 set(TOOLS_DIR ${CMAKE_SOURCE_DIR}/tools)
-set(CPPCHECK_SOURCES ${BSP_SRCS} ${BSP_USER_SRCS} ${ROVER_SRCS} ${CAVEMAN_CONTROLLER_SRCS})
+set(CPPCHECK_SOURCES ${BSP_SRCS} ${BSP_USER_SRCS} ${ROVER_SRCS} ${ROVER_CONFIG_SRCS} ${CAVEMAN_CONTROLLER_SRCS})
 include(${TOOLS_DIR}/cppcheck/cppcheck.cmake)
 get_target_property(BSP_USER_INC_DIRS BspUser INTERFACE_INCLUDE_DIRECTORIES)
 get_target_property(BSP_INC_DIRS Bsp INTERFACE_INCLUDE_DIRECTORIES)
 set(UNCRUSTIFY_SOURCES ${CPPCHECK_SOURCES})
-set(UNCRUSTIFY_INC_DIRS ${BSP_INC_DIRS} ${BSP_USER_INC_DIRS} ${ROVER_INC_DIR} ${CAVEMAN_CONTROLLER_INC_DIR})
+set(UNCRUSTIFY_INC_DIRS ${BSP_INC_DIRS} ${BSP_USER_INC_DIRS} ${ROVER_INC_DIR} ${ROVER_CONFIG_INC_DIR} ${CAVEMAN_CONTROLLER_INC_DIR})
 include(${TOOLS_DIR}/uncrustify/uncrustify.cmake)

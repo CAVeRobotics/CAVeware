@@ -8,7 +8,6 @@
 #include "stm32f4xx_hal.h"
 
 #define BSP_UNUSED(x) (void)(x)
-#define BSP_UART_DOUBLE_BUFFER_COUNT 2U
 
 typedef double   Bsp_Percent_t;
 typedef double   Bsp_Radian_t;
@@ -17,14 +16,16 @@ typedef uint32_t Bsp_Millisecond_t;
 typedef uint64_t Bsp_Microsecond_t;
 typedef int64_t  Bsp_EncoderPulse_t;
 typedef int32_t  Bsp_EncoderPeriod_t; /* Must not exceed 4 bytes for atomic read/write */
+typedef uint16_t Bsp_GpioPin_t;
 
+typedef GPIO_TypeDef       Bsp_GpioPort_t;
 typedef TIM_HandleTypeDef  Bsp_TimerHandle_t;
 typedef UART_HandleTypeDef Bsp_UartHandle_t;
 
-typedef struct Bsp_Encoder          Bsp_Encoder_t;
-typedef struct Bsp_PwmConfig        Bsp_PwmConfig_t;
-typedef struct Bsp_UartDoubleBuffer Bsp_UartDoubleBuffer_t;
-typedef struct Bsp_Uart             Bsp_Uart_t;
+typedef struct Bsp_Encoder   Bsp_Encoder_t;
+typedef struct Bsp_Gpio      Bsp_Gpio_t;
+typedef struct Bsp_PwmConfig Bsp_PwmConfig_t;
+typedef struct Bsp_Uart      Bsp_Uart_t;
 
 typedef enum
 {
@@ -35,6 +36,7 @@ typedef enum
     BSP_ERROR_PERIPHERAL = 0x04U,
     BSP_ERROR_VALUE = 0x05U,
     BSP_ERROR_NULL = 0x06U,
+    BSP_ERROR_SIZE = 0x07U
 } Bsp_Error_t;
 
 typedef enum
@@ -51,6 +53,25 @@ typedef enum
     BSP_ENCODER_USER_MODE_PULSES_PER_ROTATON,
     BSP_ENCODER_USER_MODE_RADIANS_PER_PULSE
 } Bsp_EncoderMode_t;
+
+typedef enum
+{
+    BSP_GPIO_STATE_RESET = GPIO_PIN_RESET,
+    BSP_GPIO_STATE_SET = GPIO_PIN_SET
+} Bsp_GpioState_t;
+
+typedef enum
+{
+    BSP_GPIO_MODE_OUTPUT,
+    BSP_GPIO_MODE_INPUT
+} Bsp_GpioMode_t;
+
+typedef enum
+{
+    BSP_UART_MODE_RX,
+    BSP_UART_MODE_TX,
+    BSP_UART_MODE_RXTX
+} Bsp_UartMode_t;
 
 struct Bsp_Encoder
 {
@@ -73,30 +94,35 @@ struct Bsp_Encoder
     Bsp_RadiansPerSecond_t angular_rate;                   /* Filtered angular rate */
 };
 
+struct Bsp_Gpio
+{
+    Bsp_GpioPort_t *gpio_port;
+    Bsp_GpioPin_t gpio_pin;
+    Bsp_GpioMode_t mode;
+    Bsp_Microsecond_t debounce;
+    Bsp_Microsecond_t previous;
+    void (*callback)(const Bsp_GpioPin_t pin);
+};
+
 struct Bsp_PwmConfig
 {
     Bsp_TimerHandle_t *timer_handle;
     Bsp_TimerChannel_t max_channel;
 };
 
-struct Bsp_UartDoubleBuffer
-{
-    uint8_t *buffer;
-    uint32_t half_buffer_size;
-    volatile bool writing;
-    volatile bool reading;
-    volatile uint8_t unlocked; /* 0 - write or 1 - read, numeric type because used as index */
-    volatile uint32_t write_count[BSP_UART_DOUBLE_BUFFER_COUNT];
-    volatile uint32_t read_count[BSP_UART_DOUBLE_BUFFER_COUNT];
-};
-
 struct Bsp_Uart
 {
     Bsp_UartHandle_t *uart_handle;
-    Bsp_UartDoubleBuffer_t tx_buffer;
+    Bsp_UartMode_t mode;
+    uint8_t *tx_buffer;
+    uint32_t tx_buffer_size;
+    volatile uint32_t tx_read_pointer;
+    volatile uint32_t tx_write_pointer;
+    volatile uint32_t tx_reading;
+    volatile bool txing;
     uint8_t *rx_buffer;
     uint32_t rx_buffer_size;
-    uint32_t read_pointer;
+    volatile uint32_t read_pointer;
 };
 
 void Bsp_Initialize(void);

@@ -8,10 +8,9 @@
 #include "bsp_encoder_user.h"
 #include "bsp_tick.h"
 
-#define BSP_ENCODER_PI                     3.14159265358979323846
-#define BSP_ENCODER_RADIANS_PER_ROTATION   (2 * BSP_ENCODER_PI)
-#define BSP_ENCODER_PHASES                 ((Bsp_EncoderPulse_t)2)
-#define BSP_ENCODER_MICROSECOND_TO_SECONDS ((double)10e6)
+#define BSP_ENCODER_PI                   3.14159265358979323846
+#define BSP_ENCODER_RADIANS_PER_ROTATION (2 * BSP_ENCODER_PI)
+#define BSP_ENCODER_PHASES               (Bsp_EncoderPulse_t)2
 
 extern void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef *tim_encoderHandle);
 
@@ -86,7 +85,7 @@ Bsp_Error_t BspEncoder_Sample(const BspEncoderUser_Timer_t timer)
 
         BspEncoder_SamplePulses(handle);
 
-        double delta_time = (double)((double)(handle->time - previous_time) / BSP_ENCODER_MICROSECOND_TO_SECONDS);
+        double delta_time = (double)((double)(handle->time - previous_time) / BSP_TICK_MICROSECONDS_PER_SECOND);
         handle->raw_angular_rate = ((double)(handle->pulses - previous_pulses) * (handle->radians_per_pulse)) / delta_time;
         handle->angular_rate    += handle->smoothing_factor * (handle->raw_angular_rate - handle->angular_rate); /* Exponential moving average */
     }

@@ -81,13 +81,17 @@ Bsp_Error_t BspMotor_Reverse(BspMotor_Handle_t *const handle)
 
 Bsp_Error_t BspMotor_SetDirection(BspMotor_Handle_t *const handle, const BspMotor_Direction_t direction)
 {
-    Bsp_Error_t error = BSP_ERROR_NULL;
+    Bsp_Error_t error = BSP_ERROR_NONE;
 
-    if (NULL != handle)
+    if (NULL == handle)
+    {
+        error = BSP_ERROR_NULL;
+    }
+    else
     {
         if (direction != handle->direction)
         {
-            BspMotor_SetDutyCycleUnlimited(handle, 0.0);
+            error = BspMotor_SetDutyCycleUnlimited(handle, 0.0);
 
             /* TODO SD-220 insert dead time on transition */
         }

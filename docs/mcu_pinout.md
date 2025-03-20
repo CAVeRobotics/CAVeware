@@ -1,6 +1,6 @@
 # Rover Controller MCU Pinout
 
-Revision 8
+Revision 9
 
 Based on STM32F407ZGTx
 
@@ -78,6 +78,8 @@ Based on STM32F407ZGTx
 | Jetson UART RX           | UART RX           | PA10                       |
 | Dust Sensor UART TX      | UART TX           | PG14                       |
 | Dust Sensor UART RX      | UART RX           | PG9                        |
+| Logging UART TX          | UART TX           | PD8                        |
+| Logging UART RX          | UART RX           | PB11                       |
 | HSE IN                   | HSE               | PH0                        |
 | HSE OUT                  | HSE               | PH1                        |
 
@@ -119,12 +121,4 @@ Spare PWM: TIM 13, TIM 14
 
 - Interrupts in use on 0, 1, 2, 3, 4, 7, 10, 11, 12, 13, 14
   
-  - Consider PD5, PD6, PD8, PD9 for remaining digital interrupts
-
-- Consider breaking out several more GPIO
-  
-  - Any unused GPIO remaining can be used
-
-- Break out BOOT0 pin too?
-  
-  - Maybe configure with a jumper
+  - Consider PD5, PD6, PD9 for remaining digital interrupts

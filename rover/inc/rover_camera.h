@@ -3,6 +3,8 @@
 
 #include "rover.h"
 
+Rover_Error_t RoverCamera_Enable(void);
+Rover_Error_t RoverCamera_Disable(void);
 Rover_Error_t RoverCamera_Pan(const Rover_Radian_t pan_angle);
 Rover_Error_t RoverCamera_Tilt(const Rover_Radian_t tilt_angle);
 

@@ -1,18 +1,25 @@
 #include "caveman_cavetalk.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 
 #include "cave_talk.h"
 #include "cave_talk_types.h"
 #include "cave_talk_link.h"
 #include "ooga_booga.pb.h"
+#include "odometry.pb.h"
 
 #include "bsp.h"
+#include "bsp_gpio.h"
+#include "bsp_gpio_user.h"
+#include "bsp_encoder_user.h"
 #include "bsp_logger.h"
+#include "bsp_tick.h"
 #include "bsp_uart.h"
 #include "bsp_uart_user.h"
 
 #include "rover_4ws.h"
+#include "rover_camera.h"
 
 #define CAVEMAN_CAVE_TALK_BUFFER_SIZE 1024U
 #define CAVEMAN_CAVE_TALK_HEADER_SIZE 3U
@@ -31,6 +38,9 @@ static CaveTalk_Error_t CavemanCaveTalk_Receive(void *const data, const size_t s
 static CaveTalk_Error_t CavemanCaveTalk_ConvertBspError(const Bsp_Error_t bsp_error);
 static void CavemanCaveTalk_HearOogaBooga(const cave_talk_Say ooga_booga);
 static void CavemanCaveTalk_HearMovement(const CaveTalk_MetersPerSecond_t speed, const CaveTalk_RadiansPerSecond_t turn_rate);
+static void CavemanCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, const CaveTalk_Radian_t tilt);
+static void CavemanCaveTalk_HearLights(const bool headlights);
+static void CavemanCaveTalk_SendOdometry(void);
 
 static CaveTalk_Handle_t CavemanCaveTalk_Handle = {
     .link_handle = {
@@ -42,8 +52,8 @@ static CaveTalk_Handle_t CavemanCaveTalk_Handle = {
     .listen_callbacks = {
         .hear_ooga_booga      = CavemanCaveTalk_HearOogaBooga,
         .hear_movement        = CavemanCaveTalk_HearMovement,
-        .hear_camera_movement = NULL,
-        .hear_lights          = NULL,
+        .hear_camera_movement = CavemanCaveTalk_HearCameraMovement,
+        .hear_lights          = CavemanCaveTalk_HearLights,
         .hear_mode            = NULL,
     },
 };
@@ -60,8 +70,6 @@ void CavemanCaveTalk_Task(void)
     {
         BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Hear error: %d", (int)error);
     }
-
-    /* TODO send odometry data */
 }
 
 static CaveTalk_Error_t CavemanCaveTalk_Send(const void *const data, const size_t size)
@@ -97,12 +105,11 @@ static CaveTalk_Error_t CavemanCaveTalk_ConvertBspError(const Bsp_Error_t bsp_er
 
 static void CavemanCaveTalk_HearOogaBooga(const cave_talk_Say ooga_booga)
 {
-    BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Comms success");
-
     switch (ooga_booga)
     {
     case cave_talk_Say_SAY_OOGA:
         (void)CaveTalk_SpeakOogaBooga(&CavemanCaveTalk_Handle, cave_talk_Say_SAY_BOOGA);
+        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Comms established");
         break;
     case cave_talk_Say_SAY_BOOGA:
         (void)CaveTalk_SpeakOogaBooga(&CavemanCaveTalk_Handle, cave_talk_Say_SAY_OOGA);
@@ -119,5 +126,70 @@ static void CavemanCaveTalk_HearMovement(const CaveTalk_MetersPerSecond_t speed,
     if (ROVER_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to set speed and turn rate with error %d", (int)error);
+    }
+    else
+    {
+        CavemanCaveTalk_SendOdometry();
+
+        BSP_LOGGER_LOG_DEBUG(kCavemanCaveTalk_LogTag, "Heard movement message");
+    }
+
+    BSP_UNUSED(error);
+}
+
+static void CavemanCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, const CaveTalk_Radian_t tilt)
+{
+    Rover_Error_t error = RoverCamera_Pan(pan);
+
+    if (ROVER_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to set camera pan with error %d", (int)error);
+    }
+
+    error = RoverCamera_Tilt(tilt);
+
+    if (ROVER_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to set camera tilt with error %d", (int)error);
+    }
+}
+
+static void CavemanCaveTalk_HearLights(const bool headlights)
+{
+    if (headlights)
+    {
+        (void)BspGpio_Write(BSP_GPIO_USER_PIN_HEADLIGHTS_0, BSP_GPIO_STATE_SET);
+        (void)BspGpio_Write(BSP_GPIO_USER_PIN_HEADLIGHTS_1, BSP_GPIO_STATE_SET);
+        (void)BspGpio_Write(BSP_GPIO_USER_PIN_HEADLIGHTS_2, BSP_GPIO_STATE_SET);
+    }
+    else
+    {
+        (void)BspGpio_Write(BSP_GPIO_USER_PIN_HEADLIGHTS_0, BSP_GPIO_STATE_RESET);
+        (void)BspGpio_Write(BSP_GPIO_USER_PIN_HEADLIGHTS_1, BSP_GPIO_STATE_RESET);
+        (void)BspGpio_Write(BSP_GPIO_USER_PIN_HEADLIGHTS_2, BSP_GPIO_STATE_RESET);
+    }
+}
+
+static void CavemanCaveTalk_SendOdometry(void)
+{
+    cave_talk_Imu     imu_message       = cave_talk_Imu_init_zero;
+    cave_talk_Encoder encoder_message_0 = cave_talk_Encoder_init_zero;
+    cave_talk_Encoder encoder_message_1 = cave_talk_Encoder_init_zero;
+    cave_talk_Encoder encoder_message_2 = cave_talk_Encoder_init_zero;
+    cave_talk_Encoder encoder_message_3 = cave_talk_Encoder_init_zero;
+
+    encoder_message_0.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].pulses;
+    encoder_message_0.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].angular_rate;
+    encoder_message_1.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].pulses;
+    encoder_message_1.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].angular_rate;
+    encoder_message_2.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].pulses;
+    encoder_message_2.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].angular_rate;
+    encoder_message_3.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].pulses;
+    encoder_message_3.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].angular_rate;
+
+    CaveTalk_Error_t error = CaveTalk_SpeakOdometry(&CavemanCaveTalk_Handle, &imu_message, &encoder_message_0, &encoder_message_1, &encoder_message_2, &encoder_message_3);
+    if (CAVE_TALK_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Speak odometry error: %d", (int)error);
     }
 }

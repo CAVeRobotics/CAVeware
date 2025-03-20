@@ -56,8 +56,7 @@ BspMotor_Handle_t Rover4wsConfig_Motors[ROVER_4WS_MOTOR_MAX] = {
             .timer   = BSP_PWM_USER_TIMER_MOTORS,
             .channel = BSP_TIMER_CHANNEL_1,
         },
-        .reverse_phase = {
-            /* TODO set motor reverse timer and channels */
+        .reverse_phase = {/* TODO set motor reverse timer and channels */
             .timer   = BSP_PWM_USER_TIMER_MAX,
             .channel = BSP_TIMER_CHANNEL_1
         },
@@ -72,8 +71,7 @@ BspMotor_Handle_t Rover4wsConfig_Motors[ROVER_4WS_MOTOR_MAX] = {
             .timer   = BSP_PWM_USER_TIMER_MOTORS,
             .channel = BSP_TIMER_CHANNEL_2,
         },
-        .reverse_phase = {
-            /* TODO set motor reverse timer and channels */
+        .reverse_phase = {/* TODO set motor reverse timer and channels */
             .timer   = BSP_PWM_USER_TIMER_MAX,
             .channel = BSP_TIMER_CHANNEL_1
         },
@@ -88,8 +86,7 @@ BspMotor_Handle_t Rover4wsConfig_Motors[ROVER_4WS_MOTOR_MAX] = {
             .timer   = BSP_PWM_USER_TIMER_MOTORS,
             .channel = BSP_TIMER_CHANNEL_3,
         },
-        .reverse_phase = {
-            /* TODO set motor reverse timer and channels */
+        .reverse_phase = {/* TODO set motor reverse timer and channels */
             .timer   = BSP_PWM_USER_TIMER_MAX,
             .channel = BSP_TIMER_CHANNEL_1
         },
@@ -104,8 +101,7 @@ BspMotor_Handle_t Rover4wsConfig_Motors[ROVER_4WS_MOTOR_MAX] = {
             .timer   = BSP_PWM_USER_TIMER_MOTORS,
             .channel = BSP_TIMER_CHANNEL_4,
         },
-        .reverse_phase = {
-            /* TODO set motor reverse timer and channels */
+        .reverse_phase = {/* TODO set motor reverse timer and channels */
             .timer   = BSP_PWM_USER_TIMER_MAX,
             .channel = BSP_TIMER_CHANNEL_1
         },
