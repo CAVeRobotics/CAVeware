@@ -1,21 +1,19 @@
 #include "rover.h"
 
+#include <stdbool.h>
+
 #include "bsp.h"
 #include "bsp_logger.h"
 
 #include "rover_4ws.h"
 #include "rover_camera.h"
 
-static Rover_Mode_t Rover_Mode    = ROVER_MODE_STARTUP;
-static const char*  kRover_LogTag = "ROVER";
-
-static Rover_Error_t Rover_SetModeStartup(void);
-static Rover_Error_t Rover_SetModeConfigure(void);
-static Rover_Error_t Rover_SetModeRun(void);
+static const char* kRover_LogTag = "ROVER";
+static bool        Rover_Armed   = false;
 
 void Rover_Initialize(void)
 {
-    (void)Rover_SetMode(ROVER_MODE_STARTUP);
+    (void)Rover_Dearm();
     (void)Rover4ws_EnableEncoders();
 }
 
@@ -51,77 +49,64 @@ Rover_Error_t Rover_BspToRoverError(const Bsp_Error_t bsp_error)
     return rover_error;
 }
 
-Rover_Mode_t Rover_GetMode(void)
+Rover_Error_t Rover_Arm(void)
 {
-    return Rover_Mode;
-}
+    Rover_Error_t error = Rover4ws_EnableSteering();
 
-Rover_Error_t Rover_SetMode(const Rover_Mode_t mode)
-{
-    Rover_Error_t error = ROVER_ERROR_MODE;
-
-    switch (mode)
+    if (ROVER_ERROR_NONE == error)
     {
-    case ROVER_MODE_STARTUP:
-        error = Rover_SetModeStartup();
-        break;
-    case ROVER_MODE_CONFIGURE:
-        error = Rover_SetModeConfigure();
-        break;
-    case ROVER_MODE_RUN:
-        error = Rover_SetModeRun();
-        break;
-    default:
-        break;
+        error = Rover4ws_StartMotors();
     }
 
-    if (ROVER_ERROR_NONE != error)
+    if (ROVER_ERROR_NONE == error)
     {
-        BSP_LOGGER_LOG_ERROR(kRover_LogTag, "Failed to set mode %d with error %d", (int)mode, (int)error);
+        error = RoverCamera_Enable();
+    }
+
+    if (ROVER_ERROR_NONE == error)
+    {
+        BSP_LOGGER_LOG_INFO(kRover_LogTag, "Armed", (int)error);
     }
     else
     {
-        BSP_LOGGER_LOG_INFO(kRover_LogTag, "Set mode %d", (int)mode);
+        BSP_LOGGER_LOG_ERROR(kRover_LogTag, "Failed to arm with error %d", (int)error);
     }
 
     return error;
 }
 
-static Rover_Error_t Rover_SetModeStartup(void)
+Rover_Error_t Rover_Dearm(void)
 {
-    Rover_Mode = ROVER_MODE_STARTUP;
+    Rover_Error_t error = Rover4ws_DisableSteering();
 
-    /* TODO */
+    if (ROVER_ERROR_NONE == error)
+    {
+        error = Rover4ws_StopMotors();
+    }
 
-    (void)Rover4ws_StopMotors();
-    (void)Rover4ws_DisableSteering();
-    (void)RoverCamera_Disable();
+    if (ROVER_ERROR_NONE == error)
+    {
+        error = RoverCamera_Disable();
+    }
 
-    return ROVER_ERROR_NONE;
+    if (ROVER_ERROR_NONE == error)
+    {
+        BSP_LOGGER_LOG_INFO(kRover_LogTag, "Dearmed", (int)error);
+    }
+    else
+    {
+        BSP_LOGGER_LOG_ERROR(kRover_LogTag, "Failed to dearm with error %d", (int)error);
+    }
+
+    return error;
 }
 
-static Rover_Error_t Rover_SetModeConfigure(void)
+bool Rover_IsArmed(void)
 {
-    Rover_Mode = ROVER_MODE_CONFIGURE;
-
-    /* TODO */
-
-    (void)Rover4ws_StopMotors();
-    (void)Rover4ws_DisableSteering();
-    (void)RoverCamera_Disable();
-
-    return ROVER_ERROR_NONE;
+    return Rover_Armed;
 }
 
-static Rover_Error_t Rover_SetModeRun(void)
+Rover_Error_t Rover_Drive(const Rover_MetersPerSecond_t speed, const Rover_RadiansPerSecond_t turn_rate)
 {
-    Rover_Mode = ROVER_MODE_RUN;
-
-    /* TODO */
-
-    (void)Rover4ws_EnableSteering();
-    (void)Rover4ws_StartMotors();
-    (void)RoverCamera_Enable();
-
-    return ROVER_ERROR_NONE;
+    return Rover4ws_Drive(speed, turn_rate);
 }

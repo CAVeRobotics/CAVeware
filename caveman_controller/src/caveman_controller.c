@@ -23,7 +23,9 @@ static void Caveman_MeasureLoopRate(void);
 int main(void)
 {
     Caveman_Initialize();
-    Rover_SetMode(ROVER_MODE_RUN);
+
+    /* TODO remove once arm message is implemented */
+    (void)Rover_Arm();
 
     while (true)
     {

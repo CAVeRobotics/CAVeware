@@ -32,7 +32,7 @@ Rover_Error_t Rover4ws_ConfigureSteering(const Rover4ws_Servo_t servo,
     {
         error = ROVER_ERROR_PERIPHERAL;
     }
-    else if (ROVER_MODE_CONFIGURE != Rover_GetMode())
+    else if (Rover_IsArmed())
     {
         error = ROVER_ERROR_MODE;
     }
@@ -59,7 +59,7 @@ Rover_Error_t Rover4ws_ConfigureMotor(const Rover4ws_Motor_t motor,
     {
         error = ROVER_ERROR_PERIPHERAL;
     }
-    else if (ROVER_MODE_CONFIGURE != Rover_GetMode())
+    else if (Rover_IsArmed())
     {
         error = ROVER_ERROR_MODE;
     }

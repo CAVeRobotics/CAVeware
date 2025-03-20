@@ -21,17 +21,12 @@ typedef enum
     ROVER_ERROR_MODE
 } Rover_Error_t;
 
-typedef enum
-{
-    ROVER_MODE_STARTUP,
-    ROVER_MODE_CONFIGURE,
-    ROVER_MODE_RUN,
-} Rover_Mode_t;
-
 void Rover_Initialize(void);
 void Rover_Task(void);
 Rover_Error_t Rover_BspToRoverError(const Bsp_Error_t bsp_error);
-Rover_Mode_t Rover_GetMode(void);
-Rover_Error_t Rover_SetMode(const Rover_Mode_t mode);
+Rover_Error_t Rover_Arm(void);
+Rover_Error_t Rover_Dearm(void);
+bool Rover_IsArmed(void);
+Rover_Error_t Rover_Drive(const Rover_MetersPerSecond_t speed, const Rover_RadiansPerSecond_t turn_rate);
 
 #endif /* ROVER_H */
