@@ -65,6 +65,27 @@ Bsp_Error_t BspEncoder_Start(const BspEncoderUser_Timer_t timer)
     return error;
 }
 
+Bsp_Error_t BspEncoder_Stop(const BspEncoderUser_Timer_t timer)
+{
+    Bsp_Error_t error = BSP_ERROR_NONE;
+
+    if (timer >= BSP_ENCODER_USER_TIMER_MAX)
+    {
+        error = BSP_ERROR_PERIPHERAL;
+    }
+    else if (NULL == BspEncoderUser_HandleTable[timer].timer_handle)
+    {
+        error = BSP_ERROR_NULL;
+    }
+    else
+    {
+        error = (Bsp_Error_t)HAL_TIM_Base_Stop_IT(BspEncoderUser_HandleTable[timer].timer_handle);
+        HAL_TIM_Encoder_MspDeInit(BspEncoderUser_HandleTable[timer].timer_handle);
+    }
+
+    return error;
+}
+
 Bsp_Error_t BspEncoder_Sample(const BspEncoderUser_Timer_t timer)
 {
     Bsp_Error_t error = BSP_ERROR_NONE;

@@ -69,6 +69,7 @@ set(CAVEMAN_CONTROLLER_SRCS
 
 set_source_files_properties(
     ${CAVEMAN_CONTROLLER_SRCS}
+    ${ROVER_SRCS}
     PROPERTIES
     COMPILE_OPTIONS "-Werror"
 )

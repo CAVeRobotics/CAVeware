@@ -49,7 +49,7 @@ static void Caveman_Initialize(void)
     {
         BSP_LOGGER_LOG_ERROR(kCaveman_LogTag, "Failed to start CAVeTalk");
     }
-    BSP_LOGGER_LOG_DEBUG(kCaveman_LogTag, "Initialized");
+    BSP_LOGGER_LOG_INFO(kCaveman_LogTag, "Initialized");
 
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_0, GPIO_PIN_SET); /* Test IMU LED */
 

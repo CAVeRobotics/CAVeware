@@ -6,6 +6,7 @@
 #include "cave_talk.h"
 #include "cave_talk_types.h"
 #include "cave_talk_link.h"
+#include "config_encoder.pb.h"
 #include "ooga_booga.pb.h"
 #include "odometry.pb.h"
 
@@ -19,6 +20,8 @@
 #include "bsp_uart_user.h"
 
 #include "rover.h"
+#include "rover_4ws.h"
+#include "rover_4ws_config.h"
 #include "rover_camera.h"
 
 #define CAVEMAN_CAVE_TALK_BUFFER_SIZE 1024U
@@ -41,6 +44,10 @@ static void CavemanCaveTalk_HearMovement(const CaveTalk_MetersPerSecond_t speed,
 static void CavemanCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, const CaveTalk_Radian_t tilt);
 static void CavemanCaveTalk_HearLights(const bool headlights);
 static void CavemanCaveTalk_HearArm(const bool arm);
+static void CavemanCaveTalk_HearConfigEncoders(const cave_talk_ConfigEncoder *const encoder_wheel_0,
+                                               const cave_talk_ConfigEncoder *const encoder_wheel_1,
+                                               const cave_talk_ConfigEncoder *const encoder_wheel_2,
+                                               const cave_talk_ConfigEncoder *const encoder_wheel_3);
 static void CavemanCaveTalk_SendOdometry(void);
 
 static CaveTalk_Handle_t CavemanCaveTalk_Handle = {
@@ -61,7 +68,7 @@ static CaveTalk_Handle_t CavemanCaveTalk_Handle = {
         .hear_config_servo_wheels = NULL,
         .hear_config_servo_cams   = NULL,
         .hear_config_motors       = NULL,
-        .hear_config_encoders     = NULL,
+        .hear_config_encoders     = CavemanCaveTalk_HearConfigEncoders,
     },
 };
 
@@ -128,20 +135,9 @@ static void CavemanCaveTalk_HearOogaBooga(const cave_talk_Say ooga_booga)
 
 static void CavemanCaveTalk_HearMovement(const CaveTalk_MetersPerSecond_t speed, const CaveTalk_RadiansPerSecond_t turn_rate)
 {
-    Rover_Error_t error = Rover_Drive(speed, turn_rate);
-
-    if (ROVER_ERROR_NONE != error)
-    {
-        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to set speed and turn rate with error %d", (int)error);
-    }
-    else
-    {
-        CavemanCaveTalk_SendOdometry();
-
-        BSP_LOGGER_LOG_DEBUG(kCavemanCaveTalk_LogTag, "Heard movement message");
-    }
-
-    BSP_UNUSED(error);
+    (void)Rover_Drive(speed, turn_rate);
+    CavemanCaveTalk_SendOdometry();
+    BSP_LOGGER_LOG_VERBOSE(kCavemanCaveTalk_LogTag, "Heard movement message");
 }
 
 static void CavemanCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, const CaveTalk_Radian_t tilt)
@@ -186,6 +182,29 @@ static void CavemanCaveTalk_HearArm(const bool arm)
     else
     {
         (void)Rover_Dearm();
+    }
+}
+
+static void CavemanCaveTalk_HearConfigEncoders(const cave_talk_ConfigEncoder *const encoder_wheel_0,
+                                               const cave_talk_ConfigEncoder *const encoder_wheel_1,
+                                               const cave_talk_ConfigEncoder *const encoder_wheel_2,
+                                               const cave_talk_ConfigEncoder *const encoder_wheel_3)
+{
+    if ((NULL != encoder_wheel_0) && (NULL != encoder_wheel_1) && (NULL != encoder_wheel_2) && (NULL != encoder_wheel_3))
+    {
+        Rover_Error_t error = Rover4ws_ErrorCheck(Rover4ws_ConfigureEncoder(ROVER_4WS_MOTOR_0, encoder_wheel_0->smoothing_factor),
+                                                  Rover4ws_ConfigureEncoder(ROVER_4WS_MOTOR_1, encoder_wheel_1->smoothing_factor),
+                                                  Rover4ws_ConfigureEncoder(ROVER_4WS_MOTOR_2, encoder_wheel_2->smoothing_factor),
+                                                  Rover4ws_ConfigureEncoder(ROVER_4WS_MOTOR_3, encoder_wheel_3->smoothing_factor));
+
+        if (ROVER_ERROR_NONE != error)
+        {
+            BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to configure encoders with error %d", (int)error);
+        }
+        else
+        {
+            BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Encoders configured");
+        }
     }
 }
 

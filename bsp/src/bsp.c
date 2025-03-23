@@ -23,7 +23,7 @@ void Bsp_Initialize(void)
     /* Initialize custom logger */
     BspUart_Start(BSP_UART_USER_LOG);
     BspLoggerUser_RegisterCustomLogger();
-    BSP_LOGGER_LOG_DEBUG(kBsp_LogTag, "Initialized");
+    BSP_LOGGER_LOG_INFO(kBsp_LogTag, "Initialized");
 }
 
 void Bsp_Delay(const Bsp_Millisecond_t delay)
