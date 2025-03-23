@@ -148,12 +148,20 @@ static void CavemanCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, cons
     {
         BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to set camera pan with error %d", (int)error);
     }
+    else
+    {
+        BSP_LOGGER_LOG_VERBOSE(kCavemanCaveTalk_LogTag, "Set camera pan %d rad", (int)pan);
+    }
 
     error = RoverCamera_Tilt(tilt);
 
     if (ROVER_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to set camera tilt with error %d", (int)error);
+    }
+    else
+    {
+        BSP_LOGGER_LOG_VERBOSE(kCavemanCaveTalk_LogTag, "Set camera tilt %d rad", (int)tilt);
     }
 }
 
@@ -229,5 +237,9 @@ static void CavemanCaveTalk_SendOdometry(void)
     if (CAVE_TALK_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Speak odometry error: %d", (int)error);
+    }
+    else
+    {
+        BSP_LOGGER_LOG_VERBOSE(kCavemanCaveTalk_LogTag, "Spoke odometry");
     }
 }
