@@ -9,7 +9,8 @@ typedef enum
     BSP_LOGGER_LEVEL_WARNING,
     BSP_LOGGER_LEVEL_INFO,
     BSP_LOGGER_LEVEL_DEBUG,
-    BSP_LOGGER_LEVEL_VERBOSE
+    BSP_LOGGER_LEVEL_VERBOSE,
+    BSP_LOGGER_LEVEL_MAX
 } BspLogger_Level_t;
 
 void BspLogger_SetLogLevel(const BspLogger_Level_t level);

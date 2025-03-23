@@ -83,7 +83,7 @@ static void Caveman_MeasureLoopRate(void)
     Bsp_Microsecond_t difference = time - previous_time;
     if (difference >= CAVEMAN_LOOP_LOG_PERIOD)
     {
-        BSP_LOGGER_LOG_INFO(kCaveman_LogTag, "Loop rate %dHz", (int)((double)loop_count / ((double)difference / BSP_TICK_MICROSECONDS_PER_SECOND)));
+        BSP_LOGGER_LOG_INFO(kCaveman_LogTag, "Loop rate %lfHz", (double)((double)loop_count / ((double)difference / BSP_TICK_MICROSECONDS_PER_SECOND)));
         loop_count    = 0;
         previous_time = time;
     }

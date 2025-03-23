@@ -150,7 +150,7 @@ static void CavemanCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, cons
     }
     else
     {
-        BSP_LOGGER_LOG_VERBOSE(kCavemanCaveTalk_LogTag, "Set camera pan %d rad", (int)pan);
+        BSP_LOGGER_LOG_VERBOSE(kCavemanCaveTalk_LogTag, "Set camera pan %lf rad", pan);
     }
 
     error = RoverCamera_Tilt(tilt);
@@ -161,7 +161,7 @@ static void CavemanCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, cons
     }
     else
     {
-        BSP_LOGGER_LOG_VERBOSE(kCavemanCaveTalk_LogTag, "Set camera tilt %d rad", (int)tilt);
+        BSP_LOGGER_LOG_VERBOSE(kCavemanCaveTalk_LogTag, "Set camera tilt %lf rad", tilt);
     }
 }
 

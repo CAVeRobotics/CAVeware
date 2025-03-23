@@ -112,7 +112,11 @@ Rover_Error_t Rover_Drive(const Rover_MetersPerSecond_t speed, const Rover_Radia
 
     if (ROVER_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_ERROR(kRover_LogTag, "Failed to set speed and turn rate with error %d", (int)error);
+        BSP_LOGGER_LOG_ERROR(kRover_LogTag, "Failed to set speed %lf m/s and turn rate %lf rad/s with error %d", speed, turn_rate, (int)error);
+    }
+    else
+    {
+        BSP_LOGGER_LOG_VERBOSE(kRover_LogTag, "Set speed %lf m/s and turn rate %lf rad/s", speed, turn_rate);
     }
 
     return error;
