@@ -24,11 +24,12 @@ void BspLogger_Log(const char *const tag, const BspLogger_Level_t level, char *c
 #define BSP_LOGGER_LOG_DEBUG(tag, format, ...)   BspLogger_Log(tag, BSP_LOGGER_LEVEL_DEBUG, format, ## __VA_ARGS__)
 #define BSP_LOGGER_LOG_VERBOSE(tag, format, ...) BspLogger_Log(tag, BSP_LOGGER_LEVEL_VERBOSE, format, ## __VA_ARGS__)
 #else
-#define BSP_LOGGER_LOG_ERROR(tag, format, ...)   ;
-#define BSP_LOGGER_LOG_WARNING(tag, format, ...) ;
-#define BSP_LOGGER_LOG_INFO(tag, format, ...)    ;
-#define BSP_LOGGER_LOG_DEBUG(tag, format, ...)   ;
-#define BSP_LOGGER_LOG_VERBOSE(tag, format, ...) ;
+/* TODO SD-296 unused variadic args */
+#define BSP_LOGGER_LOG_ERROR(tag, format, ...)   BSP_UNUSED(tag); BSP_UNUSED(format);
+#define BSP_LOGGER_LOG_WARNING(tag, format, ...) BSP_UNUSED(tag); BSP_UNUSED(format);
+#define BSP_LOGGER_LOG_INFO(tag, format, ...)    BSP_UNUSED(tag); BSP_UNUSED(format);
+#define BSP_LOGGER_LOG_DEBUG(tag, format, ...)   BSP_UNUSED(tag); BSP_UNUSED(format);
+#define BSP_LOGGER_LOG_VERBOSE(tag, format, ...) BSP_UNUSED(tag); BSP_UNUSED(format);
 #endif
 
 #endif /* BSP_LOGGER_H */

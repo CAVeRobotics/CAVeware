@@ -7,3 +7,6 @@
 [submodule "external/CAVeTalk"]
 	path = external/CAVeTalk
 	url = git@github.com:CAVEMaN-SeniorDesign/CAVeTalk.git
+[submodule "external/lsm6dsv16x-pid"]
+	path = external/lsm6dsv16x-pid
+	url = git@github.com:STMicroelectronics/lsm6dsv16x-pid.git

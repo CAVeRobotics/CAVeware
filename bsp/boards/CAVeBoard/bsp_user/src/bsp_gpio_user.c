@@ -34,7 +34,39 @@ Bsp_Gpio_t BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MAX] = {
         .gpio_pin  = HEADLIGHTS_ENABLE_BUTTON_Pin,
         .mode      = BSP_GPIO_MODE_INPUT,
         .callback  = NULL,
-        .debounce  = 100000U,
+        .debounce  = 50000U, /* TODO SD-130 tune for normal button press */
+        .previous  = 0U,
+    },
+    [BSP_GPIO_USER_PIN_IMU_CS] = {
+        .gpio_port = IMU_CS_GPIO_Port,
+        .gpio_pin  = IMU_CS_Pin,
+        .mode      = BSP_GPIO_MODE_OUTPUT,
+        .callback  = NULL,
+        .debounce  = 0U,
+        .previous  = 0U,
+    },
+    [BSP_GPIO_USER_PIN_IMU_STATUS] = {
+        .gpio_port = IMU_STATUS_LED_GPIO_Port,
+        .gpio_pin  = IMU_STATUS_LED_Pin,
+        .mode      = BSP_GPIO_MODE_OUTPUT,
+        .callback  = NULL,
+        .debounce  = 0U,
+        .previous  = 0U,
+    },
+    [BSP_GPIO_USER_PIN_COMMS_STATUS] = {
+        .gpio_port = JETSON_COMMS_LED_GPIO_Port,
+        .gpio_pin  = JETSON_COMMS_LED_Pin,
+        .mode      = BSP_GPIO_MODE_OUTPUT,
+        .callback  = NULL,
+        .debounce  = 0U,
+        .previous  = 0U,
+    },
+    [BSP_GPIO_USER_PIN_START] = {
+        .gpio_port = START_BUTTON_GPIO_Port,
+        .gpio_pin  = START_BUTTON_Pin,
+        .mode      = BSP_GPIO_MODE_INPUT,
+        .callback  = NULL,
+        .debounce  = 50000U,
         .previous  = 0U,
     },
 };
@@ -47,6 +79,10 @@ Bsp_Gpio_t *BspGpioUser_GetGpioHandle(const Bsp_GpioPin_t exti_pin)
     {
     case HEADLIGHTS_ENABLE_BUTTON_Pin:
         gpio = &BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_HEADLIGHTS_ENABLE];
+        break;
+    case START_BUTTON_Pin:
+        gpio = &BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_START];
+        break;
     default:
         break;
     }

@@ -2,6 +2,7 @@
 
 #include "dma.h"
 #include "gpio.h"
+#include "spi.h"
 #include "tim.h"
 #include "usart.h"
 
@@ -12,6 +13,7 @@ void BspUser_Initialize(void)
     MX_USART1_UART_Init();
     MX_USART3_UART_Init();
     MX_USART6_UART_Init();
+    MX_SPI2_Init();
     MX_TIM1_Init();
     MX_TIM2_Init();
     MX_TIM3_Init();

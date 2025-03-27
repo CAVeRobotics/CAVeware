@@ -138,7 +138,7 @@ Bsp_Error_t BspUart_Receive(const BspUartUser_Uart_t uart, uint8_t *const data, 
         {
             uint32_t bytes_to_end = BspUartUser_HandleTable[uart].rx_buffer_size - read_pointer;
             memcpy(data, (uint8_t*)((uint32_t)BspUartUser_HandleTable[uart].rx_buffer + read_pointer), bytes_to_end);
-            memcpy((uint8_t*)((uint32_t)data + bytes_to_end), BspUartUser_HandleTable[uart].rx_buffer, write_pointer);
+            memcpy((uint8_t*)((uint32_t)data + bytes_to_end), BspUartUser_HandleTable[uart].rx_buffer, (uint16_t)(*bytes_read - bytes_to_end));
         }
         else
         {

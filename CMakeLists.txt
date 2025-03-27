@@ -46,6 +46,20 @@ set_source_files_properties(
 )
 
 ################################################################################
+# LSM6DSV16X driver
+################################################################################
+set(LSM6DSV16X_DIR ${CMAKE_SOURCE_DIR}/external/lsm6dsv16x-pid)
+add_library(lsm6dsv16x INTERFACE)
+target_sources(lsm6dsv16x
+    INTERFACE
+        ${LSM6DSV16X_DIR}/lsm6dsv16x_reg.c
+)
+target_include_directories(lsm6dsv16x
+    INTERFACE
+        ${LSM6DSV16X_DIR}
+)
+
+################################################################################
 # CAVEMAN controller firmware
 ################################################################################
 set(ROVER_DIR ${CMAKE_SOURCE_DIR}/rover)
@@ -56,6 +70,7 @@ set(ROVER_SRCS
     ${ROVER_SRC_DIR}/rover.c
     ${ROVER_SRC_DIR}/rover_4ws.c
     ${ROVER_SRC_DIR}/rover_camera.c
+    ${ROVER_SRC_DIR}/rover_imu.c
 )
 
 set(CAVEMAN_CONTROLLER_DIR ${CMAKE_SOURCE_DIR}/caveman_controller)
@@ -63,6 +78,7 @@ set(CAVEMAN_CONTROLLER_INC_DIR ${CAVEMAN_CONTROLLER_DIR}/inc)
 set(CAVEMAN_CONTROLLER_SRC_DIR ${CAVEMAN_CONTROLLER_DIR}/src)
 
 set(CAVEMAN_CONTROLLER_SRCS
+    ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_buttons.c
     ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_controller.c
     ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_cavetalk.c
 )
@@ -93,6 +109,7 @@ target_link_libraries(${PROJECT_NAME}
         Bsp
         RoverConfig
         CAVeTalk-c
+        lsm6dsv16x
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

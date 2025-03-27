@@ -50,6 +50,7 @@ set(ROVER_CONFIG_SRC_DIR ${ROVER_CONFIG_DIR}/src)
 set(ROVER_CONFIG_SRCS
     ${ROVER_CONFIG_SRC_DIR}/rover_4ws_config.c
     ${ROVER_CONFIG_SRC_DIR}/rover_camera_config.c
+    ${ROVER_CONFIG_SRC_DIR}/rover_imu_config.c
 )
 
 add_library(RoverConfig INTERFACE)

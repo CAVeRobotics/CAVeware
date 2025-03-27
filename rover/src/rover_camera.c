@@ -32,11 +32,11 @@ Rover_Error_t RoverCamera_Disable(void)
 
 Rover_Error_t RoverCamera_Pan(const Rover_Radian_t pan_angle)
 {
-    Rover_Error_t error = ROVER_ERROR_NONE;
+    Rover_Error_t error = ROVER_ERROR_MODE;
 
-    if (BSP_ERROR_NONE != BspServo_SetAngle(&RoverCamera_Servos[ROVER_CAMERA_CONFIG_SERVO_PAN], pan_angle))
+    if (Rover_IsArmed())
     {
-        error = ROVER_ERROR_BSP;
+        error = Rover_BspToRoverError(BspServo_SetAngle(&RoverCamera_Servos[ROVER_CAMERA_CONFIG_SERVO_PAN], pan_angle));
     }
 
     return error;
@@ -44,11 +44,11 @@ Rover_Error_t RoverCamera_Pan(const Rover_Radian_t pan_angle)
 
 Rover_Error_t RoverCamera_Tilt(const Rover_Radian_t tilt_angle)
 {
-    Rover_Error_t error = ROVER_ERROR_NONE;
+    Rover_Error_t error = ROVER_ERROR_MODE;
 
-    if (BSP_ERROR_NONE != BspServo_SetAngle(&RoverCamera_Servos[ROVER_CAMERA_CONFIG_SERVO_TILT], tilt_angle))
+    if (Rover_IsArmed())
     {
-        error = ROVER_ERROR_BSP;
+        error = Rover_BspToRoverError(BspServo_SetAngle(&RoverCamera_Servos[ROVER_CAMERA_CONFIG_SERVO_TILT], tilt_angle));
     }
 
     return error;

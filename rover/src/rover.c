@@ -7,6 +7,7 @@
 
 #include "rover_4ws.h"
 #include "rover_camera.h"
+#include "rover_imu.h"
 
 static const char* kRover_LogTag = "ROVER";
 static bool        Rover_Armed   = false;
@@ -15,6 +16,7 @@ void Rover_Initialize(void)
 {
     (void)Rover_Dearm();
     (void)Rover4ws_EnableEncoders();
+    (void)RoverImu_Initialize();
 }
 
 void Rover_Task(void)
@@ -65,6 +67,8 @@ Rover_Error_t Rover_Arm(void)
 
     if (ROVER_ERROR_NONE == error)
     {
+        Rover_Armed = true;
+
         BSP_LOGGER_LOG_INFO(kRover_LogTag, "Armed", (int)error);
     }
     else
@@ -91,6 +95,8 @@ Rover_Error_t Rover_Dearm(void)
 
     if (ROVER_ERROR_NONE == error)
     {
+        Rover_Armed = false;
+
         BSP_LOGGER_LOG_INFO(kRover_LogTag, "Dearmed", (int)error);
     }
     else
@@ -112,11 +118,43 @@ Rover_Error_t Rover_Drive(const Rover_MetersPerSecond_t speed, const Rover_Radia
 
     if (ROVER_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_ERROR(kRover_LogTag, "Failed to set speed %lf m/s and turn rate %lf rad/s with error %d", speed, turn_rate, (int)error);
+        BSP_LOGGER_LOG_WARNING(kRover_LogTag, "Failed to set speed %lf m/s and turn rate %lf rad/s with error %d", speed, turn_rate, (int)error);
     }
     else
     {
         BSP_LOGGER_LOG_VERBOSE(kRover_LogTag, "Set speed %lf m/s and turn rate %lf rad/s", speed, turn_rate);
+    }
+
+    return error;
+}
+
+Rover_Error_t Rover_ReadAccelerometer(Rover_AccelerometerReading_t *const reading)
+{
+    Rover_Error_t error = RoverImu_ReadAccelerometer(reading);
+
+    if (ROVER_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kRover_LogTag, "Failed to read accelerometer with error %d", (int)error);
+    }
+    else
+    {
+        BSP_LOGGER_LOG_VERBOSE(kRover_LogTag, "Read acceleration x: %lf, y: %lf, z: %lf", reading->x, reading->y, reading->z);
+    }
+
+    return error;
+}
+
+Rover_Error_t Rover_ReadGyroscope(Rover_GyroscopeReading_t *const reading)
+{
+    Rover_Error_t error = RoverImu_ReadGyroscope(reading);
+
+    if (ROVER_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kRover_LogTag, "Failed to read gyroscope with error %d", (int)error);
+    }
+    else
+    {
+        BSP_LOGGER_LOG_VERBOSE(kRover_LogTag, "Read angular rates x: %lf, y: %lf, z: %lf", reading->x, reading->y, reading->z);
     }
 
     return error;
