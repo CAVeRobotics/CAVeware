@@ -23,5 +23,9 @@
         <id>staticFunction</id>
         <symbolName>BspMotor_SetDutyCycle</symbolName>
     </suppress>
+    <suppress>
+        <id>staticFunction</id>
+        <symbolName>RoverImuConfig_Calibrate</symbolName>
+    </suppress>
 
 </suppressions>

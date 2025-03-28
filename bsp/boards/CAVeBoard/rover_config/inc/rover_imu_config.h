@@ -6,6 +6,7 @@
 #include "rover.h"
 
 Rover_Error_t RoverImuConfig_Initialize(void);
+Rover_Error_t RoverImuConfig_Calibrate(void);
 Rover_Error_t RoverImuConfig_ReadAccelerometer(Rover_AccelerometerReading_t *const reading);
 Rover_Error_t RoverImuConfig_ReadGyroscope(Rover_GyroscopeReading_t *const reading);
 
