@@ -5,6 +5,8 @@
 #include "bsp.h"
 #include "bsp_encoder.h"
 #include "bsp_encoder_user.h"
+#include "bsp_gpio.h"
+#include "bsp_gpio_user.h"
 #include "bsp_motor.h"
 #include "bsp_servo.h"
 
@@ -135,7 +137,7 @@ Rover_Error_t Rover4ws_DisableSteering(void)
 
 Rover_Error_t Rover4ws_StartMotors(void)
 {
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
+    BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_SLEEP, BSP_GPIO_STATE_SET);
 
     return Rover4ws_BspErrorCheck(BspMotor_Start(&Rover4wsConfig_Motors[ROVER_4WS_MOTOR_0]),
                                   BspMotor_Start(&Rover4wsConfig_Motors[ROVER_4WS_MOTOR_2]),
@@ -145,7 +147,7 @@ Rover_Error_t Rover4ws_StartMotors(void)
 
 Rover_Error_t Rover4ws_StopMotors(void)
 {
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_RESET);
+    BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_SLEEP, BSP_GPIO_STATE_RESET);
 
     return Rover4ws_BspErrorCheck(BspMotor_Stop(&Rover4wsConfig_Motors[ROVER_4WS_MOTOR_0]),
                                   BspMotor_Stop(&Rover4wsConfig_Motors[ROVER_4WS_MOTOR_2]),

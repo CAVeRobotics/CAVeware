@@ -69,6 +69,22 @@ Bsp_Gpio_t BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MAX] = {
         .debounce  = 50000U,
         .previous  = 0U,
     },
+    [BSP_GPIO_USER_PIN_ENABLE] = {
+        .gpio_port = MOTOR_ENABLE_BUTTON_GPIO_Port,
+        .gpio_pin  = MOTOR_ENABLE_BUTTON_Pin,
+        .mode      = BSP_GPIO_MODE_INPUT,
+        .callback  = NULL,
+        .debounce  = 50000U,
+        .previous  = 0U,
+    },
+    [BSP_GPIO_USER_PIN_MOTOR_SLEEP] = {
+        .gpio_port = MOTOR_SLEEP_GPIO_Port,
+        .gpio_pin  = MOTOR_SLEEP_Pin,
+        .mode      = BSP_GPIO_MODE_OUTPUT,
+        .callback  = NULL,
+        .debounce  = 0U,
+        .previous  = 0U
+    },
 };
 
 Bsp_Gpio_t *BspGpioUser_GetGpioHandle(const Bsp_GpioPin_t exti_pin)
@@ -82,6 +98,9 @@ Bsp_Gpio_t *BspGpioUser_GetGpioHandle(const Bsp_GpioPin_t exti_pin)
         break;
     case START_BUTTON_Pin:
         gpio = &BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_START];
+        break;
+    case MOTOR_ENABLE_BUTTON_Pin:
+        gpio = &BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_ENABLE];
         break;
     default:
         break;

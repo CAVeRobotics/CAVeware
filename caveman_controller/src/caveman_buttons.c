@@ -6,6 +6,8 @@
 #include "bsp_logger.h"
 #include "bsp_tick.h"
 
+#include "rover.h"
+
 typedef struct
 {
     BspGpioUser_Pin_t pin;
@@ -22,13 +24,14 @@ static const char *kCavemanButtons_LogTag = "BUTTONS";
 static void CavemanButtons_OnPress(const Bsp_GpioPin_t pin);
 static void CavemanButtons_HeadlightsCallback(const BspGpioUser_Pin_t pin);
 static void CavemanButtons_StartCallback(const BspGpioUser_Pin_t pin);
+static void CavemanButtons_EnableCallback(const BspGpioUser_Pin_t pin);
 
 static CavemanButtons_Handle_t CavemanButtons_HandleTable[CAVEMAN_BUTTONS_BUTTON_MAX] = {
     [CAVEMAN_BUTTONS_BUTTON_HEADLIGHTS] = {
         .pin            = BSP_GPIO_USER_PIN_HEADLIGHTS_ENABLE,
         .trigger_state  = BSP_GPIO_STATE_SET,
-        .interval_min   = 10000U, /* TODO SD-130 tune for normal button press */
-        .interval_max   = 100000U,
+        .interval_min   = 0U, /* TODO SD-130 tune for normal button press */
+        .interval_max   = UINT64_MAX,
         .previous_state = BSP_GPIO_STATE_RESET,
         .previous_tick  = 0U,
         .on_press       = CavemanButtons_HeadlightsCallback,
@@ -42,6 +45,15 @@ static CavemanButtons_Handle_t CavemanButtons_HandleTable[CAVEMAN_BUTTONS_BUTTON
         .previous_tick  = 0U,
         .on_press       = CavemanButtons_StartCallback,
     },
+    [CAVEMAN_BUTTONS_BUTTON_ENABLE] = {
+        .pin            = BSP_GPIO_USER_PIN_ENABLE,
+        .trigger_state  = BSP_GPIO_STATE_SET,
+        .interval_min   = 0U,
+        .interval_max   = UINT64_MAX,
+        .previous_state = BSP_GPIO_STATE_RESET,
+        .previous_tick  = 0U,
+        .on_press       = CavemanButtons_EnableCallback,
+    }
 };
 
 Bsp_Error_t CavemanButtons_Enable(const CavemanButtons_Button_t button)
@@ -81,6 +93,10 @@ static void CavemanButtons_OnPress(const Bsp_GpioPin_t pin)
     else if (pin == BspGpioUser_HandleTable[CavemanButtons_HandleTable[CAVEMAN_BUTTONS_BUTTON_START].pin].gpio_pin)
     {
         button = CAVEMAN_BUTTONS_BUTTON_START;
+    }
+    else if (pin == BspGpioUser_HandleTable[CavemanButtons_HandleTable[CAVEMAN_BUTTONS_BUTTON_ENABLE].pin].gpio_pin)
+    {
+        button = CAVEMAN_BUTTONS_BUTTON_ENABLE;
     }
     /* TODO SD-130 add other buttons here */
 
@@ -122,4 +138,20 @@ static void CavemanButtons_StartCallback(const BspGpioUser_Pin_t pin)
     BSP_UNUSED(pin);
 
     BSP_LOGGER_LOG_DEBUG(kCavemanButtons_LogTag, "Start button pressed");
+
+    if (Rover_IsArmed())
+    {
+        (void)Rover_Dearm();
+    }
+    else
+    {
+        (void)Rover_Arm();
+    }
+}
+
+static void CavemanButtons_EnableCallback(const BspGpioUser_Pin_t pin)
+{
+    BSP_UNUSED(pin);
+
+    BSP_LOGGER_LOG_DEBUG(kCavemanButtons_LogTag, "Enable button pressed");
 }
