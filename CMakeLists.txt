@@ -71,6 +71,7 @@ set(ROVER_SRCS
     ${ROVER_SRC_DIR}/rover_4ws.c
     ${ROVER_SRC_DIR}/rover_camera.c
     ${ROVER_SRC_DIR}/rover_imu.c
+    ${ROVER_SRC_DIR}/rover_pid.c
 )
 
 set(CAVEMAN_CONTROLLER_DIR ${CMAKE_SOURCE_DIR}/caveman_controller)

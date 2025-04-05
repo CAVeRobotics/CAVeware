@@ -65,6 +65,10 @@ static void CavemanCaveTalk_HearConfigEncoders(const cave_talk_ConfigEncoder *co
                                                const cave_talk_ConfigEncoder *const encoder_wheel_2,
                                                const cave_talk_ConfigEncoder *const encoder_wheel_3);
 static void CavemanCaveTalk_HearConfigLog(const cave_talk_LogLevel log_level);
+static void CavemanCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *const wheel_0_params,
+                                                        const cave_talk_PID *const wheel_1_params,
+                                                        const cave_talk_PID *const wheel_2_params,
+                                                        const cave_talk_PID *const wheel_3_params);
 static void CavemanCaveTalk_SendOdometry(void);
 
 static CaveTalk_Handle_t CavemanCaveTalk_Handle = {
@@ -75,18 +79,20 @@ static CaveTalk_Handle_t CavemanCaveTalk_Handle = {
     .buffer           = CavemanCaveTalk_Buffer,
     .buffer_size      = sizeof(CavemanCaveTalk_Buffer),
     .listen_callbacks = {
-        .hear_ooga_booga          = CavemanCaveTalk_HearOogaBooga,
-        .hear_movement            = CavemanCaveTalk_HearMovement,
-        .hear_camera_movement     = CavemanCaveTalk_HearCameraMovement,
-        .hear_lights              = CavemanCaveTalk_HearLights,
-        .hear_arm                 = CavemanCaveTalk_HearArm,
-        .hear_odometry            = NULL,
-        .hear_log                 = NULL,
-        .hear_config_servo_wheels = CavemanCaveTalk_HearConfigServoWheels,
-        .hear_config_servo_cams   = CavemanCaveTalk_HearConfigServoCams,
-        .hear_config_motors       = CavemanCaveTalk_HearConfigMotors,
-        .hear_config_encoders     = CavemanCaveTalk_HearConfigEncoders,
-        .hear_config_log          = CavemanCaveTalk_HearConfigLog,
+        .hear_ooga_booga                 = CavemanCaveTalk_HearOogaBooga,
+        .hear_movement                   = CavemanCaveTalk_HearMovement,
+        .hear_camera_movement            = CavemanCaveTalk_HearCameraMovement,
+        .hear_lights                     = CavemanCaveTalk_HearLights,
+        .hear_arm                        = CavemanCaveTalk_HearArm,
+        .hear_odometry                   = NULL,
+        .hear_log                        = NULL,
+        .hear_config_servo_wheels        = CavemanCaveTalk_HearConfigServoWheels,
+        .hear_config_servo_cams          = CavemanCaveTalk_HearConfigServoCams,
+        .hear_config_motors              = CavemanCaveTalk_HearConfigMotors,
+        .hear_config_encoders            = CavemanCaveTalk_HearConfigEncoders,
+        .hear_config_log                 = CavemanCaveTalk_HearConfigLog,
+        .hear_config_wheel_speed_control = CavemanCaveTalk_HearConfigWheelSpeedControl,
+        .hear_config_steering_control    = NULL
     },
 };
 
@@ -275,22 +281,22 @@ static void CavemanCaveTalk_HearConfigServoWheels(const cave_talk_Servo *const s
 
     if ((NULL != servo_wheel_0) && (NULL != servo_wheel_1) && (NULL != servo_wheel_2) && (NULL != servo_wheel_3))
     {
-        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureSteering(ROVER_4WS_SERVO_0,
+        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureSteering(ROVER_4WS_CONFIG_SERVO_0,
                                                                servo_wheel_0->min_duty_cycle_percentage,
                                                                servo_wheel_0->max_duty_cycle_percentage,
                                                                servo_wheel_0->min_angle_radian,
                                                                servo_wheel_0->max_angle_radian),
-                                    Rover4ws_ConfigureSteering(ROVER_4WS_SERVO_1,
+                                    Rover4ws_ConfigureSteering(ROVER_4WS_CONFIG_SERVO_1,
                                                                servo_wheel_1->min_duty_cycle_percentage,
                                                                servo_wheel_1->max_duty_cycle_percentage,
                                                                servo_wheel_1->min_angle_radian,
                                                                servo_wheel_1->max_angle_radian),
-                                    Rover4ws_ConfigureSteering(ROVER_4WS_SERVO_2,
+                                    Rover4ws_ConfigureSteering(ROVER_4WS_CONFIG_SERVO_2,
                                                                servo_wheel_2->min_duty_cycle_percentage,
                                                                servo_wheel_2->max_duty_cycle_percentage,
                                                                servo_wheel_2->min_angle_radian,
                                                                servo_wheel_2->max_angle_radian),
-                                    Rover4ws_ConfigureSteering(ROVER_4WS_SERVO_3,
+                                    Rover4ws_ConfigureSteering(ROVER_4WS_CONFIG_SERVO_3,
                                                                servo_wheel_3->min_duty_cycle_percentage,
                                                                servo_wheel_3->max_duty_cycle_percentage,
                                                                servo_wheel_3->min_angle_radian,
@@ -357,22 +363,22 @@ static void CavemanCaveTalk_HearConfigMotors(const cave_talk_Motor *const motor_
 
     if ((NULL != motor_wheel_0) && (NULL != motor_wheel_1) && (NULL != motor_wheel_2) && (NULL != motor_wheel_3))
     {
-        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureMotor(ROVER_4WS_MOTOR_0,
+        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureMotor(ROVER_4WS_CONFIG_MOTOR_0,
                                                             motor_wheel_0->min_duty_cycle_percentage,
                                                             motor_wheel_0->max_duty_cycle_percentage,
                                                             motor_wheel_0->min_speed_loaded_meters_per_second,
                                                             motor_wheel_0->max_speed_loaded_meters_per_second),
-                                    Rover4ws_ConfigureMotor(ROVER_4WS_MOTOR_1,
+                                    Rover4ws_ConfigureMotor(ROVER_4WS_CONFIG_MOTOR_1,
                                                             motor_wheel_1->min_duty_cycle_percentage,
                                                             motor_wheel_1->max_duty_cycle_percentage,
                                                             motor_wheel_1->min_speed_loaded_meters_per_second,
                                                             motor_wheel_1->max_speed_loaded_meters_per_second),
-                                    Rover4ws_ConfigureMotor(ROVER_4WS_MOTOR_2,
+                                    Rover4ws_ConfigureMotor(ROVER_4WS_CONFIG_MOTOR_2,
                                                             motor_wheel_2->min_duty_cycle_percentage,
                                                             motor_wheel_2->max_duty_cycle_percentage,
                                                             motor_wheel_2->min_speed_loaded_meters_per_second,
                                                             motor_wheel_2->max_speed_loaded_meters_per_second),
-                                    Rover4ws_ConfigureMotor(ROVER_4WS_MOTOR_3,
+                                    Rover4ws_ConfigureMotor(ROVER_4WS_CONFIG_MOTOR_3,
                                                             motor_wheel_3->min_duty_cycle_percentage,
                                                             motor_wheel_3->max_duty_cycle_percentage,
                                                             motor_wheel_3->min_speed_loaded_meters_per_second,
@@ -400,10 +406,10 @@ static void CavemanCaveTalk_HearConfigEncoders(const cave_talk_ConfigEncoder *co
 
     if ((NULL != encoder_wheel_0) && (NULL != encoder_wheel_1) && (NULL != encoder_wheel_2) && (NULL != encoder_wheel_3))
     {
-        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureEncoder(ROVER_4WS_MOTOR_0, encoder_wheel_0->smoothing_factor),
-                                    Rover4ws_ConfigureEncoder(ROVER_4WS_MOTOR_1, encoder_wheel_1->smoothing_factor),
-                                    Rover4ws_ConfigureEncoder(ROVER_4WS_MOTOR_2, encoder_wheel_2->smoothing_factor),
-                                    Rover4ws_ConfigureEncoder(ROVER_4WS_MOTOR_3, encoder_wheel_3->smoothing_factor));
+        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureEncoder(ROVER_4WS_CONFIG_MOTOR_0, encoder_wheel_0->smoothing_factor),
+                                    Rover4ws_ConfigureEncoder(ROVER_4WS_CONFIG_MOTOR_1, encoder_wheel_1->smoothing_factor),
+                                    Rover4ws_ConfigureEncoder(ROVER_4WS_CONFIG_MOTOR_2, encoder_wheel_2->smoothing_factor),
+                                    Rover4ws_ConfigureEncoder(ROVER_4WS_CONFIG_MOTOR_3, encoder_wheel_3->smoothing_factor));
     }
 
     if (ROVER_ERROR_NONE != error)
@@ -422,6 +428,33 @@ static void CavemanCaveTalk_HearConfigLog(const cave_talk_LogLevel log_level)
 
     BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Setting log level to %d", (int)log_level);
     BspLogger_SetLogLevel((BspLogger_Level_t)log_level);
+}
+
+static void CavemanCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *const wheel_0_params,
+                                                        const cave_talk_PID *const wheel_1_params,
+                                                        const cave_talk_PID *const wheel_2_params,
+                                                        const cave_talk_PID *const wheel_3_params)
+{
+    CavemanCaveTalk_HeardMessage("config wheel speed control");
+
+    Rover_Error_t error = ROVER_ERROR_NULL;
+
+    if ((NULL != wheel_0_params) && (NULL != wheel_1_params) && (NULL != wheel_2_params) && (NULL != wheel_3_params))
+    {
+        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureMotorPid(ROVER_4WS_CONFIG_MOTOR_0, wheel_0_params->Kp, wheel_0_params->Ki, wheel_0_params->Kd),
+                                    Rover4ws_ConfigureMotorPid(ROVER_4WS_CONFIG_MOTOR_1, wheel_1_params->Kp, wheel_1_params->Ki, wheel_1_params->Kd),
+                                    Rover4ws_ConfigureMotorPid(ROVER_4WS_CONFIG_MOTOR_2, wheel_2_params->Kp, wheel_2_params->Ki, wheel_2_params->Kd),
+                                    Rover4ws_ConfigureMotorPid(ROVER_4WS_CONFIG_MOTOR_3, wheel_3_params->Kp, wheel_3_params->Ki, wheel_3_params->Kd));
+    }
+
+    if (ROVER_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to configure wheel speed control with error %d", (int)error);
+    }
+    else
+    {
+        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Wheel speed control configured");
+    }
 }
 
 static void CavemanCaveTalk_SendOdometry(void)

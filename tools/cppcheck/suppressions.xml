@@ -25,6 +25,10 @@
     </suppress>
     <suppress>
         <id>staticFunction</id>
+        <symbolName>Rover4ws_SampleEncoders</symbolName>
+    </suppress>
+    <suppress>
+        <id>staticFunction</id>
         <symbolName>RoverImuConfig_Calibrate</symbolName>
     </suppress>
 

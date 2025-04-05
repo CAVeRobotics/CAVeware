@@ -13,6 +13,12 @@ jobs:
         uses: ./.github/actions/setup
       - name: Build check
         run: cmake --build --preset CAVeBoard_Debug -j$(nproc)
+      - name: Upload builds
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: caveboard-build
+          path: build/CAVeBoard_Debug/CavemanController.*
   cppcheck:
     runs-on: ubuntu-latest
     container:

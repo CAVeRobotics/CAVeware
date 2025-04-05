@@ -21,8 +21,12 @@ void Rover_Initialize(void)
 
 void Rover_Task(void)
 {
-    /* TODO tasks that need to occur repeatedly, e.g. feedback control */
-    (void)Rover4ws_SampleEncoders();
+    Rover_Error_t error = Rover4ws_Task();
+
+    if (ROVER_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kRover_LogTag, "Task error %d", (int)error);
+    }
 }
 
 Rover_Error_t Rover_BspToRoverError(const Bsp_Error_t bsp_error)
@@ -123,6 +127,38 @@ Rover_Error_t Rover_Drive(const Rover_MetersPerSecond_t speed, const Rover_Radia
     else
     {
         BSP_LOGGER_LOG_VERBOSE(kRover_LogTag, "Set speed %lf m/s and turn rate %lf rad/s", speed, turn_rate);
+    }
+
+    return error;
+}
+
+Rover_Error_t Rover_EnableControl(void)
+{
+    Rover_Error_t error = Rover4ws_EnableSpeedControl();
+
+    if (ROVER_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kRover_LogTag, "Failed to enable control with error %d", (int)error);
+    }
+    else
+    {
+        BSP_LOGGER_LOG_INFO(kRover_LogTag, "Control enabled");
+    }
+
+    return error;
+}
+
+Rover_Error_t Rover_DisableControl(void)
+{
+    Rover_Error_t error = Rover4ws_DisableSpeedControl();
+
+    if (ROVER_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kRover_LogTag, "Failed to disable control with error %d", (int)error);
+    }
+    else
+    {
+        BSP_LOGGER_LOG_INFO(kRover_LogTag, "Control disabled");
     }
 
     return error;
