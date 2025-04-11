@@ -8,5 +8,6 @@
 Rover_Error_t RoverImu_Initialize(void);
 Rover_Error_t RoverImu_ReadAccelerometer(Rover_AccelerometerReading_t *const reading);
 Rover_Error_t RoverImu_ReadGyroscope(Rover_GyroscopeReading_t *const reading);
+Rover_Error_t RoverImu_ReadQuaternion(Rover_Quaternion_t *const quaternion);
 
 #endif /* ROVER_IMU_H */

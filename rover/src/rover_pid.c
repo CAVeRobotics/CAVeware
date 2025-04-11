@@ -53,10 +53,11 @@ Rover_Error_t RoverPid_Disable(RoverPid_Handle_t *const handle)
 
 Rover_Error_t RoverPid_Update(RoverPid_Handle_t *const handle, const double actual, const Rover_Microsecond_t tick)
 {
-    Rover_Error_t error = ROVER_ERROR_NULL;
+    Rover_Error_t error = ROVER_ERROR_NONE;
 
     if (NULL == handle)
     {
+        error = ROVER_ERROR_NULL;
     }
     else if (!handle->enabled)
     {
@@ -81,8 +82,6 @@ Rover_Error_t RoverPid_Update(RoverPid_Handle_t *const handle, const double actu
         {
             handle->output = handle->minimum;
         }
-
-        error = ROVER_ERROR_NONE;
     }
 
     return error;

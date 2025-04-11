@@ -68,7 +68,9 @@ static void CavemanCaveTalk_HearConfigLog(const cave_talk_LogLevel log_level);
 static void CavemanCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *const wheel_0_params,
                                                         const cave_talk_PID *const wheel_1_params,
                                                         const cave_talk_PID *const wheel_2_params,
-                                                        const cave_talk_PID *const wheel_3_params);
+                                                        const cave_talk_PID *const wheel_3_params,
+                                                        const bool enabled);
+static void CavemanCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const turn_rate_params, const bool enabled);
 static void CavemanCaveTalk_SendOdometry(void);
 
 static CaveTalk_Handle_t CavemanCaveTalk_Handle = {
@@ -92,7 +94,7 @@ static CaveTalk_Handle_t CavemanCaveTalk_Handle = {
         .hear_config_encoders            = CavemanCaveTalk_HearConfigEncoders,
         .hear_config_log                 = CavemanCaveTalk_HearConfigLog,
         .hear_config_wheel_speed_control = CavemanCaveTalk_HearConfigWheelSpeedControl,
-        .hear_config_steering_control    = NULL
+        .hear_config_steering_control    = CavemanCaveTalk_HearConfigSteeringControl
     },
 };
 
@@ -433,7 +435,8 @@ static void CavemanCaveTalk_HearConfigLog(const cave_talk_LogLevel log_level)
 static void CavemanCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *const wheel_0_params,
                                                         const cave_talk_PID *const wheel_1_params,
                                                         const cave_talk_PID *const wheel_2_params,
-                                                        const cave_talk_PID *const wheel_3_params)
+                                                        const cave_talk_PID *const wheel_3_params,
+                                                        const bool enabled)
 {
     CavemanCaveTalk_HeardMessage("config wheel speed control");
 
@@ -454,6 +457,71 @@ static void CavemanCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *con
     else
     {
         BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Wheel speed control configured");
+    }
+
+    if (enabled)
+    {
+        error = Rover4ws_EnableSpeedControl();
+    }
+    else
+    {
+        error = Rover4ws_DisableSpeedControl();
+    }
+
+    if (ROVER_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to enable wheel speed control with error %d", (int)error);
+    }
+    else if (enabled)
+    {
+        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Wheel speed control enabled");
+    }
+    else
+    {
+        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Wheel speed control disabled");
+    }
+}
+
+static void CavemanCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const turn_rate_params, const bool enabled)
+{
+    CavemanCaveTalk_HeardMessage("config steering control");
+
+    Rover_Error_t error = ROVER_ERROR_NULL;
+
+    if (NULL != turn_rate_params)
+    {
+        error = Rover4ws_ConfigureSteeringPid(turn_rate_params->Kp, turn_rate_params->Ki, turn_rate_params->Kd);
+    }
+
+    if (ROVER_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to configure steering control with error %d", (int)error);
+    }
+    else
+    {
+        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Steering control configured");
+    }
+
+    if (enabled)
+    {
+        error = Rover4ws_EnableSpeedControl();
+    }
+    else
+    {
+        error = Rover4ws_DisableSpeedControl();
+    }
+
+    if (ROVER_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to enable steering control with error %d", (int)error);
+    }
+    else if (enabled)
+    {
+        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Steering control enabled");
+    }
+    else
+    {
+        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Steering control disabled");
     }
 }
 
@@ -488,6 +556,20 @@ static void CavemanCaveTalk_SendOdometry(void)
     imu_message.gyro.pitch_radians_per_second = gyro_reading.y;
     imu_message.gyro.yaw_radians_per_second   = gyro_reading.z;
     imu_message.has_gyro                      = true;
+
+    Rover_Quaternion_t quaternion = {
+        .w = 0.0,
+        .x = 0.0,
+        .y = 0.0,
+        .z = 0.0
+    };
+    (void)Rover_ReadQuaternion(&quaternion);
+
+    imu_message.quat.w   = quaternion.w;
+    imu_message.quat.x   = quaternion.x;
+    imu_message.quat.y   = quaternion.y;
+    imu_message.quat.z   = quaternion.z;
+    imu_message.has_quat = true;
 
     encoder_message_0.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].pulses;
     encoder_message_0.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].angular_rate;

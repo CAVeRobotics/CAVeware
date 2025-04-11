@@ -51,3 +51,15 @@ Rover_Error_t RoverImu_ReadGyroscope(Rover_GyroscopeReading_t *const reading)
 
     return error;
 }
+
+Rover_Error_t RoverImu_ReadQuaternion(Rover_Quaternion_t *const quaternion)
+{
+    Rover_Error_t error = ROVER_ERROR_NULL;
+
+    if (NULL != quaternion)
+    {
+        error = RoverImuConfig_ReadQuaterion(quaternion);
+    }
+
+    return error;
+}

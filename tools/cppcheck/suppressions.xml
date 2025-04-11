@@ -32,4 +32,10 @@
         <symbolName>RoverImuConfig_Calibrate</symbolName>
     </suppress>
 
+    <!-- Suppress double sign comparison portability error -->
+    <suppress>
+        <id>invalidPointerCast</id>
+        <fileName>*/rover/src/rover_4ws.c</fileName>
+    </suppress>
+
 </suppressions>

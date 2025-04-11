@@ -43,10 +43,12 @@ Rover_Error_t Rover_BspToRoverError(const Bsp_Error_t bsp_error)
     case BSP_ERROR_PERIPHERAL:
         rover_error = ROVER_ERROR_PERIPHERAL;
         break;
+    case BSP_ERROR_VALUE:
+        rover_error = ROVER_ERROR_VALUE;
+        break;
     case BSP_ERROR_HAL:
     case BSP_ERROR_BUSY:
     case BSP_ERROR_TIMEOUT:
-    case BSP_ERROR_VALUE:
     default:
         rover_error = ROVER_ERROR_BSP;
         break;
@@ -191,6 +193,22 @@ Rover_Error_t Rover_ReadGyroscope(Rover_GyroscopeReading_t *const reading)
     else
     {
         BSP_LOGGER_LOG_VERBOSE(kRover_LogTag, "Read angular rates x: %lf, y: %lf, z: %lf", reading->x, reading->y, reading->z);
+    }
+
+    return error;
+}
+
+Rover_Error_t Rover_ReadQuaternion(Rover_Quaternion_t *const quaternion)
+{
+    Rover_Error_t error = RoverImu_ReadQuaternion(quaternion);
+
+    if (ROVER_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kRover_LogTag, "Failed to read quaternion with error %d", (int)error);
+    }
+    else
+    {
+        BSP_LOGGER_LOG_VERBOSE(kRover_LogTag, "Read quaternion w: %lf, x: %lf, y: %lf, z: %lf", quaternion->w, quaternion->x, quaternion->y, quaternion->z);
     }
 
     return error;

@@ -17,6 +17,7 @@ Rover_Error_t Rover4ws_ConfigureMotor(const Rover4wsConfig_Motor_t motor,
                                       const Bsp_RadiansPerSecond_t minimum_speed,
                                       const Bsp_RadiansPerSecond_t maximum_speed);
 Rover_Error_t Rover4ws_ConfigureMotorPid(const Rover4wsConfig_Motor_t motor, const double kp, const double ki, const double kd);
+Rover_Error_t Rover4ws_ConfigureSteeringPid(const double kp, const double ki, const double kd);
 Rover_Error_t Rover4ws_ConfigureEncoder(const Rover4wsConfig_Motor_t motor, const double smoothing_factor);
 Rover_Error_t Rover4ws_EnableSteering(void);
 Rover_Error_t Rover4ws_DisableSteering(void);
@@ -26,6 +27,8 @@ Rover_Error_t Rover4ws_EnableEncoders(void);
 Rover_Error_t Rover4ws_SampleEncoders(void);
 Rover_Error_t Rover4ws_EnableSpeedControl(void);
 Rover_Error_t Rover4ws_DisableSpeedControl(void);
+Rover_Error_t Rover4ws_EnableSteeringControl(void);
+Rover_Error_t Rover4ws_DisableSteeringControl(void);
 Rover_Error_t Rover4ws_Task(void);
 Rover_Error_t Rover4ws_Drive(const Rover_MetersPerSecond_t speed, const Rover_RadiansPerSecond_t turn_rate);
 Rover_Error_t Rover4ws_ErrorCheck(const Rover_Error_t error_0,

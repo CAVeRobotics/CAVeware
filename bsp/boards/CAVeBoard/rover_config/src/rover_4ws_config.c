@@ -20,34 +20,34 @@ BspServo_Handle_t Rover4wsConfig_Servos[ROVER_4WS_CONFIG_SERVO_MAX] = {
     [ROVER_4WS_CONFIG_SERVO_0] = {
         .timer              = BSP_PWM_USER_TIMER_SERVOS_FRONT,
         .channel            = BSP_TIMER_CHANNEL_1,
-        .minimum_duty_cycle = 0.027,
-        .maximum_duty_cycle = 0.1235,
-        .minimum_angle      = 0,
-        .maximum_angle      = 180 * ROVER_DEGREES_TO_RADIANS,
+        .minimum_duty_cycle = 0.0325,
+        .maximum_duty_cycle = 0.115,
+        .minimum_angle      = 10 * ROVER_DEGREES_TO_RADIANS,
+        .maximum_angle      = 170 * ROVER_DEGREES_TO_RADIANS,
     },
     [ROVER_4WS_CONFIG_SERVO_1] = {
         .timer              = BSP_PWM_USER_TIMER_SERVOS_FRONT,
         .channel            = BSP_TIMER_CHANNEL_2,
-        .minimum_duty_cycle = 0.033,
-        .maximum_duty_cycle = 0.130,
-        .minimum_angle      = 0,
-        .maximum_angle      = 180 * ROVER_DEGREES_TO_RADIANS,
+        .minimum_duty_cycle = 0.0325,
+        .maximum_duty_cycle = 0.1125,
+        .minimum_angle      = 10 * ROVER_DEGREES_TO_RADIANS,
+        .maximum_angle      = 170 * ROVER_DEGREES_TO_RADIANS,
     },
     [ROVER_4WS_CONFIG_SERVO_2] = {
         .timer              = BSP_PWM_USER_TIMER_SERVOS_REAR,
         .channel            = BSP_TIMER_CHANNEL_1,
-        .minimum_duty_cycle = 0.0347,
-        .maximum_duty_cycle = 0.130,
-        .minimum_angle      = 0,
-        .maximum_angle      = 180 * ROVER_DEGREES_TO_RADIANS,
+        .minimum_duty_cycle = 0.03,
+        .maximum_duty_cycle = 0.1075,
+        .minimum_angle      = 10 * ROVER_DEGREES_TO_RADIANS,
+        .maximum_angle      = 170 * ROVER_DEGREES_TO_RADIANS,
     },
     [ROVER_4WS_CONFIG_SERVO_3] = {
         .timer              = BSP_PWM_USER_TIMER_SERVOS_REAR,
         .channel            = BSP_TIMER_CHANNEL_2,
-        .minimum_duty_cycle = 0.025,
-        .maximum_duty_cycle = 0.1203,
-        .minimum_angle      = 0,
-        .maximum_angle      = 180 * ROVER_DEGREES_TO_RADIANS,
+        .minimum_duty_cycle = 0.0325,
+        .maximum_duty_cycle = 0.1125,
+        .minimum_angle      = 10 * ROVER_DEGREES_TO_RADIANS,
+        .maximum_angle      = 170 * ROVER_DEGREES_TO_RADIANS,
     },
 };
 
@@ -174,4 +174,18 @@ RoverPid_Handle_t Rover4wsConfig_MotorsPid[ROVER_4WS_CONFIG_MOTOR_MAX] = {
         .minimum       = 0,
         .maximum       = 18.75
     }
+};
+
+RoverPid_Handle_t Rover4wsConfig_SteeringPid = {
+    .kp            = 0.0,
+    .ki            = 0.0,
+    .kd            = 0.0,
+    .integral      = 0.0,
+    .command       = 0.0,
+    .error         = 0.0,
+    .output        = 0.0,
+    .previous_tick = 0U,
+    .enabled       = true,
+    .minimum       = -90 * ROVER_DEGREES_TO_RADIANS,
+    .maximum       = 90 * ROVER_DEGREES_TO_RADIANS
 };
