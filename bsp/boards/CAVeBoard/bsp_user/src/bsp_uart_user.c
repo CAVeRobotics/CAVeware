@@ -13,7 +13,6 @@
 static uint8_t BspUartUser_LogTxBuffer[BSP_UART_USER_LOG_BUFFER_SIZE];
 static uint8_t BspUartUser_CommsTxBuffer[BSP_UART_USER_COMMS_BUFFER_SIZE];
 static uint8_t BspUartUser_CommsRxBuffer[BSP_UART_USER_COMMS_BUFFER_SIZE];
-static uint8_t BspUartUser_DustSensorTxBuffer[BSP_UART_USER_COMMS_BUFFER_SIZE];
 static uint8_t BspUartUser_DustSensorRxBuffer[BSP_UART_USER_COMMS_BUFFER_SIZE];
 
 Bsp_Uart_t BspUartUser_HandleTable[BSP_UART_USER_MAX] = {
@@ -45,9 +44,9 @@ Bsp_Uart_t BspUartUser_HandleTable[BSP_UART_USER_MAX] = {
     },
     [BSP_UART_USER_DUST_SENSOR] = {
         .uart_handle      = &huart6,
-        .mode             = BSP_UART_MODE_RXTX,
-        .tx_buffer        = BspUartUser_DustSensorTxBuffer,
-        .tx_buffer_size   = (uint32_t)sizeof(BspUartUser_DustSensorTxBuffer),
+        .mode             = BSP_UART_MODE_RX,
+        .tx_buffer        = NULL,
+        .tx_buffer_size   = 0U,
         .tx_read_pointer  = 0U,
         .tx_write_pointer = 0U,
         .tx_reading       = 0U,

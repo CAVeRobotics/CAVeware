@@ -11,7 +11,9 @@
 
 #include "caveman_buttons.h"
 #include "caveman_cavetalk.h"
+#include "caveman_dust_sensor.h"
 #include "rover.h"
+#include "rover_4ws.h"
 
 #define CAVEMAN_LOOP_LOG_PERIOD (Bsp_Microsecond_t)((Bsp_Microsecond_t)5U * BSP_TICK_MICROSECONDS_PER_SECOND)
 
@@ -50,7 +52,19 @@ static void Caveman_Initialize(void)
         BSP_LOGGER_LOG_ERROR(kCaveman_LogTag, "Failed to start CAVeTalk");
     }
 
-    CavemanButtons_Enable(CAVEMAN_BUTTONS_BUTTON_START);
+    if (BSP_ERROR_NONE != CavemanButtons_Enable(CAVEMAN_BUTTONS_BUTTON_START))
+    {
+        BSP_LOGGER_LOG_ERROR(kCaveman_LogTag, "Failed to enabled buttons");
+    }
+
+    if (BSP_ERROR_NONE != CavemanDustSensor_Initialize())
+    {
+        BSP_LOGGER_LOG_ERROR(kCaveman_LogTag, "Failed to initialize dust sensor");
+    }
+
+    /* TODO SD-348 testing */
+    (void)Rover4ws_DisableSpeedControl();
+    (void)Rover4ws_DisableSteeringControl();
 
     BSP_LOGGER_LOG_INFO(kCaveman_LogTag, "Initialized");
 }
