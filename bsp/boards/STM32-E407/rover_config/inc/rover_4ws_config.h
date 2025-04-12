@@ -1,10 +1,12 @@
 #ifndef ROVER_4WS_CONFIG_H
 #define ROVER_4WS_CONFIG_H
 
-#include "bsp_servo.h"
+#include "bsp_encoder_user.h"
 #include "bsp_motor.h"
+#include "bsp_servo.h"
 
 #include "rover.h"
+#include "rover_pid.h"
 
 typedef enum
 {
@@ -34,5 +36,8 @@ extern const Rover_Meter_t kRover4wsConfig_DoubleWheelRadius;
 
 extern BspServo_Handle_t Rover4wsConfig_Servos[ROVER_4WS_CONFIG_SERVO_MAX];
 extern BspMotor_Handle_t Rover4wsConfig_Motors[ROVER_4WS_CONFIG_MOTOR_MAX];
+extern BspEncoderUser_Timer_t Rover4wsConfig_Encoders[ROVER_4WS_CONFIG_MOTOR_MAX];
+extern RoverPid_Handle_t Rover4wsConfig_MotorsPid[ROVER_4WS_CONFIG_MOTOR_MAX];
+extern RoverPid_Handle_t Rover4wsConfig_SteeringPid;
 
 #endif /* ROVER_4WS_CONFIG_H */

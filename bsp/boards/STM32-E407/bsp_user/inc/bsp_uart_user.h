@@ -7,6 +7,7 @@ typedef enum
 {
     BSP_UART_USER_LOG,
     BSP_UART_USER_COMMS,
+    BSP_UART_USER_DUST_SENSOR,
     BSP_UART_USER_MAX
 } BspUartUser_Uart_t;
 
