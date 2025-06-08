@@ -1,3 +1,3 @@
-# CAVEMAN Controller
+# CAVeware
 
-Firmware for the CAVEMAN rover controller board
+Firmware for the CAVeBot
