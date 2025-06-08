@@ -2,7 +2,7 @@
 
 [Uncrustify](https://github.com/uncrustify/uncrustify) is used to automatically format code to ensure the project has a consistent style.
 
-To setup Uncrustify in a local repository, follow these steps:
+If Uncrustify is not installed globally, follow these steps to setup Uncrustify in a local repository:
 
 1. Initialize and update submodules
 
