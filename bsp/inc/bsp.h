@@ -17,11 +17,15 @@ typedef uint64_t Bsp_Microsecond_t;
 typedef int64_t  Bsp_EncoderPulse_t;
 typedef int32_t  Bsp_EncoderPeriod_t; /* Must not exceed 4 bytes for atomic read/write */
 typedef uint16_t Bsp_GpioPin_t;
+typedef uint16_t Bsp_AdcReading_t;
+typedef double   Bsp_Volt_t;
 
+typedef ADC_HandleTypeDef  Bsp_AdcHandle_t;
 typedef GPIO_TypeDef       Bsp_GpioPort_t;
 typedef TIM_HandleTypeDef  Bsp_TimerHandle_t;
 typedef UART_HandleTypeDef Bsp_UartHandle_t;
 
+typedef struct Bsp_Adc       Bsp_Adc_t;
 typedef struct Bsp_Encoder   Bsp_Encoder_t;
 typedef struct Bsp_Gpio      Bsp_Gpio_t;
 typedef struct Bsp_PwmConfig Bsp_PwmConfig_t;
@@ -72,6 +76,14 @@ typedef enum
     BSP_UART_MODE_TX,
     BSP_UART_MODE_RXTX
 } Bsp_UartMode_t;
+
+struct Bsp_Adc
+{
+    Bsp_AdcHandle_t *adc_handle;
+    uint16_t *buffer;
+    uint16_t *shadow_buffer;
+    uint8_t channels;
+};
 
 struct Bsp_Encoder
 {

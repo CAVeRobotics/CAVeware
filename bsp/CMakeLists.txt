@@ -18,6 +18,7 @@ set(BSP_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 set(BSP_SRCS
     ${BSP_SRC_DIR}/bsp.c
+    ${BSP_SRC_DIR}/bsp_adc.c
     ${BSP_SRC_DIR}/bsp_encoder.c
     ${BSP_SRC_DIR}/bsp_gpio.c
     ${BSP_SRC_DIR}/bsp_logger.c

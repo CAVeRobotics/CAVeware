@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include "bsp_adc.h"
+#include "bsp_adc_user.h"
 #include "bsp_logger.h"
 #include "bsp_logger_user.h"
 #include "bsp_uart.h"
@@ -19,6 +21,8 @@ void Bsp_Initialize(void)
     SystemClock_Config();
 
     BspUser_Initialize();
+
+    BspAdc_Start(BSP_ADC_USER_ADC_1);
 
     /* Initialize custom logger */
     BspUart_Start(BSP_UART_USER_LOG);

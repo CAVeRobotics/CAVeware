@@ -31,6 +31,10 @@
         <id>staticFunction</id>
         <symbolName>RoverImuConfig_Calibrate</symbolName>
     </suppress>
+    <suppress>
+        <id>staticFunction</id>
+        <symbolName>BspAdc_ReadRaw</symbolName>
+    </suppress>
 
     <!-- Suppress double sign comparison portability error -->
     <suppress>

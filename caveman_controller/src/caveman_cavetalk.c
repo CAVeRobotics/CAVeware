@@ -21,16 +21,18 @@
 #include "bsp_uart_user.h"
 
 #include "caveman_dust_sensor.h"
+#include "caveman_gas_sensor.h"
 #include "rover.h"
 #include "rover_4ws.h"
 #include "rover_4ws_config.h"
 #include "rover_camera.h"
 #include "rover_camera_config.h"
 
-#define CAVEMAN_CAVE_TALK_BUFFER_SIZE     1024U
-#define CAVEMAN_CAVE_TALK_HEADER_SIZE     3U
-#define CAVEMAN_CAVE_TALK_RETRY_PERIOD    (Bsp_Millisecond_t)1000U
-#define CAVEMAN_CAVE_TALK_ODOMETRY_PERIOD (Bsp_Millisecond_t)10U
+#define CAVEMAN_CAVE_TALK_BUFFER_SIZE        1024U
+#define CAVEMAN_CAVE_TALK_HEADER_SIZE        3U
+#define CAVEMAN_CAVE_TALK_RETRY_PERIOD       (Bsp_Millisecond_t)1000U
+#define CAVEMAN_CAVE_TALK_ODOMETRY_PERIOD    (Bsp_Millisecond_t)20U
+#define CAVEMAN_CAVE_TALK_AIR_QUALITY_PERIOD (Bsp_Millisecond_t)1000U
 
 typedef enum
 {
@@ -39,11 +41,12 @@ typedef enum
 } CavemanCaveTalk_Receive_t;
 
 static uint8_t           CavemanCaveTalk_Buffer[CAVEMAN_CAVE_TALK_BUFFER_SIZE];
-static const char *      kCavemanCaveTalk_LogTag          = "CAVE TALK";
-static bool              CavemanCaveTalk_Connected        = false;
-static bool              CavemanCaveTalk_WasArmed         = false;
-static Bsp_Millisecond_t CavemanCaveTalk_PreviousMessage  = 0U;
-static Bsp_Millisecond_t CavemanCaveTalk_PreviousOdometry = 0U;
+static const char *      kCavemanCaveTalk_LogTag            = "CAVE TALK";
+static bool              CavemanCaveTalk_Connected          = false;
+static bool              CavemanCaveTalk_WasArmed           = false;
+static Bsp_Millisecond_t CavemanCaveTalk_PreviousMessage    = 0U;
+static Bsp_Millisecond_t CavemanCaveTalk_PreviousOdometry   = 0U;
+static Bsp_Millisecond_t CavemanCaveTalk_PreviousAirQuality = 0U;
 
 static CaveTalk_Error_t CavemanCaveTalk_Send(const void *const data, const size_t size);
 static CaveTalk_Error_t CavemanCaveTalk_Receive(void *const data, const size_t size, size_t *const bytes_received);
@@ -137,15 +140,21 @@ void CavemanCaveTalk_Task(void)
         CavemanCaveTalk_PreviousMessage = tick;
     }
 
-    if ((tick - CavemanCaveTalk_PreviousOdometry) > CAVEMAN_CAVE_TALK_ODOMETRY_PERIOD)
+    if (CavemanCaveTalk_Connected)
     {
-        if (CavemanCaveTalk_Connected)
+        if ((tick - CavemanCaveTalk_PreviousOdometry) > CAVEMAN_CAVE_TALK_ODOMETRY_PERIOD)
         {
             CavemanCaveTalk_SendOdometry();
-            CavemanCaveTalk_SendAirQuality();
+
+            CavemanCaveTalk_PreviousOdometry = tick;
         }
 
-        CavemanCaveTalk_PreviousOdometry = tick;
+        if ((tick - CavemanCaveTalk_PreviousAirQuality) > CAVEMAN_CAVE_TALK_AIR_QUALITY_PERIOD)
+        {
+            CavemanCaveTalk_SendAirQuality();
+
+            CavemanCaveTalk_PreviousAirQuality = tick;
+        }
     }
 }
 
@@ -604,8 +613,8 @@ static void CavemanCaveTalk_SendOdometry(void)
 
 static void CavemanCaveTalk_SendAirQuality(void)
 {
-    /* TODO SD-349 */
-    CaveTalk_Error_t error = CaveTalk_SpeakAirQuality(&CavemanCaveTalk_Handle, (uint32_t)CavemanDustSensor_Read(), 0U);
+    /* TODO SD-349 update gas and temperature with correct values, temporarily using temperature to report raw voltage */
+    CaveTalk_Error_t error = CaveTalk_SpeakAirQuality(&CavemanCaveTalk_Handle, (uint32_t)CavemanDustSensor_Read(), 0U, CavemanGasSensor_ReadRaw());
     if (CAVE_TALK_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Speak air quality error: %d", (int)error);

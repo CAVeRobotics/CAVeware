@@ -83,6 +83,7 @@ set(CAVEMAN_CONTROLLER_SRCS
     ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_controller.c
     ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_cavetalk.c
     ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_dust_sensor.c
+    ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_gas_sensor.c
 )
 
 set_source_files_properties(

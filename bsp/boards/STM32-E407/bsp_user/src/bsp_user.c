@@ -1,5 +1,6 @@
 #include "bsp_user.h"
 
+#include "adc.h"
 #include "dma.h"
 #include "gpio.h"
 #include "spi.h"
@@ -10,6 +11,7 @@ void BspUser_Initialize(void)
 {
     MX_GPIO_Init();
     MX_DMA_Init();
+    MX_ADC3_Init();
     MX_USART2_UART_Init();
     MX_USART3_UART_Init();
     MX_USART6_UART_Init();
