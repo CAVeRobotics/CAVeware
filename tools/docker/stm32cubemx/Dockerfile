@@ -3,7 +3,7 @@ FROM alpine:latest AS mcu-package-extract
 RUN apk -U upgrade
 RUN apk add git
 WORKDIR /root/STM32Cube/Repository
-RUN git clone --recursive --depth 1 --branch v1.28.1 https://github.com/STMicroelectronics/STM32CubeF4.git
+RUN git clone --recursive --depth 1 --branch v1.28.2 https://github.com/STMicroelectronics/STM32CubeF4.git
 
 # Initialize STM32CubeMX for building STM32F4 project
 FROM d3lta12/stm32cubemx AS cube-initialize
