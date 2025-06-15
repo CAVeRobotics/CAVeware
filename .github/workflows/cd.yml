@@ -11,10 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: d3lta12/arm-build-tools
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      startsWith(github.event.workflow_run.ref, 'refs/tags/')
+    # if: >
+    #   github.event.workflow_run.conclusion == 'success' &&
+    #   startsWith(github.event.workflow_run.ref, 'refs/tags/')
+    
     steps:
+      - name: Debug
+        run: |
+          echo "${{ github.event.workflow_run.conclusion }} ${{ github.event.workflow_run.ref }}" >> $GITHUB_OUTPUT
       - name: Checkout
         uses: actions/checkout@v4
         with:
