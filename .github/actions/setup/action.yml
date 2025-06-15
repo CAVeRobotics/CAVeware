@@ -6,8 +6,7 @@ runs:
       id: cache-stm32cubemx
       uses: actions/cache@v4
       env:
-        cache-name: cache-stm32cubemx
-        cache-key: ${{ env.cache-name }}-${{ hashFiles('./bsp/boards/CAVeBoard/generated/CAVeBoard.ioc', './bsp/boards/CAVeBoard/generated/CAVeBoard.script') }}
+        cache-key: cache-stm32cubemx-${{ hashFiles('./bsp/boards/CAVeBoard/generated/CAVeBoard.ioc', './bsp/boards/CAVeBoard/generated/CAVeBoard.script') }}
         cache-base-path: ./bsp/boards/CAVeBoard/generated
         startup-file: startup_stm32f407xx.s
         linker-script: stm32f407zgtx_flash.ld
@@ -35,8 +34,7 @@ runs:
       id: cache-cmake
       uses: actions/cache@v4
       env:
-        cache-name: cache-cmake
-        cache-key: ${{ env.cache-name }}-${{ hashFiles('**/CMakeLists.txt', '**.cmake') }}
+        cache-key: cache-cmake-${{ hashFiles('**/CMakeLists.txt', '**.cmake') }}
       with:
         path: ./build
         key: ${{ env.cache-key }}
