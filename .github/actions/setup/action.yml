@@ -6,7 +6,7 @@ runs:
       id: cache-stm32cubemx
       uses: actions/cache@v4
       env:
-        cache-name: cache-stm32cubemx
+        cache-key: cache-stm32cubemx-${{ hashFiles('./bsp/boards/CAVeBoard/generated/CAVeBoard.ioc', './bsp/boards/CAVeBoard/generated/CAVeBoard.script') }}
         cache-base-path: ./bsp/boards/CAVeBoard/generated
         startup-file: startup_stm32f407xx.s
         linker-script: stm32f407zgtx_flash.ld
@@ -20,8 +20,10 @@ runs:
           ${{ env.cache-base-path }}/CMakePresets.json
           ${{ env.cache-base-path }}/${{ env.startup-file }}
           ${{ env.cache-base-path }}/${{ env.linker-script }}
-        key: ${{ env.cache-name }}-${{ hashFiles('./bsp/boards/CAVeBoard/generated/CAVeBoard.ioc', './bsp/boards/CAVeBoard/generated/CAVeBoard.script') }}
+        key: ${{ env.cache-key }}
+        restore-keys: ${{ env.cache-key }}
     - name: STM32CubeMX Generate Code
+      if: ${{ steps.cache-stm32cubemx.outputs.cache-hit != 'true' }}
       uses: docker://d3lta12/stm32cubemx-stm32f4:v6.13.0
       with:
         args: /bin/bash -c "cd bsp/boards/CAVeBoard/generated && /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q CAVeBoard.script"
@@ -32,10 +34,11 @@ runs:
       id: cache-cmake
       uses: actions/cache@v4
       env:
-        cache-name: cache-cmake
+        cache-key: cache-cmake-${{ hashFiles('**/CMakeLists.txt', '**.cmake') }}
       with:
         path: ./build
-        key: ${{ env.cache-name }}-${{ hashFiles('**/CMakeLists.txt', '**.cmake') }}
+        key: ${{ env.cache-key }}
+        restore-keys: ${{ env.cache-key }}
     - name: Generate CMake cache
       if: ${{ steps.cache-cmake.outputs.cache-hit != 'true' }}
       run: cmake --preset CAVeBoard_Debug
