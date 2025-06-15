@@ -23,6 +23,7 @@ runs:
         key: ${{ env.cache-name }}-${{ hashFiles('./bsp/boards/CAVeBoard/generated/CAVeBoard.ioc', './bsp/boards/CAVeBoard/generated/CAVeBoard.script') }}
         restore-keys: ${{ env.cache-name }}-
     - name: STM32CubeMX Generate Code
+      if: ${{ steps.cache-stm32cubemx.outputs.cache-hit != 'true' }}
       uses: docker://d3lta12/stm32cubemx-stm32f4:v6.13.0
       with:
         args: /bin/bash -c "cd bsp/boards/CAVeBoard/generated && /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q CAVeBoard.script"
