@@ -2,14 +2,24 @@ name: Setup
 runs:
   using: "composite"
   steps:
-    # TODO cache STM32CubeMX generated code, re-build cache on ioc changes
     - name: Cache STM32CubeMX generated code
       id: cache-stm32cubemx
       uses: actions/cache@v4
       env:
         cache-name: cache-stm32cubemx
+        cache-base-path: ./bsp/boards/CAVeBoard/generated
+        startup-file: startup_stm32f407xx.s
+        linker-script: stm32f407zgtx_flash.ld
       with:
-        path: ./bsp/boards/CAVeBoard/generated
+        path: |
+          ${{ env.cache-base-path }}/cmake
+          ${{ env.cache-base-path }}/Core
+          ${{ env.cache-base-path }}/Drivers
+          ${{ env.cache-base-path }}/.mxproject
+          ${{ env.cache-base-path }}/CMakeLists.txt
+          ${{ env.cache-base-path }}/CMakePresets.json
+          ${{ env.cache-base-path }}/${{ env.startup-file }}
+          ${{ env.cache-base-path }}/${{ env.linker-script }}
         key: ${{ env.cache-name }}-${{ hashFiles('./bsp/boards/CAVeBoard/generated/CAVeBoard.ioc', './bsp/boards/CAVeBoard/generated/CAVeBoard.script') }}
     - name: STM32CubeMX Generate Code
       uses: docker://d3lta12/stm32cubemx-stm32f4:v6.13.0
