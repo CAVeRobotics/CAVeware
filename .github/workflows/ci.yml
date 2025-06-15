@@ -1,6 +1,17 @@
 name: Continuous Integration Workflow
 
-on: [push]
+on:
+  push:
+    tags-ignore:
+      - '**'
+    branches:
+      - '**'
+  workflow_call:
+    outputs:
+      tag_ref:
+        value: ${{ jobs.build.outputs.tag_ref }}
+      tag_name:
+        value: ${{ jobs.build.outputs.tag_name }}
 
 jobs:
   build:
