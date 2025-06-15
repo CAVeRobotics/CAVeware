@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Debug
         run: |
-          echo "${{ github.event.workflow_run.conclusion }} ${{ github.ref }}" >> $GITHUB_OUTPUT
+          echo "${{ github.event.workflow_run.conclusion }} ${{ github.ref }}"
       - name: Checkout
         uses: actions/checkout@v4
         with:
