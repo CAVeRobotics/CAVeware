@@ -2,7 +2,7 @@
 
 [Cppcheck](https://cppcheck.sourceforge.io/) is used to perform static analysis on code.
 
-To setup Cppcheck in a local repository, follow these steps:
+If Cppcheck is not installed globally, follow these steps to setup Cppcheck in a local repository:
 
 1. Initialize and update submodules
 

@@ -4,7 +4,7 @@ runs:
   steps:
     # TODO cache STM32CubeMX generated code, re-build cache on ioc changes
     - name: STM32CubeMX Generate Code
-      uses: docker://d3lta12/stm32cubemx-stm32f4
+      uses: docker://d3lta12/stm32cubemx-stm32f4:v6.13.0
       with:
         args: /bin/bash -c "cd bsp/boards/CAVeBoard/generated && /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q CAVeBoard.script"
     - name: Generate CAVeTalk Protobufs

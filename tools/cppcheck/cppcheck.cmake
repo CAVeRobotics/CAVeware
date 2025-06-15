@@ -11,20 +11,20 @@ find_program(${CPPCHECK_NAME}_BIN
 )
 if(${CPPCHECK_NAME}_BIN)
     message(STATUS "Found ${CPPCHECK_NAME} at: ${${CPPCHECK_NAME}_BIN}")
+
+    message(STATUS "Adding files to Cppcheck")
+
+    add_custom_target(
+        cppcheck
+        ${${CPPCHECK_NAME}_BIN}
+        --enable=all
+        --check-level=exhaustive
+        --suppress-xml=${CPPCHECK_DIR}/suppressions.xml
+        --error-exitcode=2
+        --xml
+        --output-file=cppcheck_report.xml
+        ${CPPCHECK_SOURCES}
+    )
 else()
-    message(FATAL_ERROR "${CPPCHECK_NAME} not found.")
+    message(WARNING "${CPPCHECK_NAME} not found.")
 endif()
-
-message(STATUS "Adding files to Cppcheck")
-
-add_custom_target(
-    cppcheck
-    ${${CPPCHECK_NAME}_BIN}
-    --enable=all
-    --check-level=exhaustive
-    --suppress-xml=${CPPCHECK_DIR}/suppressions.xml
-    --error-exitcode=2
-    --xml
-    --output-file=cppcheck_report.xml
-    ${CPPCHECK_SOURCES}
-)

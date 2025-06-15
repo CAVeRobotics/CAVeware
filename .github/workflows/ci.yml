@@ -18,7 +18,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: caveboard-build
-          path: build/CAVeBoard_Debug/CavemanController.*
+          path: build/CAVeBoard_Debug/CAVeware.*
   cppcheck:
     runs-on: ubuntu-latest
     container:
@@ -73,7 +73,7 @@ jobs:
   #     - name: STM32CubeMX Generate Code
   #       uses: docker://d3lta12/stm32cubemx-stm32f4
   #       with:
-  #         args: /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q CavemanController_nucleo64.script
+  #         args: /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q CAVeware_nucleo64.script
   #     - name: Install sonar-scanner and build-wrapper
   #       uses: sonarsource/sonarcloud-github-c-cpp@v3
   #     - name: Cache CMake files
@@ -93,7 +93,7 @@ jobs:
   #         SONAR_TOKEN: ${{ secrets.CAVEMAN_CONTROLLER_SONARCLOUD_TOKEN }}
   #       run: |
   #         sonar-scanner \
-  #           -Dsonar.projectKey=delta-12_CavemanController \
+  #           -Dsonar.projectKey=delta-12_CAVeware \
   #           -Dsonar.organization=delta-12 \
   #           -Dsonar.sources=bsp,caveman_controller \
   #           --define sonar.cfamily.compile-commands="${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json" \

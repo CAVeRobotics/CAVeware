@@ -13,7 +13,7 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 # Project with support for ASM and C languages
-project(CavemanController LANGUAGES C ASM)
+project(CAVeware LANGUAGES C ASM)
 
 # CAVeTalk library
 include(${CMAKE_SOURCE_DIR}/CAVeTalk.cmake)
