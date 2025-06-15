@@ -19,24 +19,24 @@
 
 static const char *kCavebot_LogTag = "CAVEMAN";
 
-static void CAVEBOT_Initialize(void);
-static void CAVEBOT_MeasureLoopRate(void);
+static void Cavebot_Initialize(void);
+static void Cavebot_MeasureLoopRate(void);
 
 int main(void)
 {
-    CAVEBOT_Initialize();
+    Cavebot_Initialize();
 
     while (true)
     {
         Rover_Task();
         CavebotCaveTalk_Task();
-        CAVEBOT_MeasureLoopRate();
+        Cavebot_MeasureLoopRate();
     }
 
     return 0;
 }
 
-static void CAVEBOT_Initialize(void)
+static void Cavebot_Initialize(void)
 {
     Bsp_Initialize();
 
@@ -69,7 +69,7 @@ static void CAVEBOT_Initialize(void)
     BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Initialized");
 }
 
-static void CAVEBOT_MeasureLoopRate(void)
+static void Cavebot_MeasureLoopRate(void)
 {
     static size_t            loop_count    = 0U;
     static Bsp_Microsecond_t previous_time = 0U;
