@@ -41,5 +41,5 @@ runs:
         restore-keys: ${{ env.cache-key }}
     - name: Generate CMake cache
       if: ${{ steps.cache-cmake.outputs.cache-hit != 'true' }}
-      run: cmake --preset CAVeBoard_Debug
+      run: cmake --preset CAVeBoard_Release
       shell: sh

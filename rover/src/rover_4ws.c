@@ -29,7 +29,7 @@ static Rover_Error_t Rover4ws_BspErrorCheck(const Bsp_Error_t error_0,
                                             const Bsp_Error_t error_1,
                                             const Bsp_Error_t error_2,
                                             const Bsp_Error_t error_3);
-static inline bool Rover4ws_CompareDoubleSigns(const double value_1, const double value_2);
+static inline bool Rover4ws_CompareDoubleSigns(const double *const value_1, const double *const value_2);
 
 Rover_Error_t Rover4ws_ConfigureSteering(const Rover4wsConfig_Servo_t servo,
                                          const Bsp_Percent_t minimum_duty_cycle,
@@ -410,7 +410,7 @@ static Rover_Error_t Rover4ws_SetSteeringAngle(const Rover_Radian_t steering_ang
     Rover_Radian_t delta_left  = atan(scaled_wheelbase / (kRover4wsConfig_HalfWheelbase - offset));
     Rover_Radian_t delta_right = atan(scaled_wheelbase / (kRover4wsConfig_HalfWheelbase + offset));
 
-    if (Rover4ws_CompareDoubleSigns(delta_left, delta_right))
+    if (Rover4ws_CompareDoubleSigns(&delta_left, &delta_right))
     {
         error = Rover4ws_BspErrorCheck(BspServo_SetAngle(&Rover4wsConfig_Servos[ROVER_4WS_CONFIG_SERVO_0], (ROVER_4WS_WHEEL_OFFSET - delta_left)),
                                        BspServo_SetAngle(&Rover4wsConfig_Servos[ROVER_4WS_CONFIG_SERVO_1], (ROVER_4WS_WHEEL_OFFSET - delta_right)),
@@ -434,7 +434,7 @@ static Rover_Error_t Rover4ws_BspErrorCheck(const Bsp_Error_t error_0,
     return Rover4ws_ErrorCheck(rover_error_0, rover_error_1, rover_error_2, rover_error_3);
 }
 
-static inline bool Rover4ws_CompareDoubleSigns(const double value_1, const double value_2)
+static inline bool Rover4ws_CompareDoubleSigns(const double *const value_1, const double *const value_2)
 {
-    return !(bool)((*(uint64_t *)(&value_1) & ROVER_4WS_DOUBLE_SIGN_MASK) ^ (*(uint64_t *)(&value_2) & ROVER_4WS_DOUBLE_SIGN_MASK));
+    return !(bool)((*(uint64_t *)(value_1) & ROVER_4WS_DOUBLE_SIGN_MASK) ^ (*(uint64_t *)(value_2) & ROVER_4WS_DOUBLE_SIGN_MASK));
 }

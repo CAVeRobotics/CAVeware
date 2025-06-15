@@ -1,0 +1,9 @@
+#ifndef CAVEBOT_VERSION_H
+#define CAVEBOT_VERSION_H
+
+#define CAVEBOT_GIT_BRANCH      "@GIT_BRANCH@"
+#define CAVEBOT_GIT_COMMIT_HASH "@GIT_COMMIT_HASH@"
+#define CAVEBOT_GIT_DIRTY       "@GIT_DIRTY@"
+#define CAVEBOT_GIT_TAG         "@GIT_TAG@"
+
+#endif /* CAVEBOT_VERSION_H */
