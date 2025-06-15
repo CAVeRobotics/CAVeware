@@ -20,13 +20,13 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup
       - name: Build check
-        run: cmake --build --preset CAVeBoard_Debug -j$(nproc)
+        run: cmake --build --preset CAVeBoard_Release -j$(nproc)
       - name: Upload builds
         if: ${{ success() }}
         uses: actions/upload-artifact@v4
         with:
           name: caveboard-build
-          path: build/CAVeBoard_Debug/CAVeware.*
+          path: build/CAVeBoard_Release/CAVeware.*
   cppcheck:
     runs-on: ubuntu-latest
     container:
@@ -39,7 +39,7 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup
       - name: Cppcheck
-        run: cmake --build --preset CAVeBoard_Debug -j$(nproc) --target cppcheck
+        run: cmake --build --preset CAVeBoard_Release -j$(nproc) --target cppcheck
       - name: Upload Cppcheck Report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
@@ -58,7 +58,7 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup
       - name: Crust check
-        run: cmake --build --preset CAVeBoard_Debug -j$(nproc) --target uncrustify-check
+        run: cmake --build --preset CAVeBoard_Release -j$(nproc) --target uncrustify-check
       - name: Upload Uncrustify Report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
