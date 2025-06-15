@@ -1,26 +1,24 @@
 name: Continuous Deployment Workflow
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_run:
+    workflows: ['Continuous Integration Workflow']
+    types:
+      - completed
 
 jobs:
   release:
     runs-on: ubuntu-latest
     container:
       image: d3lta12/arm-build-tools
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      startsWith(github.event.workflow_run.ref, 'refs/tags/')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: "recursive"
-      - name: Setup
-        uses: ./.github/actions/setup
-      - name: Generate CMake release cache
-        run: cmake --preset CAVeBoard_Release
-      - name: Build release firmware
-        run: cmake --build --preset CAVeBoard_Release -j$(nproc)
+          ref: ${{ github.event.workflow_run.head_sha }}
       - name: Create pre-release
         if: ${{ contains(github.ref_name, '-') }}
         env:
@@ -42,6 +40,7 @@ jobs:
               --title="${tag#v}" \
               --generate-notes \
               --latest=true
+      # TODO verify status checks
       # - name: Upload build
       #   uses: actions/upload-release-asset@v1
       #   with:

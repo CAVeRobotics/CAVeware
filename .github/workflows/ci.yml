@@ -1,11 +1,6 @@
 name: Continuous Integration Workflow
 
-on:
-  push:
-    tags-ignore:
-      - '**'
-    branches:
-      - '**'
+on: [push]
 
 jobs:
   build:
