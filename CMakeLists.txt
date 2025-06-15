@@ -74,20 +74,20 @@ set(ROVER_SRCS
     ${ROVER_SRC_DIR}/rover_pid.c
 )
 
-set(CAVEMAN_CONTROLLER_DIR ${CMAKE_SOURCE_DIR}/caveman_controller)
-set(CAVEMAN_CONTROLLER_INC_DIR ${CAVEMAN_CONTROLLER_DIR}/inc)
-set(CAVEMAN_CONTROLLER_SRC_DIR ${CAVEMAN_CONTROLLER_DIR}/src)
+set(CAVEBOT_DIR ${CMAKE_SOURCE_DIR}/cavebot)
+set(CAVEBOT_INC_DIR ${CAVEBOT_DIR}/inc)
+set(CAVEBOT_SRC_DIR ${CAVEBOT_DIR}/src)
 
-set(CAVEMAN_CONTROLLER_SRCS
-    ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_buttons.c
-    ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_controller.c
-    ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_cavetalk.c
-    ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_dust_sensor.c
-    ${CAVEMAN_CONTROLLER_SRC_DIR}/caveman_gas_sensor.c
+set(CAVEBOT_SRCS
+    ${CAVEBOT_SRC_DIR}/cavebot_buttons.c
+    ${CAVEBOT_SRC_DIR}/cavebot.c
+    ${CAVEBOT_SRC_DIR}/cavebot_cavetalk.c
+    ${CAVEBOT_SRC_DIR}/cavebot_dust_sensor.c
+    ${CAVEBOT_SRC_DIR}/cavebot_gas_sensor.c
 )
 
 set_source_files_properties(
-    ${CAVEMAN_CONTROLLER_SRCS}
+    ${CAVEBOT_SRCS}
     ${ROVER_SRCS}
     PROPERTIES
     COMPILE_OPTIONS "-Werror"
@@ -97,13 +97,13 @@ add_executable(${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE
-        ${CAVEMAN_CONTROLLER_INC_DIR}
+        ${CAVEBOT_INC_DIR}
         ${ROVER_INC_DIR}
 )
 
 target_sources(${PROJECT_NAME}
     PRIVATE
-        ${CAVEMAN_CONTROLLER_SRCS}
+        ${CAVEBOT_SRCS}
         ${ROVER_SRCS}
 )
 
@@ -125,10 +125,10 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 # CI and tools
 ################################################################################
 set(TOOLS_DIR ${CMAKE_SOURCE_DIR}/tools)
-set(CPPCHECK_SOURCES ${BSP_SRCS} ${BSP_USER_SRCS} ${ROVER_SRCS} ${ROVER_CONFIG_SRCS} ${CAVEMAN_CONTROLLER_SRCS})
+set(CPPCHECK_SOURCES ${BSP_SRCS} ${BSP_USER_SRCS} ${ROVER_SRCS} ${ROVER_CONFIG_SRCS} ${CAVEBOT_SRCS})
 include(${TOOLS_DIR}/cppcheck/cppcheck.cmake)
 get_target_property(BSP_USER_INC_DIRS BspUser INTERFACE_INCLUDE_DIRECTORIES)
 get_target_property(BSP_INC_DIRS Bsp INTERFACE_INCLUDE_DIRECTORIES)
 set(UNCRUSTIFY_SOURCES ${CPPCHECK_SOURCES})
-set(UNCRUSTIFY_INC_DIRS ${BSP_INC_DIRS} ${BSP_USER_INC_DIRS} ${ROVER_INC_DIR} ${ROVER_CONFIG_INC_DIR} ${CAVEMAN_CONTROLLER_INC_DIR})
+set(UNCRUSTIFY_INC_DIRS ${BSP_INC_DIRS} ${BSP_USER_INC_DIRS} ${ROVER_INC_DIR} ${ROVER_CONFIG_INC_DIR} ${CAVEBOT_INC_DIR})
 include(${TOOLS_DIR}/uncrustify/uncrustify.cmake)
