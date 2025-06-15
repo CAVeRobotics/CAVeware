@@ -6,8 +6,8 @@
 #include "bsp_uart_user.h"
 
 #define CAVEBOT_DUST_SENSOR_CHARACTERISTIC_BYTE 0xA5U
-#define CAVEBOT_DUST_SENSOR_MASK 0x7FU
-#define CAVEBOT_DUST_SENSOR_DATA_HIGH_SHIFT 7U
+#define CAVEBOT_DUST_SENSOR_MASK                0x7FU
+#define CAVEBOT_DUST_SENSOR_DATA_HIGH_SHIFT     7U
 
 typedef enum
 {
@@ -27,8 +27,9 @@ typedef struct
 
 static CavebotDustSensor_Handle_t CavebotDustSensor_Handle = {
     .buffer = {
-        0U},
-    .byte = CAVEBOT_DUST_SENSOR_BYTE_CHARACTERISTIC,
+        0U
+    },
+    .byte    = CAVEBOT_DUST_SENSOR_BYTE_CHARACTERISTIC,
     .reading = 0U,
 };
 
@@ -39,8 +40,8 @@ Bsp_Error_t CavebotDustSensor_Initialize(void)
 
 CavebotDustSensor_MicrogramsPerMeterCubed_t CavebotDustSensor_Read(void)
 {
-    size_t bytes_received = 0u;
-    uint8_t sum = 0U;
+    size_t  bytes_received = 0u;
+    uint8_t sum            = 0U;
 
     (void)BspUart_Receive(BSP_UART_USER_DUST_SENSOR,
                           (uint8_t *)((uint32_t)CavebotDustSensor_Handle.buffer + (uint32_t)CavebotDustSensor_Handle.byte),

@@ -71,17 +71,17 @@ static void CAVEBOT_Initialize(void)
 
 static void CAVEBOT_MeasureLoopRate(void)
 {
-    static size_t loop_count = 0U;
+    static size_t            loop_count    = 0U;
     static Bsp_Microsecond_t previous_time = 0U;
 
     loop_count++;
 
-    Bsp_Microsecond_t time = BspTick_GetMicroseconds();
+    Bsp_Microsecond_t time       = BspTick_GetMicroseconds();
     Bsp_Microsecond_t difference = time - previous_time;
     if (difference >= CAVEBOT_LOOP_LOG_PERIOD)
     {
         BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Loop rate %lfHz", (double)((double)loop_count / ((double)difference / BSP_TICK_MICROSECONDS_PER_SECOND)));
-        loop_count = 0;
+        loop_count    = 0;
         previous_time = time;
     }
 }

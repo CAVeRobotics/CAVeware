@@ -28,10 +28,10 @@
 #include "rover_camera.h"
 #include "rover_camera_config.h"
 
-#define CAVEBOT_CAVE_TALK_BUFFER_SIZE 1024U
-#define CAVEBOT_CAVE_TALK_HEADER_SIZE 3U
-#define CAVEBOT_CAVE_TALK_RETRY_PERIOD (Bsp_Millisecond_t)1000U
-#define CAVEBOT_CAVE_TALK_ODOMETRY_PERIOD (Bsp_Millisecond_t)20U
+#define CAVEBOT_CAVE_TALK_BUFFER_SIZE        1024U
+#define CAVEBOT_CAVE_TALK_HEADER_SIZE        3U
+#define CAVEBOT_CAVE_TALK_RETRY_PERIOD       (Bsp_Millisecond_t)1000U
+#define CAVEBOT_CAVE_TALK_ODOMETRY_PERIOD    (Bsp_Millisecond_t)20U
 #define CAVEBOT_CAVE_TALK_AIR_QUALITY_PERIOD (Bsp_Millisecond_t)1000U
 
 typedef enum
@@ -40,12 +40,12 @@ typedef enum
     CAVEBOT_CAVE_TALK_RECEIVE_PAYLOAD
 } CavebotCaveTalk_Receive_t;
 
-static uint8_t CavebotCaveTalk_Buffer[CAVEBOT_CAVE_TALK_BUFFER_SIZE];
-static const char *kCavebotCaveTalk_LogTag = "CAVE TALK";
-static bool CavebotCaveTalk_Connected = false;
-static bool CavebotCaveTalk_WasArmed = false;
-static Bsp_Millisecond_t CavebotCaveTalk_PreviousMessage = 0U;
-static Bsp_Millisecond_t CavebotCaveTalk_PreviousOdometry = 0U;
+static uint8_t           CavebotCaveTalk_Buffer[CAVEBOT_CAVE_TALK_BUFFER_SIZE];
+static const char *      kCavebotCaveTalk_LogTag            = "CAVE TALK";
+static bool              CavebotCaveTalk_Connected          = false;
+static bool              CavebotCaveTalk_WasArmed           = false;
+static Bsp_Millisecond_t CavebotCaveTalk_PreviousMessage    = 0U;
+static Bsp_Millisecond_t CavebotCaveTalk_PreviousOdometry   = 0U;
 static Bsp_Millisecond_t CavebotCaveTalk_PreviousAirQuality = 0U;
 
 static CaveTalk_Error_t CavebotCaveTalk_Send(const void *const data, const size_t size);
@@ -82,27 +82,27 @@ static void CavebotCaveTalk_SendAirQuality(void);
 
 static CaveTalk_Handle_t CavebotCaveTalk_Handle = {
     .link_handle = {
-        .send = CavebotCaveTalk_Send,
+        .send    = CavebotCaveTalk_Send,
         .receive = CavebotCaveTalk_Receive,
     },
-    .buffer = CavebotCaveTalk_Buffer,
-    .buffer_size = sizeof(CavebotCaveTalk_Buffer),
+    .buffer           = CavebotCaveTalk_Buffer,
+    .buffer_size      = sizeof(CavebotCaveTalk_Buffer),
     .listen_callbacks = {
-        .hear_ooga_booga = CavebotCaveTalk_HearOogaBooga,
-        .hear_movement = CavebotCaveTalk_HearMovement,
-        .hear_camera_movement = CavebotCaveTalk_HearCameraMovement,
-        .hear_lights = CavebotCaveTalk_HearLights,
-        .hear_arm = CavebotCaveTalk_HearArm,
-        .hear_odometry = NULL,
-        .hear_log = NULL,
-        .hear_config_servo_wheels = CavebotCaveTalk_HearConfigServoWheels,
-        .hear_config_servo_cams = CavebotCaveTalk_HearConfigServoCams,
-        .hear_config_motors = CavebotCaveTalk_HearConfigMotors,
-        .hear_config_encoders = CavebotCaveTalk_HearConfigEncoders,
-        .hear_config_log = CavebotCaveTalk_HearConfigLog,
+        .hear_ooga_booga                 = CavebotCaveTalk_HearOogaBooga,
+        .hear_movement                   = CavebotCaveTalk_HearMovement,
+        .hear_camera_movement            = CavebotCaveTalk_HearCameraMovement,
+        .hear_lights                     = CavebotCaveTalk_HearLights,
+        .hear_arm                        = CavebotCaveTalk_HearArm,
+        .hear_odometry                   = NULL,
+        .hear_log                        = NULL,
+        .hear_config_servo_wheels        = CavebotCaveTalk_HearConfigServoWheels,
+        .hear_config_servo_cams          = CavebotCaveTalk_HearConfigServoCams,
+        .hear_config_motors              = CavebotCaveTalk_HearConfigMotors,
+        .hear_config_encoders            = CavebotCaveTalk_HearConfigEncoders,
+        .hear_config_log                 = CavebotCaveTalk_HearConfigLog,
         .hear_config_wheel_speed_control = CavebotCaveTalk_HearConfigWheelSpeedControl,
-        .hear_config_steering_control = CavebotCaveTalk_HearConfigSteeringControl,
-        .hear_air_quality = NULL,
+        .hear_config_steering_control    = CavebotCaveTalk_HearConfigSteeringControl,
+        .hear_air_quality                = NULL,
     },
 };
 
@@ -125,7 +125,7 @@ void CavebotCaveTalk_Task(void)
         if (CavebotCaveTalk_Connected)
         {
             CavebotCaveTalk_Connected = false;
-            CavebotCaveTalk_WasArmed = Rover_IsArmed();
+            CavebotCaveTalk_WasArmed  = Rover_IsArmed();
             BspGpio_Write(BSP_GPIO_USER_PIN_COMMS_STATUS, BSP_GPIO_STATE_RESET);
             BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Disconnected");
 
@@ -551,7 +551,7 @@ static void CavebotCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const
 
 static void CavebotCaveTalk_SendOdometry(void)
 {
-    cave_talk_Imu imu_message = cave_talk_Imu_init_zero;
+    cave_talk_Imu     imu_message       = cave_talk_Imu_init_zero;
     cave_talk_Encoder encoder_message_0 = cave_talk_Encoder_init_zero;
     cave_talk_Encoder encoder_message_1 = cave_talk_Encoder_init_zero;
     cave_talk_Encoder encoder_message_2 = cave_talk_Encoder_init_zero;
@@ -567,7 +567,7 @@ static void CavebotCaveTalk_SendOdometry(void)
     imu_message.accel.x_meters_per_second_squared = accelerometer_reading.x;
     imu_message.accel.y_meters_per_second_squared = accelerometer_reading.y;
     imu_message.accel.z_meters_per_second_squared = accelerometer_reading.z;
-    imu_message.has_accel = true;
+    imu_message.has_accel                         = true;
 
     Rover_GyroscopeReading_t gyro_reading = {
         .x = 0.0,
@@ -576,31 +576,32 @@ static void CavebotCaveTalk_SendOdometry(void)
     };
     (void)Rover_ReadGyroscope(&gyro_reading);
 
-    imu_message.gyro.roll_radians_per_second = gyro_reading.x;
+    imu_message.gyro.roll_radians_per_second  = gyro_reading.x;
     imu_message.gyro.pitch_radians_per_second = gyro_reading.y;
-    imu_message.gyro.yaw_radians_per_second = gyro_reading.z;
-    imu_message.has_gyro = true;
+    imu_message.gyro.yaw_radians_per_second   = gyro_reading.z;
+    imu_message.has_gyro                      = true;
 
     Rover_Quaternion_t quaternion = {
         .w = 0.0,
         .x = 0.0,
         .y = 0.0,
-        .z = 0.0};
+        .z = 0.0
+    };
     (void)Rover_ReadQuaternion(&quaternion);
 
-    imu_message.quat.w = quaternion.w;
-    imu_message.quat.x = quaternion.x;
-    imu_message.quat.y = quaternion.y;
-    imu_message.quat.z = quaternion.z;
+    imu_message.quat.w   = quaternion.w;
+    imu_message.quat.x   = quaternion.x;
+    imu_message.quat.y   = quaternion.y;
+    imu_message.quat.z   = quaternion.z;
     imu_message.has_quat = true;
 
-    encoder_message_0.total_pulses = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].pulses;
+    encoder_message_0.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].pulses;
     encoder_message_0.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].angular_rate;
-    encoder_message_1.total_pulses = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].pulses;
+    encoder_message_1.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].pulses;
     encoder_message_1.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].angular_rate;
-    encoder_message_2.total_pulses = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].pulses;
+    encoder_message_2.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].pulses;
     encoder_message_2.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].angular_rate;
-    encoder_message_3.total_pulses = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].pulses;
+    encoder_message_3.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].pulses;
     encoder_message_3.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].angular_rate;
 
     CaveTalk_Error_t error = CaveTalk_SpeakOdometry(&CavebotCaveTalk_Handle, &imu_message, &encoder_message_0, &encoder_message_1, &encoder_message_2, &encoder_message_3);
