@@ -21,6 +21,7 @@ runs:
           ${{ env.cache-base-path }}/${{ env.startup-file }}
           ${{ env.cache-base-path }}/${{ env.linker-script }}
         key: ${{ env.cache-name }}-${{ hashFiles('./bsp/boards/CAVeBoard/generated/CAVeBoard.ioc', './bsp/boards/CAVeBoard/generated/CAVeBoard.script') }}
+        restore-keys: ${{ env.cache-name }}-
     - name: STM32CubeMX Generate Code
       uses: docker://d3lta12/stm32cubemx-stm32f4:v6.13.0
       with:
@@ -36,6 +37,7 @@ runs:
       with:
         path: ./build
         key: ${{ env.cache-name }}-${{ hashFiles('**/CMakeLists.txt', '**.cmake') }}
+        restore-keys: ${{ env.cache-name }}-
     - name: Generate CMake cache
       if: ${{ steps.cache-cmake.outputs.cache-hit != 'true' }}
       run: cmake --preset CAVeBoard_Debug
