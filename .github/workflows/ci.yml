@@ -1,4 +1,7 @@
+name: Continuous Integration Workflow
+
 on: [push]
+
 jobs:
   build:
     runs-on: ubuntu-latest

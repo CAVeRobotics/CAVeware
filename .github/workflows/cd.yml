@@ -1,0 +1,51 @@
+name: Continuous Deployment Workflow
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    container:
+      image: d3lta12/arm-build-tools
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+      - name: Setup
+        uses: ./.github/actions/setup
+      - name: Generate CMake release cache
+        run: cmake --preset CAVeBoard_Release
+      - name: Build release firmware
+        run: cmake --build --preset CAVeBoard_Release -j$(nproc)
+      - name: Create pre-release
+        if: ${{ contains(github.ref_name, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+        run: |
+          gh release create "$tag" \
+              --title="${tag#v}" \
+              --generate-notes \
+              --latest=false
+              --prerelease
+      - name: Create release
+        if: ${{ contains(github.ref_name, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+        run: |
+          gh release create "$tag" \
+              --title="${tag#v}" \
+              --generate-notes \
+              --latest=true
+      # - name: Upload build
+      #   uses: actions/upload-release-asset@v1
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: ./your_artifact.zip
+      #     asset_name: your_artifact.zip
+      #     asset_content_type: application/zip
