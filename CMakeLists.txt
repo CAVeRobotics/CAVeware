@@ -60,6 +60,39 @@ target_include_directories(lsm6dsv16x
 )
 
 ################################################################################
+# Versioning
+################################################################################
+execute_process(
+    COMMAND git rev-parse HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+execute_process(
+    COMMAND git rev-parse --abbrev-ref HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_BRANCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+execute_process(
+    COMMAND git describe --tags --always
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_TAG
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+execute_process(
+    COMMAND git status --porcelain
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_STATUS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+if(GIT_STATUS)
+    set(GIT_DIRTY "Dirty")
+else()
+    set(GIT_DIRTY "Clean")
+endif()
+
+################################################################################
 # CAVEMAN controller firmware
 ################################################################################
 set(ROVER_DIR ${CMAKE_SOURCE_DIR}/rover)
@@ -77,6 +110,11 @@ set(ROVER_SRCS
 set(CAVEBOT_DIR ${CMAKE_SOURCE_DIR}/cavebot)
 set(CAVEBOT_INC_DIR ${CAVEBOT_DIR}/inc)
 set(CAVEBOT_SRC_DIR ${CAVEBOT_DIR}/src)
+
+configure_file(
+    ${CAVEBOT_INC_DIR}/cavebot_version.h.in
+    ${CAVEBOT_INC_DIR}/cavebot_version.h
+)
 
 set(CAVEBOT_SRCS
     ${CAVEBOT_SRC_DIR}/cavebot_buttons.c

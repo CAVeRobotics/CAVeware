@@ -13,6 +13,9 @@ bsp/boards/*/generated/startup_stm32*.s
 bsp/boards/*/generated/STM32*_FLASH.ld
 bsp/boards/*/generated/stm32*_flash.ld
 
+# Version header
+cavebot/inc/cavebot_version.h
+
 # VS Code
 .vscode/*
 !.vscode/launch.json

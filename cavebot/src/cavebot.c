@@ -12,6 +12,7 @@
 #include "cavebot_buttons.h"
 #include "cavebot_cavetalk.h"
 #include "cavebot_dust_sensor.h"
+#include "cavebot_version.h"
 #include "rover.h"
 #include "rover_4ws.h"
 
@@ -44,6 +45,11 @@ static void Cavebot_Initialize(void)
     {
         BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to start BSP Tick");
     }
+
+    BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build branch: %s", CAVEBOT_GIT_BRANCH);
+    BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build commit: %s", CAVEBOT_GIT_COMMIT_HASH);
+    BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build tag: %s", CAVEBOT_GIT_TAG);
+    BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build status: %s", CAVEBOT_GIT_DIRTY);
 
     Rover_Initialize();
 
