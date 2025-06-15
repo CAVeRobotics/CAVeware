@@ -1,4 +1,4 @@
-#include "caveman_cavetalk.h"
+#include "cavebot_cavetalk.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -20,155 +20,155 @@
 #include "bsp_uart.h"
 #include "bsp_uart_user.h"
 
-#include "caveman_dust_sensor.h"
-#include "caveman_gas_sensor.h"
+#include "cavebot_dust_sensor.h"
+#include "cavebot_gas_sensor.h"
 #include "rover.h"
 #include "rover_4ws.h"
 #include "rover_4ws_config.h"
 #include "rover_camera.h"
 #include "rover_camera_config.h"
 
-#define CAVEMAN_CAVE_TALK_BUFFER_SIZE        1024U
-#define CAVEMAN_CAVE_TALK_HEADER_SIZE        3U
-#define CAVEMAN_CAVE_TALK_RETRY_PERIOD       (Bsp_Millisecond_t)1000U
-#define CAVEMAN_CAVE_TALK_ODOMETRY_PERIOD    (Bsp_Millisecond_t)20U
-#define CAVEMAN_CAVE_TALK_AIR_QUALITY_PERIOD (Bsp_Millisecond_t)1000U
+#define CAVEBOT_CAVE_TALK_BUFFER_SIZE        1024U
+#define CAVEBOT_CAVE_TALK_HEADER_SIZE        3U
+#define CAVEBOT_CAVE_TALK_RETRY_PERIOD       (Bsp_Millisecond_t)1000U
+#define CAVEBOT_CAVE_TALK_ODOMETRY_PERIOD    (Bsp_Millisecond_t)20U
+#define CAVEBOT_CAVE_TALK_AIR_QUALITY_PERIOD (Bsp_Millisecond_t)1000U
 
 typedef enum
 {
-    CAVEMAN_CAVE_TALK_RECEIVE_HEADER,
-    CAVEMAN_CAVE_TALK_RECEIVE_PAYLOAD
-} CavemanCaveTalk_Receive_t;
+    CAVEBOT_CAVE_TALK_RECEIVE_HEADER,
+    CAVEBOT_CAVE_TALK_RECEIVE_PAYLOAD
+} CavebotCaveTalk_Receive_t;
 
-static uint8_t           CavemanCaveTalk_Buffer[CAVEMAN_CAVE_TALK_BUFFER_SIZE];
-static const char *      kCavemanCaveTalk_LogTag            = "CAVE TALK";
-static bool              CavemanCaveTalk_Connected          = false;
-static bool              CavemanCaveTalk_WasArmed           = false;
-static Bsp_Millisecond_t CavemanCaveTalk_PreviousMessage    = 0U;
-static Bsp_Millisecond_t CavemanCaveTalk_PreviousOdometry   = 0U;
-static Bsp_Millisecond_t CavemanCaveTalk_PreviousAirQuality = 0U;
+static uint8_t           CavebotCaveTalk_Buffer[CAVEBOT_CAVE_TALK_BUFFER_SIZE];
+static const char *      kCavebotCaveTalk_LogTag            = "CAVE TALK";
+static bool              CavebotCaveTalk_Connected          = false;
+static bool              CavebotCaveTalk_WasArmed           = false;
+static Bsp_Millisecond_t CavebotCaveTalk_PreviousMessage    = 0U;
+static Bsp_Millisecond_t CavebotCaveTalk_PreviousOdometry   = 0U;
+static Bsp_Millisecond_t CavebotCaveTalk_PreviousAirQuality = 0U;
 
-static CaveTalk_Error_t CavemanCaveTalk_Send(const void *const data, const size_t size);
-static CaveTalk_Error_t CavemanCaveTalk_Receive(void *const data, const size_t size, size_t *const bytes_received);
-static CaveTalk_Error_t CavemanCaveTalk_ConvertBspError(const Bsp_Error_t bsp_error);
-static inline void CavemanCaveTalk_HeardMessage(const char *const log);
-static void CavemanCaveTalk_HearOogaBooga(const cave_talk_Say ooga_booga);
-static void CavemanCaveTalk_HearMovement(const CaveTalk_MetersPerSecond_t speed, const CaveTalk_RadiansPerSecond_t turn_rate);
-static void CavemanCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, const CaveTalk_Radian_t tilt);
-static void CavemanCaveTalk_HearLights(const bool headlights);
-static void CavemanCaveTalk_HearArm(const bool arm);
-static void CavemanCaveTalk_HearConfigServoWheels(const cave_talk_Servo *const servo_wheel_0,
+static CaveTalk_Error_t CavebotCaveTalk_Send(const void *const data, const size_t size);
+static CaveTalk_Error_t CavebotCaveTalk_Receive(void *const data, const size_t size, size_t *const bytes_received);
+static CaveTalk_Error_t CavebotCaveTalk_ConvertBspError(const Bsp_Error_t bsp_error);
+static inline void CavebotCaveTalk_HeardMessage(const char *const log);
+static void CavebotCaveTalk_HearOogaBooga(const cave_talk_Say ooga_booga);
+static void CavebotCaveTalk_HearMovement(const CaveTalk_MetersPerSecond_t speed, const CaveTalk_RadiansPerSecond_t turn_rate);
+static void CavebotCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, const CaveTalk_Radian_t tilt);
+static void CavebotCaveTalk_HearLights(const bool headlights);
+static void CavebotCaveTalk_HearArm(const bool arm);
+static void CavebotCaveTalk_HearConfigServoWheels(const cave_talk_Servo *const servo_wheel_0,
                                                   const cave_talk_Servo *const servo_wheel_1,
                                                   const cave_talk_Servo *const servo_wheel_2,
                                                   const cave_talk_Servo *const servo_wheel_3);
-static void CavemanCaveTalk_HearConfigServoCams(const cave_talk_Servo *const servo_cam_pan, const cave_talk_Servo *const servo_cam_tilt);
-static void CavemanCaveTalk_HearConfigMotors(const cave_talk_Motor *const motor_wheel_0,
+static void CavebotCaveTalk_HearConfigServoCams(const cave_talk_Servo *const servo_cam_pan, const cave_talk_Servo *const servo_cam_tilt);
+static void CavebotCaveTalk_HearConfigMotors(const cave_talk_Motor *const motor_wheel_0,
                                              const cave_talk_Motor *const motor_wheel_1,
                                              const cave_talk_Motor *const motor_wheel_2,
                                              const cave_talk_Motor *const motor_wheel_3);
-static void CavemanCaveTalk_HearConfigEncoders(const cave_talk_ConfigEncoder *const encoder_wheel_0,
+static void CavebotCaveTalk_HearConfigEncoders(const cave_talk_ConfigEncoder *const encoder_wheel_0,
                                                const cave_talk_ConfigEncoder *const encoder_wheel_1,
                                                const cave_talk_ConfigEncoder *const encoder_wheel_2,
                                                const cave_talk_ConfigEncoder *const encoder_wheel_3);
-static void CavemanCaveTalk_HearConfigLog(const cave_talk_LogLevel log_level);
-static void CavemanCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *const wheel_0_params,
+static void CavebotCaveTalk_HearConfigLog(const cave_talk_LogLevel log_level);
+static void CavebotCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *const wheel_0_params,
                                                         const cave_talk_PID *const wheel_1_params,
                                                         const cave_talk_PID *const wheel_2_params,
                                                         const cave_talk_PID *const wheel_3_params,
                                                         const bool enabled);
-static void CavemanCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const turn_rate_params, const bool enabled);
-static void CavemanCaveTalk_SendOdometry(void);
-static void CavemanCaveTalk_SendAirQuality(void);
+static void CavebotCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const turn_rate_params, const bool enabled);
+static void CavebotCaveTalk_SendOdometry(void);
+static void CavebotCaveTalk_SendAirQuality(void);
 
-static CaveTalk_Handle_t CavemanCaveTalk_Handle = {
+static CaveTalk_Handle_t CavebotCaveTalk_Handle = {
     .link_handle = {
-        .send    = CavemanCaveTalk_Send,
-        .receive = CavemanCaveTalk_Receive,
+        .send    = CavebotCaveTalk_Send,
+        .receive = CavebotCaveTalk_Receive,
     },
-    .buffer           = CavemanCaveTalk_Buffer,
-    .buffer_size      = sizeof(CavemanCaveTalk_Buffer),
+    .buffer           = CavebotCaveTalk_Buffer,
+    .buffer_size      = sizeof(CavebotCaveTalk_Buffer),
     .listen_callbacks = {
-        .hear_ooga_booga                 = CavemanCaveTalk_HearOogaBooga,
-        .hear_movement                   = CavemanCaveTalk_HearMovement,
-        .hear_camera_movement            = CavemanCaveTalk_HearCameraMovement,
-        .hear_lights                     = CavemanCaveTalk_HearLights,
-        .hear_arm                        = CavemanCaveTalk_HearArm,
+        .hear_ooga_booga                 = CavebotCaveTalk_HearOogaBooga,
+        .hear_movement                   = CavebotCaveTalk_HearMovement,
+        .hear_camera_movement            = CavebotCaveTalk_HearCameraMovement,
+        .hear_lights                     = CavebotCaveTalk_HearLights,
+        .hear_arm                        = CavebotCaveTalk_HearArm,
         .hear_odometry                   = NULL,
         .hear_log                        = NULL,
-        .hear_config_servo_wheels        = CavemanCaveTalk_HearConfigServoWheels,
-        .hear_config_servo_cams          = CavemanCaveTalk_HearConfigServoCams,
-        .hear_config_motors              = CavemanCaveTalk_HearConfigMotors,
-        .hear_config_encoders            = CavemanCaveTalk_HearConfigEncoders,
-        .hear_config_log                 = CavemanCaveTalk_HearConfigLog,
-        .hear_config_wheel_speed_control = CavemanCaveTalk_HearConfigWheelSpeedControl,
-        .hear_config_steering_control    = CavemanCaveTalk_HearConfigSteeringControl,
+        .hear_config_servo_wheels        = CavebotCaveTalk_HearConfigServoWheels,
+        .hear_config_servo_cams          = CavebotCaveTalk_HearConfigServoCams,
+        .hear_config_motors              = CavebotCaveTalk_HearConfigMotors,
+        .hear_config_encoders            = CavebotCaveTalk_HearConfigEncoders,
+        .hear_config_log                 = CavebotCaveTalk_HearConfigLog,
+        .hear_config_wheel_speed_control = CavebotCaveTalk_HearConfigWheelSpeedControl,
+        .hear_config_steering_control    = CavebotCaveTalk_HearConfigSteeringControl,
         .hear_air_quality                = NULL,
     },
 };
 
-CaveTalk_Error_t CavemanCaveTalk_Start(void)
+CaveTalk_Error_t CavebotCaveTalk_Start(void)
 {
-    return CavemanCaveTalk_ConvertBspError(BspUart_Start(BSP_UART_USER_COMMS));
+    return CavebotCaveTalk_ConvertBspError(BspUart_Start(BSP_UART_USER_COMMS));
 }
 
-void CavemanCaveTalk_Task(void)
+void CavebotCaveTalk_Task(void)
 {
-    CaveTalk_Error_t error = CaveTalk_Hear(&CavemanCaveTalk_Handle);
+    CaveTalk_Error_t error = CaveTalk_Hear(&CavebotCaveTalk_Handle);
     if (CAVE_TALK_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Hear error: %d", (int)error);
+        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Hear error: %d", (int)error);
     }
 
     Bsp_Millisecond_t tick = BspTick_GetTick();
-    if ((tick - CavemanCaveTalk_PreviousMessage) > CAVEMAN_CAVE_TALK_RETRY_PERIOD)
+    if ((tick - CavebotCaveTalk_PreviousMessage) > CAVEBOT_CAVE_TALK_RETRY_PERIOD)
     {
-        if (CavemanCaveTalk_Connected)
+        if (CavebotCaveTalk_Connected)
         {
-            CavemanCaveTalk_Connected = false;
-            CavemanCaveTalk_WasArmed  = Rover_IsArmed();
+            CavebotCaveTalk_Connected = false;
+            CavebotCaveTalk_WasArmed  = Rover_IsArmed();
             BspGpio_Write(BSP_GPIO_USER_PIN_COMMS_STATUS, BSP_GPIO_STATE_RESET);
-            BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Disconnected");
+            BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Disconnected");
 
-            if (CavemanCaveTalk_WasArmed)
+            if (CavebotCaveTalk_WasArmed)
             {
                 (void)Rover_Dearm();
             }
         }
 
-        BSP_LOGGER_LOG_DEBUG(kCavemanCaveTalk_LogTag, "Connecting");
-        (void)CaveTalk_SpeakOogaBooga(&CavemanCaveTalk_Handle, cave_talk_Say_SAY_OOGA);
-        CavemanCaveTalk_PreviousMessage = tick;
+        BSP_LOGGER_LOG_DEBUG(kCavebotCaveTalk_LogTag, "Connecting");
+        (void)CaveTalk_SpeakOogaBooga(&CavebotCaveTalk_Handle, cave_talk_Say_SAY_OOGA);
+        CavebotCaveTalk_PreviousMessage = tick;
     }
 
-    if (CavemanCaveTalk_Connected)
+    if (CavebotCaveTalk_Connected)
     {
-        if ((tick - CavemanCaveTalk_PreviousOdometry) > CAVEMAN_CAVE_TALK_ODOMETRY_PERIOD)
+        if ((tick - CavebotCaveTalk_PreviousOdometry) > CAVEBOT_CAVE_TALK_ODOMETRY_PERIOD)
         {
-            CavemanCaveTalk_SendOdometry();
+            CavebotCaveTalk_SendOdometry();
 
-            CavemanCaveTalk_PreviousOdometry = tick;
+            CavebotCaveTalk_PreviousOdometry = tick;
         }
 
-        if ((tick - CavemanCaveTalk_PreviousAirQuality) > CAVEMAN_CAVE_TALK_AIR_QUALITY_PERIOD)
+        if ((tick - CavebotCaveTalk_PreviousAirQuality) > CAVEBOT_CAVE_TALK_AIR_QUALITY_PERIOD)
         {
-            CavemanCaveTalk_SendAirQuality();
+            CavebotCaveTalk_SendAirQuality();
 
-            CavemanCaveTalk_PreviousAirQuality = tick;
+            CavebotCaveTalk_PreviousAirQuality = tick;
         }
     }
 }
 
-static CaveTalk_Error_t CavemanCaveTalk_Send(const void *const data, const size_t size)
+static CaveTalk_Error_t CavebotCaveTalk_Send(const void *const data, const size_t size)
 {
-    return CavemanCaveTalk_ConvertBspError(BspUart_Transmit(BSP_UART_USER_COMMS, data, size));
+    return CavebotCaveTalk_ConvertBspError(BspUart_Transmit(BSP_UART_USER_COMMS, data, size));
 }
 
-static CaveTalk_Error_t CavemanCaveTalk_Receive(void *const data, const size_t size, size_t *const bytes_received)
+static CaveTalk_Error_t CavebotCaveTalk_Receive(void *const data, const size_t size, size_t *const bytes_received)
 {
-    return CavemanCaveTalk_ConvertBspError(BspUart_Receive(BSP_UART_USER_COMMS, data, size, bytes_received));
+    return CavebotCaveTalk_ConvertBspError(BspUart_Receive(BSP_UART_USER_COMMS, data, size, bytes_received));
 }
 
-static CaveTalk_Error_t CavemanCaveTalk_ConvertBspError(const Bsp_Error_t bsp_error)
+static CaveTalk_Error_t CavebotCaveTalk_ConvertBspError(const Bsp_Error_t bsp_error)
 {
     CaveTalk_Error_t cavetalk_error = CAVE_TALK_ERROR_NONE;
 
@@ -189,37 +189,37 @@ static CaveTalk_Error_t CavemanCaveTalk_ConvertBspError(const Bsp_Error_t bsp_er
     return cavetalk_error;
 }
 
-static inline void CavemanCaveTalk_HeardMessage(const char *const log)
+static inline void CavebotCaveTalk_HeardMessage(const char *const log)
 {
-    BSP_LOGGER_LOG_VERBOSE(kCavemanCaveTalk_LogTag, "Heard %s", log);
+    BSP_LOGGER_LOG_VERBOSE(kCavebotCaveTalk_LogTag, "Heard %s", log);
 
-    if (CavemanCaveTalk_Connected)
+    if (CavebotCaveTalk_Connected)
     {
-        CavemanCaveTalk_PreviousMessage = BspTick_GetTick();
+        CavebotCaveTalk_PreviousMessage = BspTick_GetTick();
     }
 }
 
-static void CavemanCaveTalk_HearOogaBooga(const cave_talk_Say ooga_booga)
+static void CavebotCaveTalk_HearOogaBooga(const cave_talk_Say ooga_booga)
 {
-    CavemanCaveTalk_HeardMessage("ooga booga");
+    CavebotCaveTalk_HeardMessage("ooga booga");
 
     switch (ooga_booga)
     {
     case cave_talk_Say_SAY_OOGA:
-        (void)CaveTalk_SpeakOogaBooga(&CavemanCaveTalk_Handle, cave_talk_Say_SAY_BOOGA);
-        if (!CavemanCaveTalk_Connected)
+        (void)CaveTalk_SpeakOogaBooga(&CavebotCaveTalk_Handle, cave_talk_Say_SAY_BOOGA);
+        if (!CavebotCaveTalk_Connected)
         {
-            (void)CaveTalk_SpeakOogaBooga(&CavemanCaveTalk_Handle, cave_talk_Say_SAY_OOGA);
+            (void)CaveTalk_SpeakOogaBooga(&CavebotCaveTalk_Handle, cave_talk_Say_SAY_OOGA);
         }
         break;
     case cave_talk_Say_SAY_BOOGA:
-        if (!CavemanCaveTalk_Connected)
+        if (!CavebotCaveTalk_Connected)
         {
-            CavemanCaveTalk_Connected = true;
+            CavebotCaveTalk_Connected = true;
             BspGpio_Write(BSP_GPIO_USER_PIN_COMMS_STATUS, BSP_GPIO_STATE_SET);
-            BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Connected");
+            BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Connected");
 
-            if (CavemanCaveTalk_WasArmed)
+            if (CavebotCaveTalk_WasArmed)
             {
                 (void)Rover_Arm();
             }
@@ -230,43 +230,43 @@ static void CavemanCaveTalk_HearOogaBooga(const cave_talk_Say ooga_booga)
     }
 }
 
-static void CavemanCaveTalk_HearMovement(const CaveTalk_MetersPerSecond_t speed, const CaveTalk_RadiansPerSecond_t turn_rate)
+static void CavebotCaveTalk_HearMovement(const CaveTalk_MetersPerSecond_t speed, const CaveTalk_RadiansPerSecond_t turn_rate)
 {
-    CavemanCaveTalk_HeardMessage("movement");
+    CavebotCaveTalk_HeardMessage("movement");
 
     (void)Rover_Drive(speed, turn_rate);
 }
 
-static void CavemanCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, const CaveTalk_Radian_t tilt)
+static void CavebotCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, const CaveTalk_Radian_t tilt)
 {
-    CavemanCaveTalk_HeardMessage("camera movement");
+    CavebotCaveTalk_HeardMessage("camera movement");
 
     Rover_Error_t error = RoverCamera_Pan(pan);
 
     if (ROVER_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_WARNING(kCavemanCaveTalk_LogTag, "Failed to set camera pan with error %d", (int)error);
+        BSP_LOGGER_LOG_WARNING(kCavebotCaveTalk_LogTag, "Failed to set camera pan with error %d", (int)error);
     }
     else
     {
-        BSP_LOGGER_LOG_VERBOSE(kCavemanCaveTalk_LogTag, "Set camera pan %lf rad", pan);
+        BSP_LOGGER_LOG_VERBOSE(kCavebotCaveTalk_LogTag, "Set camera pan %lf rad", pan);
     }
 
     error = RoverCamera_Tilt(tilt);
 
     if (ROVER_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_WARNING(kCavemanCaveTalk_LogTag, "Failed to set camera tilt with error %d", (int)error);
+        BSP_LOGGER_LOG_WARNING(kCavebotCaveTalk_LogTag, "Failed to set camera tilt with error %d", (int)error);
     }
     else
     {
-        BSP_LOGGER_LOG_VERBOSE(kCavemanCaveTalk_LogTag, "Set camera tilt %lf rad", tilt);
+        BSP_LOGGER_LOG_VERBOSE(kCavebotCaveTalk_LogTag, "Set camera tilt %lf rad", tilt);
     }
 }
 
-static void CavemanCaveTalk_HearLights(const bool headlights)
+static void CavebotCaveTalk_HearLights(const bool headlights)
 {
-    CavemanCaveTalk_HeardMessage("lights");
+    CavebotCaveTalk_HeardMessage("lights");
 
     if (headlights)
     {
@@ -282,9 +282,9 @@ static void CavemanCaveTalk_HearLights(const bool headlights)
     }
 }
 
-static void CavemanCaveTalk_HearArm(const bool arm)
+static void CavebotCaveTalk_HearArm(const bool arm)
 {
-    CavemanCaveTalk_HeardMessage("arm");
+    CavebotCaveTalk_HeardMessage("arm");
 
     if (arm)
     {
@@ -296,12 +296,12 @@ static void CavemanCaveTalk_HearArm(const bool arm)
     }
 }
 
-static void CavemanCaveTalk_HearConfigServoWheels(const cave_talk_Servo *const servo_wheel_0,
+static void CavebotCaveTalk_HearConfigServoWheels(const cave_talk_Servo *const servo_wheel_0,
                                                   const cave_talk_Servo *const servo_wheel_1,
                                                   const cave_talk_Servo *const servo_wheel_2,
                                                   const cave_talk_Servo *const servo_wheel_3)
 {
-    CavemanCaveTalk_HeardMessage("config servo wheels");
+    CavebotCaveTalk_HeardMessage("config servo wheels");
 
     Rover_Error_t error = ROVER_ERROR_NULL;
 
@@ -331,17 +331,17 @@ static void CavemanCaveTalk_HearConfigServoWheels(const cave_talk_Servo *const s
 
     if (ROVER_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to configure wheels servos with error %d", (int)error);
+        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to configure wheels servos with error %d", (int)error);
     }
     else
     {
-        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Wheel servos configured");
+        BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Wheel servos configured");
     }
 }
 
-static void CavemanCaveTalk_HearConfigServoCams(const cave_talk_Servo *const servo_cam_pan, const cave_talk_Servo *const servo_cam_tilt)
+static void CavebotCaveTalk_HearConfigServoCams(const cave_talk_Servo *const servo_cam_pan, const cave_talk_Servo *const servo_cam_tilt)
 {
-    CavemanCaveTalk_HeardMessage("config servo cam");
+    CavebotCaveTalk_HeardMessage("config servo cam");
 
     Rover_Error_t error = ROVER_ERROR_NULL;
 
@@ -370,20 +370,20 @@ static void CavemanCaveTalk_HearConfigServoCams(const cave_talk_Servo *const ser
 
     if (ROVER_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to configure camera servos with error %d", (int)error);
+        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to configure camera servos with error %d", (int)error);
     }
     else
     {
-        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Camera servos configured");
+        BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Camera servos configured");
     }
 }
 
-static void CavemanCaveTalk_HearConfigMotors(const cave_talk_Motor *const motor_wheel_0,
+static void CavebotCaveTalk_HearConfigMotors(const cave_talk_Motor *const motor_wheel_0,
                                              const cave_talk_Motor *const motor_wheel_1,
                                              const cave_talk_Motor *const motor_wheel_2,
                                              const cave_talk_Motor *const motor_wheel_3)
 {
-    CavemanCaveTalk_HeardMessage("config motors");
+    CavebotCaveTalk_HeardMessage("config motors");
 
     Rover_Error_t error = ROVER_ERROR_NULL;
 
@@ -413,20 +413,20 @@ static void CavemanCaveTalk_HearConfigMotors(const cave_talk_Motor *const motor_
 
     if (ROVER_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to configure motors with error %d", (int)error);
+        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to configure motors with error %d", (int)error);
     }
     else
     {
-        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Motors configured");
+        BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Motors configured");
     }
 }
 
-static void CavemanCaveTalk_HearConfigEncoders(const cave_talk_ConfigEncoder *const encoder_wheel_0,
+static void CavebotCaveTalk_HearConfigEncoders(const cave_talk_ConfigEncoder *const encoder_wheel_0,
                                                const cave_talk_ConfigEncoder *const encoder_wheel_1,
                                                const cave_talk_ConfigEncoder *const encoder_wheel_2,
                                                const cave_talk_ConfigEncoder *const encoder_wheel_3)
 {
-    CavemanCaveTalk_HeardMessage("config encoders");
+    CavebotCaveTalk_HeardMessage("config encoders");
 
     Rover_Error_t error = ROVER_ERROR_NULL;
 
@@ -440,29 +440,29 @@ static void CavemanCaveTalk_HearConfigEncoders(const cave_talk_ConfigEncoder *co
 
     if (ROVER_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to configure encoders with error %d", (int)error);
+        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to configure encoders with error %d", (int)error);
     }
     else
     {
-        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Encoders configured");
+        BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Encoders configured");
     }
 }
 
-static void CavemanCaveTalk_HearConfigLog(const cave_talk_LogLevel log_level)
+static void CavebotCaveTalk_HearConfigLog(const cave_talk_LogLevel log_level)
 {
-    CavemanCaveTalk_HeardMessage("config log");
+    CavebotCaveTalk_HeardMessage("config log");
 
-    BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Setting log level to %d", (int)log_level);
+    BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Setting log level to %d", (int)log_level);
     BspLogger_SetLogLevel((BspLogger_Level_t)log_level);
 }
 
-static void CavemanCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *const wheel_0_params,
+static void CavebotCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *const wheel_0_params,
                                                         const cave_talk_PID *const wheel_1_params,
                                                         const cave_talk_PID *const wheel_2_params,
                                                         const cave_talk_PID *const wheel_3_params,
                                                         const bool enabled)
 {
-    CavemanCaveTalk_HeardMessage("config wheel speed control");
+    CavebotCaveTalk_HeardMessage("config wheel speed control");
 
     Rover_Error_t error = ROVER_ERROR_NULL;
 
@@ -476,11 +476,11 @@ static void CavemanCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *con
 
     if (ROVER_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to configure wheel speed control with error %d", (int)error);
+        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to configure wheel speed control with error %d", (int)error);
     }
     else
     {
-        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Wheel speed control configured");
+        BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Wheel speed control configured");
     }
 
     if (enabled)
@@ -494,21 +494,21 @@ static void CavemanCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *con
 
     if (ROVER_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to enable wheel speed control with error %d", (int)error);
+        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to enable wheel speed control with error %d", (int)error);
     }
     else if (enabled)
     {
-        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Wheel speed control enabled");
+        BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Wheel speed control enabled");
     }
     else
     {
-        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Wheel speed control disabled");
+        BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Wheel speed control disabled");
     }
 }
 
-static void CavemanCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const turn_rate_params, const bool enabled)
+static void CavebotCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const turn_rate_params, const bool enabled)
 {
-    CavemanCaveTalk_HeardMessage("config steering control");
+    CavebotCaveTalk_HeardMessage("config steering control");
 
     Rover_Error_t error = ROVER_ERROR_NULL;
 
@@ -519,11 +519,11 @@ static void CavemanCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const
 
     if (ROVER_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to configure steering control with error %d", (int)error);
+        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to configure steering control with error %d", (int)error);
     }
     else
     {
-        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Steering control configured");
+        BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Steering control configured");
     }
 
     if (enabled)
@@ -537,19 +537,19 @@ static void CavemanCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const
 
     if (ROVER_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Failed to enable steering control with error %d", (int)error);
+        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to enable steering control with error %d", (int)error);
     }
     else if (enabled)
     {
-        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Steering control enabled");
+        BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Steering control enabled");
     }
     else
     {
-        BSP_LOGGER_LOG_INFO(kCavemanCaveTalk_LogTag, "Steering control disabled");
+        BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Steering control disabled");
     }
 }
 
-static void CavemanCaveTalk_SendOdometry(void)
+static void CavebotCaveTalk_SendOdometry(void)
 {
     cave_talk_Imu     imu_message       = cave_talk_Imu_init_zero;
     cave_talk_Encoder encoder_message_0 = cave_talk_Encoder_init_zero;
@@ -604,19 +604,19 @@ static void CavemanCaveTalk_SendOdometry(void)
     encoder_message_3.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].pulses;
     encoder_message_3.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].angular_rate;
 
-    CaveTalk_Error_t error = CaveTalk_SpeakOdometry(&CavemanCaveTalk_Handle, &imu_message, &encoder_message_0, &encoder_message_1, &encoder_message_2, &encoder_message_3);
+    CaveTalk_Error_t error = CaveTalk_SpeakOdometry(&CavebotCaveTalk_Handle, &imu_message, &encoder_message_0, &encoder_message_1, &encoder_message_2, &encoder_message_3);
     if (CAVE_TALK_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Speak odometry error: %d", (int)error);
+        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Speak odometry error: %d", (int)error);
     }
 }
 
-static void CavemanCaveTalk_SendAirQuality(void)
+static void CavebotCaveTalk_SendAirQuality(void)
 {
     /* TODO SD-349 update gas and temperature with correct values, temporarily using temperature to report raw voltage */
-    CaveTalk_Error_t error = CaveTalk_SpeakAirQuality(&CavemanCaveTalk_Handle, (uint32_t)CavemanDustSensor_Read(), 0U, CavemanGasSensor_ReadRaw());
+    CaveTalk_Error_t error = CaveTalk_SpeakAirQuality(&CavebotCaveTalk_Handle, (uint32_t)CavebotDustSensor_Read(), 0U, CavebotGasSensor_ReadRaw());
     if (CAVE_TALK_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_ERROR(kCavemanCaveTalk_LogTag, "Speak air quality error: %d", (int)error);
+        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Speak air quality error: %d", (int)error);
     }
 }

@@ -1,9 +1,9 @@
-#include "caveman_gas_sensor.h"
+#include "cavebot_gas_sensor.h"
 
 #include "bsp_adc.h"
 #include "bsp_adc_user.h"
 
-Bsp_Volt_t CavemanGasSensor_ReadRaw(void)
+Bsp_Volt_t CavebotGasSensor_ReadRaw(void)
 {
     Bsp_Volt_t volts = 0U;
 
