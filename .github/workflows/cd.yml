@@ -35,7 +35,7 @@ jobs:
               --latest=false \
               --prerelease
       - name: Create release
-        if: ${{ contains(github.ref_name, '-') }}
+        if: ${{ !contains(github.ref_name, '-') }}
         run: |
           gh release create "$tag" \
               --title="${tag#v}" \
