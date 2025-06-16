@@ -26,6 +26,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: caveboard-build
+      - name: Display structure of downloaded files
+        run: ls -R
       - name: Create pre-release
         if: ${{ contains(github.ref_name, '-') }}
         run: |
