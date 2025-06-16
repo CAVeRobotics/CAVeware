@@ -26,6 +26,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: caveboard-build
+          path: ./caveboard-build
       - name: Create pre-release
         if: ${{ contains(github.ref_name, '-') }}
         run: |
@@ -43,4 +44,4 @@ jobs:
               --latest=true
       - name: Upload assets
         run: |
-          gh release upload "$tag" caveboard-build.zip
+          gh release upload "$tag" ./caveboard-build/*
