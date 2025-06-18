@@ -20,19 +20,14 @@
 #include "bsp_uart.h"
 #include "bsp_uart_user.h"
 
-#include "cavebot_dust_sensor.h"
-#include "cavebot_gas_sensor.h"
 #include "rover.h"
 #include "rover_4ws.h"
 #include "rover_4ws_config.h"
-#include "rover_camera.h"
-#include "rover_camera_config.h"
 
-#define CAVEBOT_CAVE_TALK_BUFFER_SIZE        1024U
-#define CAVEBOT_CAVE_TALK_HEADER_SIZE        3U
-#define CAVEBOT_CAVE_TALK_RETRY_PERIOD       (Bsp_Millisecond_t)1000U
-#define CAVEBOT_CAVE_TALK_ODOMETRY_PERIOD    (Bsp_Millisecond_t)20U
-#define CAVEBOT_CAVE_TALK_AIR_QUALITY_PERIOD (Bsp_Millisecond_t)1000U
+#define CAVEBOT_CAVE_TALK_BUFFER_SIZE     1024U
+#define CAVEBOT_CAVE_TALK_HEADER_SIZE     3U
+#define CAVEBOT_CAVE_TALK_RETRY_PERIOD    (Bsp_Millisecond_t)1000U
+#define CAVEBOT_CAVE_TALK_ODOMETRY_PERIOD (Bsp_Millisecond_t)20U
 
 typedef enum
 {
@@ -41,12 +36,11 @@ typedef enum
 } CavebotCaveTalk_Receive_t;
 
 static uint8_t           CavebotCaveTalk_Buffer[CAVEBOT_CAVE_TALK_BUFFER_SIZE];
-static const char *      kCavebotCaveTalk_LogTag            = "CAVE TALK";
-static bool              CavebotCaveTalk_Connected          = false;
-static bool              CavebotCaveTalk_WasArmed           = false;
-static Bsp_Millisecond_t CavebotCaveTalk_PreviousMessage    = 0U;
-static Bsp_Millisecond_t CavebotCaveTalk_PreviousOdometry   = 0U;
-static Bsp_Millisecond_t CavebotCaveTalk_PreviousAirQuality = 0U;
+static const char *      kCavebotCaveTalk_LogTag          = "CAVE TALK";
+static bool              CavebotCaveTalk_Connected        = false;
+static bool              CavebotCaveTalk_WasArmed         = false;
+static Bsp_Millisecond_t CavebotCaveTalk_PreviousMessage  = 0U;
+static Bsp_Millisecond_t CavebotCaveTalk_PreviousOdometry = 0U;
 
 static CaveTalk_Error_t CavebotCaveTalk_Send(const void *const data, const size_t size);
 static CaveTalk_Error_t CavebotCaveTalk_Receive(void *const data, const size_t size, size_t *const bytes_received);
@@ -54,14 +48,12 @@ static CaveTalk_Error_t CavebotCaveTalk_ConvertBspError(const Bsp_Error_t bsp_er
 static inline void CavebotCaveTalk_HeardMessage(const char *const log);
 static void CavebotCaveTalk_HearOogaBooga(const cave_talk_Say ooga_booga);
 static void CavebotCaveTalk_HearMovement(const CaveTalk_MetersPerSecond_t speed, const CaveTalk_RadiansPerSecond_t turn_rate);
-static void CavebotCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, const CaveTalk_Radian_t tilt);
 static void CavebotCaveTalk_HearLights(const bool headlights);
 static void CavebotCaveTalk_HearArm(const bool arm);
 static void CavebotCaveTalk_HearConfigServoWheels(const cave_talk_Servo *const servo_wheel_0,
                                                   const cave_talk_Servo *const servo_wheel_1,
                                                   const cave_talk_Servo *const servo_wheel_2,
                                                   const cave_talk_Servo *const servo_wheel_3);
-static void CavebotCaveTalk_HearConfigServoCams(const cave_talk_Servo *const servo_cam_pan, const cave_talk_Servo *const servo_cam_tilt);
 static void CavebotCaveTalk_HearConfigMotors(const cave_talk_Motor *const motor_wheel_0,
                                              const cave_talk_Motor *const motor_wheel_1,
                                              const cave_talk_Motor *const motor_wheel_2,
@@ -78,7 +70,6 @@ static void CavebotCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *con
                                                         const bool enabled);
 static void CavebotCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const turn_rate_params, const bool enabled);
 static void CavebotCaveTalk_SendOdometry(void);
-static void CavebotCaveTalk_SendAirQuality(void);
 
 static CaveTalk_Handle_t CavebotCaveTalk_Handle = {
     .link_handle = {
@@ -90,13 +81,13 @@ static CaveTalk_Handle_t CavebotCaveTalk_Handle = {
     .listen_callbacks = {
         .hear_ooga_booga                 = CavebotCaveTalk_HearOogaBooga,
         .hear_movement                   = CavebotCaveTalk_HearMovement,
-        .hear_camera_movement            = CavebotCaveTalk_HearCameraMovement,
+        .hear_camera_movement            = NULL,
         .hear_lights                     = CavebotCaveTalk_HearLights,
         .hear_arm                        = CavebotCaveTalk_HearArm,
         .hear_odometry                   = NULL,
         .hear_log                        = NULL,
         .hear_config_servo_wheels        = CavebotCaveTalk_HearConfigServoWheels,
-        .hear_config_servo_cams          = CavebotCaveTalk_HearConfigServoCams,
+        .hear_config_servo_cams          = NULL,
         .hear_config_motors              = CavebotCaveTalk_HearConfigMotors,
         .hear_config_encoders            = CavebotCaveTalk_HearConfigEncoders,
         .hear_config_log                 = CavebotCaveTalk_HearConfigLog,
@@ -147,13 +138,6 @@ void CavebotCaveTalk_Task(void)
             CavebotCaveTalk_SendOdometry();
 
             CavebotCaveTalk_PreviousOdometry = tick;
-        }
-
-        if ((tick - CavebotCaveTalk_PreviousAirQuality) > CAVEBOT_CAVE_TALK_AIR_QUALITY_PERIOD)
-        {
-            CavebotCaveTalk_SendAirQuality();
-
-            CavebotCaveTalk_PreviousAirQuality = tick;
         }
     }
 }
@@ -237,33 +221,6 @@ static void CavebotCaveTalk_HearMovement(const CaveTalk_MetersPerSecond_t speed,
     (void)Rover_Drive(speed, turn_rate);
 }
 
-static void CavebotCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, const CaveTalk_Radian_t tilt)
-{
-    CavebotCaveTalk_HeardMessage("camera movement");
-
-    Rover_Error_t error = RoverCamera_Pan(pan);
-
-    if (ROVER_ERROR_NONE != error)
-    {
-        BSP_LOGGER_LOG_WARNING(kCavebotCaveTalk_LogTag, "Failed to set camera pan with error %d", (int)error);
-    }
-    else
-    {
-        BSP_LOGGER_LOG_VERBOSE(kCavebotCaveTalk_LogTag, "Set camera pan %lf rad", pan);
-    }
-
-    error = RoverCamera_Tilt(tilt);
-
-    if (ROVER_ERROR_NONE != error)
-    {
-        BSP_LOGGER_LOG_WARNING(kCavebotCaveTalk_LogTag, "Failed to set camera tilt with error %d", (int)error);
-    }
-    else
-    {
-        BSP_LOGGER_LOG_VERBOSE(kCavebotCaveTalk_LogTag, "Set camera tilt %lf rad", tilt);
-    }
-}
-
 static void CavebotCaveTalk_HearLights(const bool headlights)
 {
     CavebotCaveTalk_HeardMessage("lights");
@@ -336,45 +293,6 @@ static void CavebotCaveTalk_HearConfigServoWheels(const cave_talk_Servo *const s
     else
     {
         BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Wheel servos configured");
-    }
-}
-
-static void CavebotCaveTalk_HearConfigServoCams(const cave_talk_Servo *const servo_cam_pan, const cave_talk_Servo *const servo_cam_tilt)
-{
-    CavebotCaveTalk_HeardMessage("config servo cam");
-
-    Rover_Error_t error = ROVER_ERROR_NULL;
-
-    if ((NULL != servo_cam_pan) && (NULL != servo_cam_tilt))
-    {
-        Rover_Error_t pan_config_error = RoverCamera_ConfigureServo(ROVER_CAMERA_CONFIG_SERVO_PAN,
-                                                                    servo_cam_pan->min_duty_cycle_percentage,
-                                                                    servo_cam_pan->max_duty_cycle_percentage,
-                                                                    servo_cam_pan->min_angle_radian,
-                                                                    servo_cam_pan->max_angle_radian);
-        Rover_Error_t tilt_config_error = RoverCamera_ConfigureServo(ROVER_CAMERA_CONFIG_SERVO_TILT,
-                                                                     servo_cam_tilt->min_duty_cycle_percentage,
-                                                                     servo_cam_tilt->max_duty_cycle_percentage,
-                                                                     servo_cam_tilt->min_angle_radian,
-                                                                     servo_cam_tilt->max_angle_radian);
-
-        if (ROVER_ERROR_NONE != pan_config_error)
-        {
-            error = pan_config_error;
-        }
-        else
-        {
-            error = tilt_config_error;
-        }
-    }
-
-    if (ROVER_ERROR_NONE != error)
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to configure camera servos with error %d", (int)error);
-    }
-    else
-    {
-        BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Camera servos configured");
     }
 }
 
@@ -608,15 +526,5 @@ static void CavebotCaveTalk_SendOdometry(void)
     if (CAVE_TALK_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Speak odometry error: %d", (int)error);
-    }
-}
-
-static void CavebotCaveTalk_SendAirQuality(void)
-{
-    /* TODO SD-349 update gas and temperature with correct values, temporarily using temperature to report raw voltage */
-    CaveTalk_Error_t error = CaveTalk_SpeakAirQuality(&CavebotCaveTalk_Handle, (uint32_t)CavebotDustSensor_Read(), 0U, CavebotGasSensor_ReadRaw());
-    if (CAVE_TALK_ERROR_NONE != error)
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Speak air quality error: %d", (int)error);
     }
 }

@@ -11,7 +11,6 @@
 
 #include "cavebot_buttons.h"
 #include "cavebot_cavetalk.h"
-#include "cavebot_dust_sensor.h"
 #include "cavebot_version.h"
 #include "rover.h"
 #include "rover_4ws.h"
@@ -61,11 +60,6 @@ static void Cavebot_Initialize(void)
     if (BSP_ERROR_NONE != CavebotButtons_Enable(CAVEBOT_BUTTONS_BUTTON_START))
     {
         BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to enabled buttons");
-    }
-
-    if (BSP_ERROR_NONE != CavebotDustSensor_Initialize())
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize dust sensor");
     }
 
     /* TODO SD-348 testing */

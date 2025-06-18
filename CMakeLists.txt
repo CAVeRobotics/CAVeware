@@ -102,7 +102,6 @@ set(ROVER_SRC_DIR ${ROVER_DIR}/src)
 set(ROVER_SRCS
     ${ROVER_SRC_DIR}/rover.c
     ${ROVER_SRC_DIR}/rover_4ws.c
-    ${ROVER_SRC_DIR}/rover_camera.c
     ${ROVER_SRC_DIR}/rover_imu.c
     ${ROVER_SRC_DIR}/rover_pid.c
 )
@@ -120,8 +119,6 @@ set(CAVEBOT_SRCS
     ${CAVEBOT_SRC_DIR}/cavebot_buttons.c
     ${CAVEBOT_SRC_DIR}/cavebot.c
     ${CAVEBOT_SRC_DIR}/cavebot_cavetalk.c
-    ${CAVEBOT_SRC_DIR}/cavebot_dust_sensor.c
-    ${CAVEBOT_SRC_DIR}/cavebot_gas_sensor.c
 )
 
 set_source_files_properties(
