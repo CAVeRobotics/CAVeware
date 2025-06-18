@@ -7,16 +7,16 @@
 
 #include "bsp.h"
 
-#define BSP_UART_USER_LOG_BUFFER_SIZE   1024U
-#define BSP_UART_USER_COMMS_BUFFER_SIZE 1024U
+#define BSP_UART_USER_0_BUFFER_SIZE 1024U
+#define BSP_UART_USER_1_BUFFER_SIZE 1024U
 
-static uint8_t BspUartUser_LogTxBuffer[BSP_UART_USER_LOG_BUFFER_SIZE];
-static uint8_t BspUartUser_CommsTxBuffer[BSP_UART_USER_COMMS_BUFFER_SIZE];
-static uint8_t BspUartUser_CommsRxBuffer[BSP_UART_USER_COMMS_BUFFER_SIZE];
-static uint8_t BspUartUser_DustSensorRxBuffer[BSP_UART_USER_COMMS_BUFFER_SIZE];
+static uint8_t BspUartUser_LogTxBuffer[BSP_UART_USER_0_BUFFER_SIZE];
+static uint8_t BspUartUser_CommsTxBuffer[BSP_UART_USER_1_BUFFER_SIZE];
+static uint8_t BspUartUser_CommsRxBuffer[BSP_UART_USER_1_BUFFER_SIZE];
+static uint8_t BspUartUser_DustSensorRxBuffer[BSP_UART_USER_1_BUFFER_SIZE];
 
 Bsp_Uart_t BspUartUser_HandleTable[BSP_UART_USER_MAX] = {
-    [BSP_UART_USER_LOG] = {
+    [BSP_UART_USER_0] = {
         .uart_handle      = &huart3,
         .mode             = BSP_UART_MODE_TX,
         .tx_buffer        = BspUartUser_LogTxBuffer,
@@ -29,7 +29,7 @@ Bsp_Uart_t BspUartUser_HandleTable[BSP_UART_USER_MAX] = {
         .rx_buffer_size   = 0U,
         .read_pointer     = 0U,
     },
-    [BSP_UART_USER_COMMS] = {
+    [BSP_UART_USER_1] = {
         .uart_handle      = &huart1,
         .mode             = BSP_UART_MODE_RXTX,
         .tx_buffer        = BspUartUser_CommsTxBuffer,
@@ -42,7 +42,7 @@ Bsp_Uart_t BspUartUser_HandleTable[BSP_UART_USER_MAX] = {
         .rx_buffer_size   = (uint32_t)sizeof(BspUartUser_CommsRxBuffer),
         .read_pointer     = 0U,
     },
-    [BSP_UART_USER_DUST_SENSOR] = {
+    [BSP_UART_USER_2] = {
         .uart_handle      = &huart6,
         .mode             = BSP_UART_MODE_RX,
         .tx_buffer        = NULL,
@@ -61,17 +61,17 @@ Bsp_Uart_t *BspUartUser_GetUart(const Bsp_UartHandle_t *const uart_handle)
 {
     Bsp_Uart_t *uart = NULL;
 
-    if (uart_handle == BspUartUser_HandleTable[BSP_UART_USER_LOG].uart_handle)
+    if (uart_handle == BspUartUser_HandleTable[BSP_UART_USER_0].uart_handle)
     {
-        uart = &BspUartUser_HandleTable[BSP_UART_USER_LOG];
+        uart = &BspUartUser_HandleTable[BSP_UART_USER_0];
     }
-    else if (uart_handle == BspUartUser_HandleTable[BSP_UART_USER_COMMS].uart_handle)
+    else if (uart_handle == BspUartUser_HandleTable[BSP_UART_USER_1].uart_handle)
     {
-        uart = &BspUartUser_HandleTable[BSP_UART_USER_COMMS];
+        uart = &BspUartUser_HandleTable[BSP_UART_USER_1];
     }
-    else if (uart_handle == BspUartUser_HandleTable[BSP_UART_USER_DUST_SENSOR].uart_handle)
+    else if (uart_handle == BspUartUser_HandleTable[BSP_UART_USER_2].uart_handle)
     {
-        uart = &BspUartUser_HandleTable[BSP_UART_USER_DUST_SENSOR];
+        uart = &BspUartUser_HandleTable[BSP_UART_USER_2];
     }
 
     return uart;
