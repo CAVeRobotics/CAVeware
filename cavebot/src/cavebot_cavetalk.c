@@ -23,8 +23,6 @@
 #include "rover.h"
 #include "rover_4ws.h"
 #include "rover_4ws_config.h"
-#include "rover_camera.h"
-#include "rover_camera_config.h"
 
 #define CAVEBOT_CAVE_TALK_BUFFER_SIZE     1024U
 #define CAVEBOT_CAVE_TALK_HEADER_SIZE     3U
@@ -50,14 +48,12 @@ static CaveTalk_Error_t CavebotCaveTalk_ConvertBspError(const Bsp_Error_t bsp_er
 static inline void CavebotCaveTalk_HeardMessage(const char *const log);
 static void CavebotCaveTalk_HearOogaBooga(const cave_talk_Say ooga_booga);
 static void CavebotCaveTalk_HearMovement(const CaveTalk_MetersPerSecond_t speed, const CaveTalk_RadiansPerSecond_t turn_rate);
-static void CavebotCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, const CaveTalk_Radian_t tilt);
 static void CavebotCaveTalk_HearLights(const bool headlights);
 static void CavebotCaveTalk_HearArm(const bool arm);
 static void CavebotCaveTalk_HearConfigServoWheels(const cave_talk_Servo *const servo_wheel_0,
                                                   const cave_talk_Servo *const servo_wheel_1,
                                                   const cave_talk_Servo *const servo_wheel_2,
                                                   const cave_talk_Servo *const servo_wheel_3);
-static void CavebotCaveTalk_HearConfigServoCams(const cave_talk_Servo *const servo_cam_pan, const cave_talk_Servo *const servo_cam_tilt);
 static void CavebotCaveTalk_HearConfigMotors(const cave_talk_Motor *const motor_wheel_0,
                                              const cave_talk_Motor *const motor_wheel_1,
                                              const cave_talk_Motor *const motor_wheel_2,
@@ -85,13 +81,13 @@ static CaveTalk_Handle_t CavebotCaveTalk_Handle = {
     .listen_callbacks = {
         .hear_ooga_booga                 = CavebotCaveTalk_HearOogaBooga,
         .hear_movement                   = CavebotCaveTalk_HearMovement,
-        .hear_camera_movement            = CavebotCaveTalk_HearCameraMovement,
+        .hear_camera_movement            = NULL,
         .hear_lights                     = CavebotCaveTalk_HearLights,
         .hear_arm                        = CavebotCaveTalk_HearArm,
         .hear_odometry                   = NULL,
         .hear_log                        = NULL,
         .hear_config_servo_wheels        = CavebotCaveTalk_HearConfigServoWheels,
-        .hear_config_servo_cams          = CavebotCaveTalk_HearConfigServoCams,
+        .hear_config_servo_cams          = NULL,
         .hear_config_motors              = CavebotCaveTalk_HearConfigMotors,
         .hear_config_encoders            = CavebotCaveTalk_HearConfigEncoders,
         .hear_config_log                 = CavebotCaveTalk_HearConfigLog,
@@ -225,33 +221,6 @@ static void CavebotCaveTalk_HearMovement(const CaveTalk_MetersPerSecond_t speed,
     (void)Rover_Drive(speed, turn_rate);
 }
 
-static void CavebotCaveTalk_HearCameraMovement(const CaveTalk_Radian_t pan, const CaveTalk_Radian_t tilt)
-{
-    CavebotCaveTalk_HeardMessage("camera movement");
-
-    Rover_Error_t error = RoverCamera_Pan(pan);
-
-    if (ROVER_ERROR_NONE != error)
-    {
-        BSP_LOGGER_LOG_WARNING(kCavebotCaveTalk_LogTag, "Failed to set camera pan with error %d", (int)error);
-    }
-    else
-    {
-        BSP_LOGGER_LOG_VERBOSE(kCavebotCaveTalk_LogTag, "Set camera pan %lf rad", pan);
-    }
-
-    error = RoverCamera_Tilt(tilt);
-
-    if (ROVER_ERROR_NONE != error)
-    {
-        BSP_LOGGER_LOG_WARNING(kCavebotCaveTalk_LogTag, "Failed to set camera tilt with error %d", (int)error);
-    }
-    else
-    {
-        BSP_LOGGER_LOG_VERBOSE(kCavebotCaveTalk_LogTag, "Set camera tilt %lf rad", tilt);
-    }
-}
-
 static void CavebotCaveTalk_HearLights(const bool headlights)
 {
     CavebotCaveTalk_HeardMessage("lights");
@@ -324,45 +293,6 @@ static void CavebotCaveTalk_HearConfigServoWheels(const cave_talk_Servo *const s
     else
     {
         BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Wheel servos configured");
-    }
-}
-
-static void CavebotCaveTalk_HearConfigServoCams(const cave_talk_Servo *const servo_cam_pan, const cave_talk_Servo *const servo_cam_tilt)
-{
-    CavebotCaveTalk_HeardMessage("config servo cam");
-
-    Rover_Error_t error = ROVER_ERROR_NULL;
-
-    if ((NULL != servo_cam_pan) && (NULL != servo_cam_tilt))
-    {
-        Rover_Error_t pan_config_error = RoverCamera_ConfigureServo(ROVER_CAMERA_CONFIG_SERVO_PAN,
-                                                                    servo_cam_pan->min_duty_cycle_percentage,
-                                                                    servo_cam_pan->max_duty_cycle_percentage,
-                                                                    servo_cam_pan->min_angle_radian,
-                                                                    servo_cam_pan->max_angle_radian);
-        Rover_Error_t tilt_config_error = RoverCamera_ConfigureServo(ROVER_CAMERA_CONFIG_SERVO_TILT,
-                                                                     servo_cam_tilt->min_duty_cycle_percentage,
-                                                                     servo_cam_tilt->max_duty_cycle_percentage,
-                                                                     servo_cam_tilt->min_angle_radian,
-                                                                     servo_cam_tilt->max_angle_radian);
-
-        if (ROVER_ERROR_NONE != pan_config_error)
-        {
-            error = pan_config_error;
-        }
-        else
-        {
-            error = tilt_config_error;
-        }
-    }
-
-    if (ROVER_ERROR_NONE != error)
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to configure camera servos with error %d", (int)error);
-    }
-    else
-    {
-        BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Camera servos configured");
     }
 }
 

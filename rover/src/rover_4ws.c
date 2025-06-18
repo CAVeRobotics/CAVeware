@@ -436,5 +436,6 @@ static Rover_Error_t Rover4ws_BspErrorCheck(const Bsp_Error_t error_0,
 
 static inline bool Rover4ws_CompareDoubleSigns(const double *const value_1, const double *const value_2)
 {
+    /* TODO CVW-49 make portable */
     return !(bool)((*(uint64_t *)(value_1) & ROVER_4WS_DOUBLE_SIGN_MASK) ^ (*(uint64_t *)(value_2) & ROVER_4WS_DOUBLE_SIGN_MASK));
 }

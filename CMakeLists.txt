@@ -102,7 +102,6 @@ set(ROVER_SRC_DIR ${ROVER_DIR}/src)
 set(ROVER_SRCS
     ${ROVER_SRC_DIR}/rover.c
     ${ROVER_SRC_DIR}/rover_4ws.c
-    ${ROVER_SRC_DIR}/rover_camera.c
     ${ROVER_SRC_DIR}/rover_imu.c
     ${ROVER_SRC_DIR}/rover_pid.c
 )

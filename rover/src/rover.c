@@ -6,7 +6,6 @@
 #include "bsp_logger.h"
 
 #include "rover_4ws.h"
-#include "rover_camera.h"
 #include "rover_imu.h"
 
 static const char* kRover_LogTag = "ROVER";
@@ -68,11 +67,6 @@ Rover_Error_t Rover_Arm(void)
 
     if (ROVER_ERROR_NONE == error)
     {
-        error = RoverCamera_Enable();
-    }
-
-    if (ROVER_ERROR_NONE == error)
-    {
         Rover_Armed = true;
 
         BSP_LOGGER_LOG_INFO(kRover_LogTag, "Armed", (int)error);
@@ -92,11 +86,6 @@ Rover_Error_t Rover_Dearm(void)
     if (ROVER_ERROR_NONE == error)
     {
         error = Rover4ws_StopMotors();
-    }
-
-    if (ROVER_ERROR_NONE == error)
-    {
-        error = RoverCamera_Disable();
     }
 
     if (ROVER_ERROR_NONE == error)
