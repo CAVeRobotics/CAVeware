@@ -20,19 +20,16 @@
 #include "bsp_uart.h"
 #include "bsp_uart_user.h"
 
-#include "cavebot_dust_sensor.h"
-#include "cavebot_gas_sensor.h"
 #include "rover.h"
 #include "rover_4ws.h"
 #include "rover_4ws_config.h"
 #include "rover_camera.h"
 #include "rover_camera_config.h"
 
-#define CAVEBOT_CAVE_TALK_BUFFER_SIZE        1024U
-#define CAVEBOT_CAVE_TALK_HEADER_SIZE        3U
-#define CAVEBOT_CAVE_TALK_RETRY_PERIOD       (Bsp_Millisecond_t)1000U
-#define CAVEBOT_CAVE_TALK_ODOMETRY_PERIOD    (Bsp_Millisecond_t)20U
-#define CAVEBOT_CAVE_TALK_AIR_QUALITY_PERIOD (Bsp_Millisecond_t)1000U
+#define CAVEBOT_CAVE_TALK_BUFFER_SIZE     1024U
+#define CAVEBOT_CAVE_TALK_HEADER_SIZE     3U
+#define CAVEBOT_CAVE_TALK_RETRY_PERIOD    (Bsp_Millisecond_t)1000U
+#define CAVEBOT_CAVE_TALK_ODOMETRY_PERIOD (Bsp_Millisecond_t)20U
 
 typedef enum
 {
@@ -41,12 +38,11 @@ typedef enum
 } CavebotCaveTalk_Receive_t;
 
 static uint8_t           CavebotCaveTalk_Buffer[CAVEBOT_CAVE_TALK_BUFFER_SIZE];
-static const char *      kCavebotCaveTalk_LogTag            = "CAVE TALK";
-static bool              CavebotCaveTalk_Connected          = false;
-static bool              CavebotCaveTalk_WasArmed           = false;
-static Bsp_Millisecond_t CavebotCaveTalk_PreviousMessage    = 0U;
-static Bsp_Millisecond_t CavebotCaveTalk_PreviousOdometry   = 0U;
-static Bsp_Millisecond_t CavebotCaveTalk_PreviousAirQuality = 0U;
+static const char *      kCavebotCaveTalk_LogTag          = "CAVE TALK";
+static bool              CavebotCaveTalk_Connected        = false;
+static bool              CavebotCaveTalk_WasArmed         = false;
+static Bsp_Millisecond_t CavebotCaveTalk_PreviousMessage  = 0U;
+static Bsp_Millisecond_t CavebotCaveTalk_PreviousOdometry = 0U;
 
 static CaveTalk_Error_t CavebotCaveTalk_Send(const void *const data, const size_t size);
 static CaveTalk_Error_t CavebotCaveTalk_Receive(void *const data, const size_t size, size_t *const bytes_received);
@@ -78,7 +74,6 @@ static void CavebotCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *con
                                                         const bool enabled);
 static void CavebotCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const turn_rate_params, const bool enabled);
 static void CavebotCaveTalk_SendOdometry(void);
-static void CavebotCaveTalk_SendAirQuality(void);
 
 static CaveTalk_Handle_t CavebotCaveTalk_Handle = {
     .link_handle = {
@@ -147,13 +142,6 @@ void CavebotCaveTalk_Task(void)
             CavebotCaveTalk_SendOdometry();
 
             CavebotCaveTalk_PreviousOdometry = tick;
-        }
-
-        if ((tick - CavebotCaveTalk_PreviousAirQuality) > CAVEBOT_CAVE_TALK_AIR_QUALITY_PERIOD)
-        {
-            CavebotCaveTalk_SendAirQuality();
-
-            CavebotCaveTalk_PreviousAirQuality = tick;
         }
     }
 }
@@ -608,15 +596,5 @@ static void CavebotCaveTalk_SendOdometry(void)
     if (CAVE_TALK_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Speak odometry error: %d", (int)error);
-    }
-}
-
-static void CavebotCaveTalk_SendAirQuality(void)
-{
-    /* TODO SD-349 update gas and temperature with correct values, temporarily using temperature to report raw voltage */
-    CaveTalk_Error_t error = CaveTalk_SpeakAirQuality(&CavebotCaveTalk_Handle, (uint32_t)CavebotDustSensor_Read(), 0U, CavebotGasSensor_ReadRaw());
-    if (CAVE_TALK_ERROR_NONE != error)
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Speak air quality error: %d", (int)error);
     }
 }
