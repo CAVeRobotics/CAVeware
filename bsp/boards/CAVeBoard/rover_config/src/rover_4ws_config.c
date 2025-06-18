@@ -18,7 +18,7 @@ const Rover_Meter_t kRover4wsConfig_DoubleWheelRadius = kRover4wsConfig_WheelRad
 
 BspServo_Handle_t Rover4wsConfig_Servos[ROVER_4WS_CONFIG_SERVO_MAX] = {
     [ROVER_4WS_CONFIG_SERVO_0] = {
-        .timer              = BSP_PWM_USER_TIMER_SERVOS_FRONT,
+        .timer              = BSP_PWM_USER_TIMER_2,
         .channel            = BSP_TIMER_CHANNEL_1,
         .minimum_duty_cycle = 0.0325,
         .maximum_duty_cycle = 0.115,
@@ -26,7 +26,7 @@ BspServo_Handle_t Rover4wsConfig_Servos[ROVER_4WS_CONFIG_SERVO_MAX] = {
         .maximum_angle      = 170 * ROVER_DEGREES_TO_RADIANS,
     },
     [ROVER_4WS_CONFIG_SERVO_1] = {
-        .timer              = BSP_PWM_USER_TIMER_SERVOS_FRONT,
+        .timer              = BSP_PWM_USER_TIMER_2,
         .channel            = BSP_TIMER_CHANNEL_2,
         .minimum_duty_cycle = 0.0325,
         .maximum_duty_cycle = 0.1125,
@@ -34,7 +34,7 @@ BspServo_Handle_t Rover4wsConfig_Servos[ROVER_4WS_CONFIG_SERVO_MAX] = {
         .maximum_angle      = 170 * ROVER_DEGREES_TO_RADIANS,
     },
     [ROVER_4WS_CONFIG_SERVO_2] = {
-        .timer              = BSP_PWM_USER_TIMER_SERVOS_REAR,
+        .timer              = BSP_PWM_USER_TIMER_3,
         .channel            = BSP_TIMER_CHANNEL_1,
         .minimum_duty_cycle = 0.03,
         .maximum_duty_cycle = 0.1075,
@@ -42,7 +42,7 @@ BspServo_Handle_t Rover4wsConfig_Servos[ROVER_4WS_CONFIG_SERVO_MAX] = {
         .maximum_angle      = 170 * ROVER_DEGREES_TO_RADIANS,
     },
     [ROVER_4WS_CONFIG_SERVO_3] = {
-        .timer              = BSP_PWM_USER_TIMER_SERVOS_REAR,
+        .timer              = BSP_PWM_USER_TIMER_3,
         .channel            = BSP_TIMER_CHANNEL_2,
         .minimum_duty_cycle = 0.0325,
         .maximum_duty_cycle = 0.1125,
@@ -54,11 +54,11 @@ BspServo_Handle_t Rover4wsConfig_Servos[ROVER_4WS_CONFIG_SERVO_MAX] = {
 BspMotor_Handle_t Rover4wsConfig_Motors[ROVER_4WS_CONFIG_MOTOR_MAX] = {
     [ROVER_4WS_CONFIG_MOTOR_0] = {
         .forward_phase = {
-            .timer   = BSP_PWM_USER_TIMER_MOTORS_FRONT,
+            .timer   = BSP_PWM_USER_TIMER_0,
             .channel = BSP_TIMER_CHANNEL_1,
         },
         .reverse_phase = {
-            .timer   = BSP_PWM_USER_TIMER_MOTORS_FRONT,
+            .timer   = BSP_PWM_USER_TIMER_0,
             .channel = BSP_TIMER_CHANNEL_2,
         },
         .minimum_duty_cycle = 0.0,
@@ -69,11 +69,11 @@ BspMotor_Handle_t Rover4wsConfig_Motors[ROVER_4WS_CONFIG_MOTOR_MAX] = {
     },
     [ROVER_4WS_CONFIG_MOTOR_1] = {
         .forward_phase = {
-            .timer   = BSP_PWM_USER_TIMER_MOTORS_FRONT,
+            .timer   = BSP_PWM_USER_TIMER_0,
             .channel = BSP_TIMER_CHANNEL_3,
         },
         .reverse_phase = {
-            .timer   = BSP_PWM_USER_TIMER_MOTORS_FRONT,
+            .timer   = BSP_PWM_USER_TIMER_0,
             .channel = BSP_TIMER_CHANNEL_4,
         },
         .minimum_duty_cycle = 0.0,
@@ -84,11 +84,11 @@ BspMotor_Handle_t Rover4wsConfig_Motors[ROVER_4WS_CONFIG_MOTOR_MAX] = {
     },
     [ROVER_4WS_CONFIG_MOTOR_2] = {
         .forward_phase = {
-            .timer   = BSP_PWM_USER_TIMER_MOTORS_REAR,
+            .timer   = BSP_PWM_USER_TIMER_1,
             .channel = BSP_TIMER_CHANNEL_1,
         },
         .reverse_phase = {
-            .timer   = BSP_PWM_USER_TIMER_MOTORS_REAR,
+            .timer   = BSP_PWM_USER_TIMER_1,
             .channel = BSP_TIMER_CHANNEL_2,
         },
         .minimum_duty_cycle = 0.0,
@@ -99,11 +99,11 @@ BspMotor_Handle_t Rover4wsConfig_Motors[ROVER_4WS_CONFIG_MOTOR_MAX] = {
     },
     [ROVER_4WS_CONFIG_MOTOR_3] = {
         .forward_phase = {
-            .timer   = BSP_PWM_USER_TIMER_MOTORS_REAR,
+            .timer   = BSP_PWM_USER_TIMER_1,
             .channel = BSP_TIMER_CHANNEL_3,
         },
         .reverse_phase = {
-            .timer   = BSP_PWM_USER_TIMER_MOTORS_REAR,
+            .timer   = BSP_PWM_USER_TIMER_1,
             .channel = BSP_TIMER_CHANNEL_4,
         },
         .minimum_duty_cycle = 0.0,
@@ -136,43 +136,13 @@ RoverPid_Handle_t Rover4wsConfig_MotorsPid[ROVER_4WS_CONFIG_MOTOR_MAX] = {
         .maximum       = 18.75
     },
     [ROVER_4WS_CONFIG_MOTOR_1] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75
+        .kp = 2.0, .ki = 1.5, .kd = 0.000001, .integral = 0.0, .command = 0.0, .error = 0.0, .output = 0.0, .previous_tick = 0U, .enabled = true, .minimum = 0, .maximum = 18.75
     },
     [ROVER_4WS_CONFIG_MOTOR_2] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75
+        .kp = 2.0, .ki = 1.5, .kd = 0.000001, .integral = 0.0, .command = 0.0, .error = 0.0, .output = 0.0, .previous_tick = 0U, .enabled = true, .minimum = 0, .maximum = 18.75
     },
     [ROVER_4WS_CONFIG_MOTOR_3] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75
+        .kp = 2.0, .ki = 1.5, .kd = 0.000001, .integral = 0.0, .command = 0.0, .error = 0.0, .output = 0.0, .previous_tick = 0U, .enabled = true, .minimum = 0, .maximum = 18.75
     }
 };
 
