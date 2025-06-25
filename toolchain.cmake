@@ -41,7 +41,7 @@ set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS} -x assembler-with-cpp -MMD -MP")
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fno-rtti -fno-exceptions -fno-threadsafe-statics")
 
 set(CMAKE_C_LINK_FLAGS "${TARGET_FLAGS}")
-set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -T \"${CMAKE_SOURCE_DIR}/bsp/boards/${BOARD}/generated/${LINKER_SCRIPT}\"")
+set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -T \"${CMAKE_SOURCE_DIR}/boards/${BOARD}/generated/${LINKER_SCRIPT}\"")
 set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -specs=nano.specs")
 set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -Wl,-Map=${CMAKE_PROJECT_NAME}.map -Wl,--gc-sections")
 set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -Wl,--start-group -lc -lm -u _printf_float -Wl,--end-group")

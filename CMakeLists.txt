@@ -6,6 +6,12 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
+# Set board
+if(NOT BOARD)
+    set(BOARD "CAVeBoard")
+endif()
+message("Board: " ${BOARD})
+
 # # Include toolchain file
 # include("${CMAKE_SOURCE_DIR}/toolchain.cmake")
 
@@ -19,30 +25,35 @@ project(CAVeware LANGUAGES C ASM)
 include(${CMAKE_SOURCE_DIR}/CAVeTalk.cmake)
 
 ################################################################################
-# BSP library
+# Boards
 ################################################################################
-add_subdirectory(${CMAKE_SOURCE_DIR}/bsp)
+add_subdirectory(${CMAKE_SOURCE_DIR}/boards)
 get_target_property(BSP_USER_SRCS BspUser INTERFACE_SOURCES)
 set_source_files_properties(
     ${BSP_USER_SRCS}
     PROPERTIES
     COMPILE_OPTIONS "-Werror"
 )
+get_target_property(ROVER_CONFIG_SRCS RoverConfig INTERFACE_SOURCES)
+set_source_files_properties(
+    ${ROVER_CONFIG_SRCS}
+    PROPERTIES
+    COMPILE_OPTIONS "-Werror"
+)
+
+################################################################################
+# BSP
+################################################################################
+add_subdirectory(${CMAKE_SOURCE_DIR}/bsp)
 get_target_property(BSP_SRCS Bsp INTERFACE_SOURCES)
 set_source_files_properties(
     ${BSP_SRCS}
     PROPERTIES
     COMPILE_OPTIONS "-Werror"
 )
-
-################################################################################
-# Rover config library
-################################################################################
-get_target_property(ROVER_CONFIG_SRCS RoverConfig INTERFACE_SOURCES)
-set_source_files_properties(
-    ${ROVER_CONFIG_SRCS}
-    PROPERTIES
-    COMPILE_OPTIONS "-Werror"
+target_link_libraries(Bsp
+    INTERFACE
+        BspUser
 )
 
 ################################################################################

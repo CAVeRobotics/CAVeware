@@ -1,15 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 project(Bsp)
 
-# Set board
-if(NOT BOARD)
-    set(BOARD "CAVeBoard")
-endif()
-message("Board: " ${BOARD})
-
-# BSP User Library
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/boards)
-
 ################################################################################
 # BSP library
 ################################################################################
@@ -49,9 +40,4 @@ target_include_directories(${PROJECT_NAME}
 target_sources(${PROJECT_NAME}
     INTERFACE
         ${BSP_SRCS}
-)
-
-target_link_libraries(${PROJECT_NAME}
-    INTERFACE
-        BspUser
 )

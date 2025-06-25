@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(BspUser)
+project(Boards)
 
 # Set board directory
 set(BOARD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${BOARD})
@@ -8,7 +8,7 @@ set(BOARD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${BOARD})
 add_subdirectory(${BOARD_DIR}/generated/cmake/stm32cubemx)
 
 ################################################################################
-# BSP User library
+# BSP User
 ################################################################################
 set(BSP_USER_DIR ${BOARD_DIR}/bsp_user)
 set(BSP_USER_INC_DIR ${BSP_USER_DIR}/inc)
@@ -24,25 +24,25 @@ set(BSP_USER_SRCS
     ${BSP_USER_SRC_DIR}/bsp_user.c
 )
 
-add_library(${PROJECT_NAME} INTERFACE)
+add_library(BspUser INTERFACE)
 
-target_include_directories(${PROJECT_NAME}
+target_include_directories(BspUser
     INTERFACE
         ${BSP_USER_INC_DIR}
 )
 
-target_sources(${PROJECT_NAME}
+target_sources(BspUser
     INTERFACE
         ${BSP_USER_SRCS}
 )
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(BspUser
     INTERFACE
         stm32cubemx
 )
 
 ################################################################################
-# Rover config library
+# Rover config
 ################################################################################
 set(ROVER_CONFIG_DIR ${BOARD_DIR}/rover_config)
 set(ROVER_CONFIG_INC_DIR ${ROVER_CONFIG_DIR}/inc)
@@ -65,6 +65,7 @@ target_sources(RoverConfig
         ${ROVER_CONFIG_SRCS}
 )
 
+# TODO remove, everything should be accessible through Bsp
 target_link_libraries(RoverConfig
     INTERFACE
         stm32cubemx
