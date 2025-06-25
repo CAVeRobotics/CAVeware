@@ -6,8 +6,8 @@ runs:
       id: cache-stm32cubemx
       uses: actions/cache@v4
       env:
-        cache-key: cache-stm32cubemx-${{ hashFiles('./bsp/boards/CAVeBoard/generated/CAVeBoard.ioc', './bsp/boards/CAVeBoard/generated/CAVeBoard.script') }}
-        cache-base-path: ./bsp/boards/CAVeBoard/generated
+        cache-key: cache-stm32cubemx-${{ hashFiles('./boards/CAVeBoard/generated/CAVeBoard.ioc', './boards/CAVeBoard/generated/CAVeBoard.script') }}
+        cache-base-path: ./boards/CAVeBoard/generated
         startup-file: startup_stm32f407xx.s
         linker-script: stm32f407zgtx_flash.ld
       with:
@@ -26,7 +26,7 @@ runs:
       if: ${{ steps.cache-stm32cubemx.outputs.cache-hit != 'true' }}
       uses: docker://d3lta12/stm32cubemx-stm32f4:v6.13.0
       with:
-        args: /bin/bash -c "cd bsp/boards/CAVeBoard/generated && /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q CAVeBoard.script"
+        args: /bin/bash -c "cd boards/CAVeBoard/generated && /opt/STM32CubeMX/jre/bin/java -jar /opt/STM32CubeMX/STM32CubeMX -q CAVeBoard.script"
     - name: Generate CAVeTalk Protobufs
       run: external/CAVeTalk/tools/nanopb/generate.sh
       shell: sh
