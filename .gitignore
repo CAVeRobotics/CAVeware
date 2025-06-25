@@ -3,15 +3,15 @@ _build
 build
 
 # STM32CubeMX
-bsp/boards/*/generated/cmake
-bsp/boards/*/generated/CMake*
-bsp/boards/*/generated/Core
-bsp/boards/*/generated/Drivers
-bsp/boards/*/generated/hsperfdata_root
-bsp/boards/*/generated/.mxproject
-bsp/boards/*/generated/startup_stm32*.s
-bsp/boards/*/generated/STM32*_FLASH.ld
-bsp/boards/*/generated/stm32*_flash.ld
+boards/*/generated/cmake
+boards/*/generated/CMake*
+boards/*/generated/Core
+boards/*/generated/Drivers
+boards/*/generated/hsperfdata_root
+boards/*/generated/.mxproject
+boards/*/generated/startup_stm32*.s
+boards/*/generated/STM32*_FLASH.ld
+boards/*/generated/stm32*_flash.ld
 
 # Version header
 cavebot/inc/cavebot_version.h

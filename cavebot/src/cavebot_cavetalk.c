@@ -99,7 +99,7 @@ static CaveTalk_Handle_t CavebotCaveTalk_Handle = {
 
 CaveTalk_Error_t CavebotCaveTalk_Start(void)
 {
-    return CavebotCaveTalk_ConvertBspError(BspUart_Start(BSP_UART_USER_COMMS));
+    return CavebotCaveTalk_ConvertBspError(BspUart_Start(BSP_UART_USER_1));
 }
 
 void CavebotCaveTalk_Task(void)
@@ -144,12 +144,12 @@ void CavebotCaveTalk_Task(void)
 
 static CaveTalk_Error_t CavebotCaveTalk_Send(const void *const data, const size_t size)
 {
-    return CavebotCaveTalk_ConvertBspError(BspUart_Transmit(BSP_UART_USER_COMMS, data, size));
+    return CavebotCaveTalk_ConvertBspError(BspUart_Transmit(BSP_UART_USER_1, data, size));
 }
 
 static CaveTalk_Error_t CavebotCaveTalk_Receive(void *const data, const size_t size, size_t *const bytes_received)
 {
-    return CavebotCaveTalk_ConvertBspError(BspUart_Receive(BSP_UART_USER_COMMS, data, size, bytes_received));
+    return CavebotCaveTalk_ConvertBspError(BspUart_Receive(BSP_UART_USER_1, data, size, bytes_received));
 }
 
 static CaveTalk_Error_t CavebotCaveTalk_ConvertBspError(const Bsp_Error_t bsp_error)
