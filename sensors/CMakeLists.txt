@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.30)
 project(Sensors)
 
-set(SENSORS_INC_DIR ${CMAKE_SOURCE_DIR}/inc)
-set(SENSORS_SRC_DIR ${CMAKE_SOURCE_DIR}/src)
+set(SENSORS_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc)
+set(SENSORS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 set(SENSORS_SRCS
     ${SENSORS_SRC_DIR}/accelerometer.c

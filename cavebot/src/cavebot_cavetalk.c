@@ -20,13 +20,16 @@
 #include "bsp_uart.h"
 #include "bsp_uart_user.h"
 
-#include "rover.h"
-#include "rover_4ws.h"
-#include "rover_4ws_config.h"
+#include "accelerometer.h"
+#include "gyroscope.h"
 
-#define CAVEBOT_CAVE_TALK_BUFFER_SIZE     1024U
-#define CAVEBOT_CAVE_TALK_HEADER_SIZE     3U
-#define CAVEBOT_CAVE_TALK_RETRY_PERIOD    (Bsp_Millisecond_t)1000U
+#include "cavebot.h"
+#include "cavebot_user.h"
+#include "rover_4ws.h"
+
+#define CAVEBOT_CAVE_TALK_BUFFER_SIZE 1024U
+#define CAVEBOT_CAVE_TALK_HEADER_SIZE 3U
+#define CAVEBOT_CAVE_TALK_RETRY_PERIOD (Bsp_Millisecond_t)1000U
 #define CAVEBOT_CAVE_TALK_ODOMETRY_PERIOD (Bsp_Millisecond_t)20U
 
 typedef enum
@@ -35,11 +38,11 @@ typedef enum
     CAVEBOT_CAVE_TALK_RECEIVE_PAYLOAD
 } CavebotCaveTalk_Receive_t;
 
-static uint8_t           CavebotCaveTalk_Buffer[CAVEBOT_CAVE_TALK_BUFFER_SIZE];
-static const char *      kCavebotCaveTalk_LogTag          = "CAVE TALK";
-static bool              CavebotCaveTalk_Connected        = false;
-static bool              CavebotCaveTalk_WasArmed         = false;
-static Bsp_Millisecond_t CavebotCaveTalk_PreviousMessage  = 0U;
+static uint8_t CavebotCaveTalk_Buffer[CAVEBOT_CAVE_TALK_BUFFER_SIZE];
+static const char *kCavebotCaveTalk_LogTag = "CAVE TALK";
+static bool CavebotCaveTalk_Connected = false;
+static bool CavebotCaveTalk_WasArmed = false;
+static Bsp_Millisecond_t CavebotCaveTalk_PreviousMessage = 0U;
 static Bsp_Millisecond_t CavebotCaveTalk_PreviousOdometry = 0U;
 
 static CaveTalk_Error_t CavebotCaveTalk_Send(const void *const data, const size_t size);
@@ -73,27 +76,27 @@ static void CavebotCaveTalk_SendOdometry(void);
 
 static CaveTalk_Handle_t CavebotCaveTalk_Handle = {
     .link_handle = {
-        .send    = CavebotCaveTalk_Send,
+        .send = CavebotCaveTalk_Send,
         .receive = CavebotCaveTalk_Receive,
     },
-    .buffer           = CavebotCaveTalk_Buffer,
-    .buffer_size      = sizeof(CavebotCaveTalk_Buffer),
+    .buffer = CavebotCaveTalk_Buffer,
+    .buffer_size = sizeof(CavebotCaveTalk_Buffer),
     .listen_callbacks = {
-        .hear_ooga_booga                 = CavebotCaveTalk_HearOogaBooga,
-        .hear_movement                   = CavebotCaveTalk_HearMovement,
-        .hear_camera_movement            = NULL,
-        .hear_lights                     = CavebotCaveTalk_HearLights,
-        .hear_arm                        = CavebotCaveTalk_HearArm,
-        .hear_odometry                   = NULL,
-        .hear_log                        = NULL,
-        .hear_config_servo_wheels        = CavebotCaveTalk_HearConfigServoWheels,
-        .hear_config_servo_cams          = NULL,
-        .hear_config_motors              = CavebotCaveTalk_HearConfigMotors,
-        .hear_config_encoders            = CavebotCaveTalk_HearConfigEncoders,
-        .hear_config_log                 = CavebotCaveTalk_HearConfigLog,
+        .hear_ooga_booga = CavebotCaveTalk_HearOogaBooga,
+        .hear_movement = CavebotCaveTalk_HearMovement,
+        .hear_camera_movement = NULL,
+        .hear_lights = CavebotCaveTalk_HearLights,
+        .hear_arm = CavebotCaveTalk_HearArm,
+        .hear_odometry = NULL,
+        .hear_log = NULL,
+        .hear_config_servo_wheels = CavebotCaveTalk_HearConfigServoWheels,
+        .hear_config_servo_cams = NULL,
+        .hear_config_motors = CavebotCaveTalk_HearConfigMotors,
+        .hear_config_encoders = CavebotCaveTalk_HearConfigEncoders,
+        .hear_config_log = CavebotCaveTalk_HearConfigLog,
         .hear_config_wheel_speed_control = CavebotCaveTalk_HearConfigWheelSpeedControl,
-        .hear_config_steering_control    = CavebotCaveTalk_HearConfigSteeringControl,
-        .hear_air_quality                = NULL,
+        .hear_config_steering_control = CavebotCaveTalk_HearConfigSteeringControl,
+        .hear_air_quality = NULL,
     },
 };
 
@@ -116,13 +119,13 @@ void CavebotCaveTalk_Task(void)
         if (CavebotCaveTalk_Connected)
         {
             CavebotCaveTalk_Connected = false;
-            CavebotCaveTalk_WasArmed  = Rover_IsArmed();
+            CavebotCaveTalk_WasArmed = Cavebot_IsArmed();
             BspGpio_Write(BSP_GPIO_USER_PIN_COMMS_STATUS, BSP_GPIO_STATE_RESET);
             BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Disconnected");
 
             if (CavebotCaveTalk_WasArmed)
             {
-                (void)Rover_Dearm();
+                (void)Cavebot_Disarm();
             }
         }
 
@@ -205,7 +208,7 @@ static void CavebotCaveTalk_HearOogaBooga(const cave_talk_Say ooga_booga)
 
             if (CavebotCaveTalk_WasArmed)
             {
-                (void)Rover_Arm();
+                (void)Cavebot_Arm();
             }
         }
         break;
@@ -218,7 +221,7 @@ static void CavebotCaveTalk_HearMovement(const CaveTalk_MetersPerSecond_t speed,
 {
     CavebotCaveTalk_HeardMessage("movement");
 
-    (void)Rover_Drive(speed, turn_rate);
+    (void)Cavebot_Drive(speed, turn_rate);
 }
 
 static void CavebotCaveTalk_HearLights(const bool headlights)
@@ -245,11 +248,11 @@ static void CavebotCaveTalk_HearArm(const bool arm)
 
     if (arm)
     {
-        (void)Rover_Arm();
+        (void)Cavebot_Arm();
     }
     else
     {
-        (void)Rover_Dearm();
+        (void)Cavebot_Disarm();
     }
 }
 
@@ -260,33 +263,33 @@ static void CavebotCaveTalk_HearConfigServoWheels(const cave_talk_Servo *const s
 {
     CavebotCaveTalk_HeardMessage("config servo wheels");
 
-    Rover_Error_t error = ROVER_ERROR_NULL;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
 
     if ((NULL != servo_wheel_0) && (NULL != servo_wheel_1) && (NULL != servo_wheel_2) && (NULL != servo_wheel_3))
     {
-        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureSteering(ROVER_4WS_CONFIG_SERVO_0,
+        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureSteering(CAVEBOT_USER_SERVO_0,
                                                                servo_wheel_0->min_duty_cycle_percentage,
                                                                servo_wheel_0->max_duty_cycle_percentage,
                                                                servo_wheel_0->min_angle_radian,
                                                                servo_wheel_0->max_angle_radian),
-                                    Rover4ws_ConfigureSteering(ROVER_4WS_CONFIG_SERVO_1,
+                                    Rover4ws_ConfigureSteering(CAVEBOT_USER_SERVO_1,
                                                                servo_wheel_1->min_duty_cycle_percentage,
                                                                servo_wheel_1->max_duty_cycle_percentage,
                                                                servo_wheel_1->min_angle_radian,
                                                                servo_wheel_1->max_angle_radian),
-                                    Rover4ws_ConfigureSteering(ROVER_4WS_CONFIG_SERVO_2,
+                                    Rover4ws_ConfigureSteering(CAVEBOT_USER_SERVO_2,
                                                                servo_wheel_2->min_duty_cycle_percentage,
                                                                servo_wheel_2->max_duty_cycle_percentage,
                                                                servo_wheel_2->min_angle_radian,
                                                                servo_wheel_2->max_angle_radian),
-                                    Rover4ws_ConfigureSteering(ROVER_4WS_CONFIG_SERVO_3,
+                                    Rover4ws_ConfigureSteering(CAVEBOT_USER_SERVO_3,
                                                                servo_wheel_3->min_duty_cycle_percentage,
                                                                servo_wheel_3->max_duty_cycle_percentage,
                                                                servo_wheel_3->min_angle_radian,
                                                                servo_wheel_3->max_angle_radian));
     }
 
-    if (ROVER_ERROR_NONE != error)
+    if (CAVEBOT_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to configure wheels servos with error %d", (int)error);
     }
@@ -303,33 +306,33 @@ static void CavebotCaveTalk_HearConfigMotors(const cave_talk_Motor *const motor_
 {
     CavebotCaveTalk_HeardMessage("config motors");
 
-    Rover_Error_t error = ROVER_ERROR_NULL;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
 
     if ((NULL != motor_wheel_0) && (NULL != motor_wheel_1) && (NULL != motor_wheel_2) && (NULL != motor_wheel_3))
     {
-        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureMotor(ROVER_4WS_CONFIG_MOTOR_0,
+        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureMotor(CAVEBOT_USER_MOTOR_0,
                                                             motor_wheel_0->min_duty_cycle_percentage,
                                                             motor_wheel_0->max_duty_cycle_percentage,
                                                             motor_wheel_0->min_speed_loaded_meters_per_second,
                                                             motor_wheel_0->max_speed_loaded_meters_per_second),
-                                    Rover4ws_ConfigureMotor(ROVER_4WS_CONFIG_MOTOR_1,
+                                    Rover4ws_ConfigureMotor(CAVEBOT_USER_MOTOR_1,
                                                             motor_wheel_1->min_duty_cycle_percentage,
                                                             motor_wheel_1->max_duty_cycle_percentage,
                                                             motor_wheel_1->min_speed_loaded_meters_per_second,
                                                             motor_wheel_1->max_speed_loaded_meters_per_second),
-                                    Rover4ws_ConfigureMotor(ROVER_4WS_CONFIG_MOTOR_2,
+                                    Rover4ws_ConfigureMotor(CAVEBOT_USER_MOTOR_2,
                                                             motor_wheel_2->min_duty_cycle_percentage,
                                                             motor_wheel_2->max_duty_cycle_percentage,
                                                             motor_wheel_2->min_speed_loaded_meters_per_second,
                                                             motor_wheel_2->max_speed_loaded_meters_per_second),
-                                    Rover4ws_ConfigureMotor(ROVER_4WS_CONFIG_MOTOR_3,
+                                    Rover4ws_ConfigureMotor(CAVEBOT_USER_MOTOR_3,
                                                             motor_wheel_3->min_duty_cycle_percentage,
                                                             motor_wheel_3->max_duty_cycle_percentage,
                                                             motor_wheel_3->min_speed_loaded_meters_per_second,
                                                             motor_wheel_3->max_speed_loaded_meters_per_second));
     }
 
-    if (ROVER_ERROR_NONE != error)
+    if (CAVEBOT_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to configure motors with error %d", (int)error);
     }
@@ -346,17 +349,17 @@ static void CavebotCaveTalk_HearConfigEncoders(const cave_talk_ConfigEncoder *co
 {
     CavebotCaveTalk_HeardMessage("config encoders");
 
-    Rover_Error_t error = ROVER_ERROR_NULL;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
 
     if ((NULL != encoder_wheel_0) && (NULL != encoder_wheel_1) && (NULL != encoder_wheel_2) && (NULL != encoder_wheel_3))
     {
-        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureEncoder(ROVER_4WS_CONFIG_MOTOR_0, encoder_wheel_0->smoothing_factor),
-                                    Rover4ws_ConfigureEncoder(ROVER_4WS_CONFIG_MOTOR_1, encoder_wheel_1->smoothing_factor),
-                                    Rover4ws_ConfigureEncoder(ROVER_4WS_CONFIG_MOTOR_2, encoder_wheel_2->smoothing_factor),
-                                    Rover4ws_ConfigureEncoder(ROVER_4WS_CONFIG_MOTOR_3, encoder_wheel_3->smoothing_factor));
+        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureEncoder(CAVEBOT_USER_MOTOR_0, encoder_wheel_0->smoothing_factor),
+                                    Rover4ws_ConfigureEncoder(CAVEBOT_USER_MOTOR_1, encoder_wheel_1->smoothing_factor),
+                                    Rover4ws_ConfigureEncoder(CAVEBOT_USER_MOTOR_2, encoder_wheel_2->smoothing_factor),
+                                    Rover4ws_ConfigureEncoder(CAVEBOT_USER_MOTOR_3, encoder_wheel_3->smoothing_factor));
     }
 
-    if (ROVER_ERROR_NONE != error)
+    if (CAVEBOT_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to configure encoders with error %d", (int)error);
     }
@@ -382,17 +385,17 @@ static void CavebotCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *con
 {
     CavebotCaveTalk_HeardMessage("config wheel speed control");
 
-    Rover_Error_t error = ROVER_ERROR_NULL;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
 
     if ((NULL != wheel_0_params) && (NULL != wheel_1_params) && (NULL != wheel_2_params) && (NULL != wheel_3_params))
     {
-        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureMotorPid(ROVER_4WS_CONFIG_MOTOR_0, wheel_0_params->Kp, wheel_0_params->Ki, wheel_0_params->Kd),
-                                    Rover4ws_ConfigureMotorPid(ROVER_4WS_CONFIG_MOTOR_1, wheel_1_params->Kp, wheel_1_params->Ki, wheel_1_params->Kd),
-                                    Rover4ws_ConfigureMotorPid(ROVER_4WS_CONFIG_MOTOR_2, wheel_2_params->Kp, wheel_2_params->Ki, wheel_2_params->Kd),
-                                    Rover4ws_ConfigureMotorPid(ROVER_4WS_CONFIG_MOTOR_3, wheel_3_params->Kp, wheel_3_params->Ki, wheel_3_params->Kd));
+        error = Rover4ws_ErrorCheck(Rover4ws_ConfigureMotorPid(CAVEBOT_USER_MOTOR_0, wheel_0_params->Kp, wheel_0_params->Ki, wheel_0_params->Kd),
+                                    Rover4ws_ConfigureMotorPid(CAVEBOT_USER_MOTOR_1, wheel_1_params->Kp, wheel_1_params->Ki, wheel_1_params->Kd),
+                                    Rover4ws_ConfigureMotorPid(CAVEBOT_USER_MOTOR_2, wheel_2_params->Kp, wheel_2_params->Ki, wheel_2_params->Kd),
+                                    Rover4ws_ConfigureMotorPid(CAVEBOT_USER_MOTOR_3, wheel_3_params->Kp, wheel_3_params->Ki, wheel_3_params->Kd));
     }
 
-    if (ROVER_ERROR_NONE != error)
+    if (CAVEBOT_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to configure wheel speed control with error %d", (int)error);
     }
@@ -410,7 +413,7 @@ static void CavebotCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *con
         error = Rover4ws_DisableSpeedControl();
     }
 
-    if (ROVER_ERROR_NONE != error)
+    if (CAVEBOT_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to enable wheel speed control with error %d", (int)error);
     }
@@ -428,14 +431,14 @@ static void CavebotCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const
 {
     CavebotCaveTalk_HeardMessage("config steering control");
 
-    Rover_Error_t error = ROVER_ERROR_NULL;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
 
     if (NULL != turn_rate_params)
     {
         error = Rover4ws_ConfigureSteeringPid(turn_rate_params->Kp, turn_rate_params->Ki, turn_rate_params->Kd);
     }
 
-    if (ROVER_ERROR_NONE != error)
+    if (CAVEBOT_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to configure steering control with error %d", (int)error);
     }
@@ -453,7 +456,7 @@ static void CavebotCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const
         error = Rover4ws_DisableSpeedControl();
     }
 
-    if (ROVER_ERROR_NONE != error)
+    if (CAVEBOT_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Failed to enable steering control with error %d", (int)error);
     }
@@ -469,57 +472,56 @@ static void CavebotCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const
 
 static void CavebotCaveTalk_SendOdometry(void)
 {
-    cave_talk_Imu     imu_message       = cave_talk_Imu_init_zero;
+    cave_talk_Imu imu_message = cave_talk_Imu_init_zero;
     cave_talk_Encoder encoder_message_0 = cave_talk_Encoder_init_zero;
     cave_talk_Encoder encoder_message_1 = cave_talk_Encoder_init_zero;
     cave_talk_Encoder encoder_message_2 = cave_talk_Encoder_init_zero;
     cave_talk_Encoder encoder_message_3 = cave_talk_Encoder_init_zero;
 
-    Rover_AccelerometerReading_t accelerometer_reading = {
+    Accelerometer_Reading_t accelerometer_reading = {
         .x = 0.0,
         .y = 0.0,
         .z = 0.0,
     };
-    (void)Rover_ReadAccelerometer(&accelerometer_reading);
+    (void)Accelerometer_Read(&accelerometer_reading);
 
     imu_message.accel.x_meters_per_second_squared = accelerometer_reading.x;
     imu_message.accel.y_meters_per_second_squared = accelerometer_reading.y;
     imu_message.accel.z_meters_per_second_squared = accelerometer_reading.z;
-    imu_message.has_accel                         = true;
+    imu_message.has_accel = true;
 
-    Rover_GyroscopeReading_t gyro_reading = {
+    Gyroscope_Reading_t gyro_reading = {
         .x = 0.0,
         .y = 0.0,
         .z = 0.0,
     };
-    (void)Rover_ReadGyroscope(&gyro_reading);
+    (void)Gyroscope_Read(&gyro_reading);
 
-    imu_message.gyro.roll_radians_per_second  = gyro_reading.x;
+    imu_message.gyro.roll_radians_per_second = gyro_reading.x;
     imu_message.gyro.pitch_radians_per_second = gyro_reading.y;
-    imu_message.gyro.yaw_radians_per_second   = gyro_reading.z;
-    imu_message.has_gyro                      = true;
+    imu_message.gyro.yaw_radians_per_second = gyro_reading.z;
+    imu_message.has_gyro = true;
 
-    Rover_Quaternion_t quaternion = {
+    Gyroscope_Quaternion_t quaternion = {
         .w = 0.0,
         .x = 0.0,
         .y = 0.0,
-        .z = 0.0
-    };
-    (void)Rover_ReadQuaternion(&quaternion);
+        .z = 0.0};
+    (void)Gyroscope_ReadQuaternion(&quaternion);
 
-    imu_message.quat.w   = quaternion.w;
-    imu_message.quat.x   = quaternion.x;
-    imu_message.quat.y   = quaternion.y;
-    imu_message.quat.z   = quaternion.z;
+    imu_message.quat.w = quaternion.w;
+    imu_message.quat.x = quaternion.x;
+    imu_message.quat.y = quaternion.y;
+    imu_message.quat.z = quaternion.z;
     imu_message.has_quat = true;
 
-    encoder_message_0.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].pulses;
+    encoder_message_0.total_pulses = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].pulses;
     encoder_message_0.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].angular_rate;
-    encoder_message_1.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].pulses;
+    encoder_message_1.total_pulses = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].pulses;
     encoder_message_1.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].angular_rate;
-    encoder_message_2.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].pulses;
+    encoder_message_2.total_pulses = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].pulses;
     encoder_message_2.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].angular_rate;
-    encoder_message_3.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].pulses;
+    encoder_message_3.total_pulses = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].pulses;
     encoder_message_3.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].angular_rate;
 
     CaveTalk_Error_t error = CaveTalk_SpeakOdometry(&CavebotCaveTalk_Handle, &imu_message, &encoder_message_0, &encoder_message_1, &encoder_message_2, &encoder_message_3);

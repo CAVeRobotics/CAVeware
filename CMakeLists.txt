@@ -34,9 +34,9 @@ set_source_files_properties(
     PROPERTIES
     COMPILE_OPTIONS "-Werror"
 )
-get_target_property(ROVER_CONFIG_SRCS RoverConfig INTERFACE_SOURCES)
+get_target_property(CAVEBOT_USER_SRCS CavebotUser INTERFACE_SOURCES)
 set_source_files_properties(
-    ${ROVER_CONFIG_SRCS}
+    ${CAVEBOT_USER_SRCS}
     PROPERTIES
     COMPILE_OPTIONS "-Werror"
 )
@@ -54,6 +54,30 @@ set_source_files_properties(
 target_link_libraries(Bsp
     INTERFACE
         BspUser
+)
+
+################################################################################
+# Sensors
+################################################################################
+add_subdirectory(${CMAKE_SOURCE_DIR}/sensors)
+# TODO move to sensors CMakeLists.txt
+get_target_property(SENSORS_SRCS Sensors INTERFACE_SOURCES)
+set_source_files_properties(
+    ${SENSORS_SRCS}
+    PROPERTIES
+    COMPILE_OPTIONS "-Werror"
+)
+
+################################################################################
+# Bots
+################################################################################
+add_subdirectory(${CMAKE_SOURCE_DIR}/bots)
+# TODO move to bots CMakeLists.txt
+get_target_property(BOTS_SRCS Bots INTERFACE_SOURCES)
+set_source_files_properties(
+    ${BOTS_SRCS}
+    PROPERTIES
+    COMPILE_OPTIONS "-Werror"
 )
 
 ################################################################################
@@ -106,17 +130,6 @@ endif()
 ################################################################################
 # CAVEMAN controller firmware
 ################################################################################
-set(ROVER_DIR ${CMAKE_SOURCE_DIR}/rover)
-set(ROVER_INC_DIR ${ROVER_DIR}/inc)
-set(ROVER_SRC_DIR ${ROVER_DIR}/src)
-
-set(ROVER_SRCS
-    ${ROVER_SRC_DIR}/rover.c
-    ${ROVER_SRC_DIR}/rover_4ws.c
-    ${ROVER_SRC_DIR}/rover_imu.c
-    ${ROVER_SRC_DIR}/rover_pid.c
-)
-
 set(CAVEBOT_DIR ${CMAKE_SOURCE_DIR}/cavebot)
 set(CAVEBOT_INC_DIR ${CAVEBOT_DIR}/inc)
 set(CAVEBOT_SRC_DIR ${CAVEBOT_DIR}/src)
@@ -127,14 +140,13 @@ configure_file(
 )
 
 set(CAVEBOT_SRCS
-    ${CAVEBOT_SRC_DIR}/cavebot_buttons.c
     ${CAVEBOT_SRC_DIR}/cavebot.c
     ${CAVEBOT_SRC_DIR}/cavebot_cavetalk.c
+    ${CAVEBOT_SRC_DIR}/cavebot_pid.c
 )
 
 set_source_files_properties(
     ${CAVEBOT_SRCS}
-    ${ROVER_SRCS}
     PROPERTIES
     COMPILE_OPTIONS "-Werror"
 )
@@ -150,13 +162,14 @@ target_include_directories(${PROJECT_NAME}
 target_sources(${PROJECT_NAME}
     PRIVATE
         ${CAVEBOT_SRCS}
-        ${ROVER_SRCS}
 )
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         Bsp
-        RoverConfig
+        Sensors
+        Bots
+        CavebotUser
         CAVeTalk-c
         lsm6dsv16x
 )

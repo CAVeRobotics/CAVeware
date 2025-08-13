@@ -19,6 +19,9 @@ typedef int32_t  Bsp_EncoderPeriod_t; /* Must not exceed 4 bytes for atomic read
 typedef uint16_t Bsp_GpioPin_t;
 typedef uint16_t Bsp_AdcReading_t;
 typedef double   Bsp_Volt_t;
+typedef double   Bsp_Meter_t;
+typedef double   Bsp_MetersPerSecond_t;
+typedef double   Bsp_MetersPerSecondSquared_t;
 
 typedef ADC_HandleTypeDef  Bsp_AdcHandle_t;
 typedef GPIO_TypeDef       Bsp_GpioPort_t;
