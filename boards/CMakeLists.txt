@@ -3,6 +3,7 @@ project(Boards)
 
 # Set board directory
 set(BOARD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${BOARD})
+add_subdirectory(${BOARD_DIR})
 
 # STM32 HAL
 add_subdirectory(${BOARD_DIR}/generated/cmake/stm32cubemx)
@@ -43,31 +44,34 @@ target_link_libraries(BspUser
 )
 
 ################################################################################
-# Rover config
+# Sensors
 ################################################################################
-set(ROVER_CONFIG_DIR ${BOARD_DIR}/rover_config)
-set(ROVER_CONFIG_INC_DIR ${ROVER_CONFIG_DIR}/inc)
-set(ROVER_CONFIG_SRC_DIR ${ROVER_CONFIG_DIR}/src)
+add_subdirectory(${CMAKE_SOURCE_DIR}/sensors ${CMAKE_BINARY_DIR}/sensors)
 
-set(ROVER_CONFIG_SRCS
-    ${ROVER_CONFIG_SRC_DIR}/rover_4ws_config.c
-    ${ROVER_CONFIG_SRC_DIR}/rover_imu_config.c
+################################################################################
+# Bots
+################################################################################
+add_subdirectory(${CMAKE_SOURCE_DIR}/bots ${CMAKE_BINARY_DIR}/bots)
+
+################################################################################
+# Cavebot User
+################################################################################
+set(CAVEBOT_USER_DIR ${BOARD_DIR}/cavebot_user)
+set(CAVEBOT_USER_INC_DIR ${CAVEBOT_USER_DIR}/inc)
+set(CAVEBOT_USER_SRC_DIR ${CAVEBOT_USER_DIR}/src)
+
+set(CAVEBOT_USER_SRCS
+    ${CAVEBOT_USER_SRC_DIR}/cavebot_user.c
 )
 
-add_library(RoverConfig INTERFACE)
+add_library(CavebotUser INTERFACE)
 
-target_include_directories(RoverConfig
+target_include_directories(CavebotUser
     INTERFACE
-        ${ROVER_CONFIG_INC_DIR}
+        ${CAVEBOT_USER_INC_DIR}
 )
 
-target_sources(RoverConfig
+target_sources(CavebotUser
     INTERFACE
-        ${ROVER_CONFIG_SRCS}
-)
-
-# TODO remove, everything should be accessible through Bsp
-target_link_libraries(RoverConfig
-    INTERFACE
-        stm32cubemx
+        ${CAVEBOT_USER_SRCS}
 )

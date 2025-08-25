@@ -22,6 +22,7 @@ set(BSP_SRCS
 
 add_library(${PROJECT_NAME} INTERFACE)
 
+# TODO move to boards
 target_compile_definitions(${PROJECT_NAME}
     INTERFACE
         $<$<CONFIG:Debug>:BSP_LOGGER>

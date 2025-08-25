@@ -1,8 +1,26 @@
-#ifndef CAVEBOT_CONTROLLER_H
-#define CAVEBOT_CONTROLLER_H
+#ifndef CAVEBOT_H
+#define CAVEBOT_H
 
-int main(void);
+#include <stdbool.h>
 
-/* TODO custom assert and error handler functions */
+#include "bsp.h"
 
-#endif /* CAVEBOT_CONTROLLER_H */
+typedef enum
+{
+    CAVEBOT_ERROR_NONE,
+    CAVEBOT_ERROR_NULL,
+    CAVEBOT_ERROR_BSP,
+    CAVEBOT_ERROR_PERIPHERAL,
+    CAVEBOT_ERROR_MODE,
+    CAVEBOT_ERROR_VALUE
+} Cavebot_Error_t;
+
+Cavebot_Error_t Cavebot_BspToCavebotError(const Bsp_Error_t bsp_error);
+Cavebot_Error_t Cavebot_Arm(void);
+Cavebot_Error_t Cavebot_Disarm(void);
+bool Cavebot_IsArmed(void);
+Cavebot_Error_t Cavebot_EnableControl(void);
+Cavebot_Error_t Cavebot_DisableControl(void);
+Cavebot_Error_t Cavebot_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_RadiansPerSecond_t turn_rate);
+
+#endif /* CAVEBOT_H */
