@@ -9,11 +9,14 @@ set(SENSORS_SRCS
     ${SENSORS_SRC_DIR}/gyroscope.c
 )
 
-if(NOT DEFINED ACCELEROMETER_ENABLED)
+option(ACCELEROMETER "Enable accelerometer" OFF)
+option(GYROSCOPE "Enable gyroscope" OFF)
+
+if(NOT ACCELEROMETER)
     message(STATUS "Accelerometer not enabled, adding user stub.")
     list(APPEND SENSORS_SRCS ${SENSORS_SRC_DIR}/accelerometer_user.c)
 endif()
-if(NOT DEFINED GYROSCOPE_ENABLED)
+if(NOT GYROSCOPE)
     message(STATUS "Gyroscope not enabled, adding user stub.")
     list(APPEND SENSORS_SRCS ${SENSORS_SRC_DIR}/gyroscope_user.c)
 endif()

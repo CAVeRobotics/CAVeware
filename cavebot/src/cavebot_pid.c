@@ -10,10 +10,10 @@ Cavebot_Error_t CavebotPid_Reset(CavebotPid_Handle_t *const handle)
 
     if (NULL != handle)
     {
-        handle->integral = 0.0;
-        handle->command = 0.0;
-        handle->error = 0.0;
-        handle->output = 0.0;
+        handle->integral      = 0.0;
+        handle->command       = 0.0;
+        handle->error         = 0.0;
+        handle->output        = 0.0;
         handle->previous_tick = 0U;
 
         error = CAVEBOT_ERROR_NONE;
@@ -65,13 +65,13 @@ Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const doubl
     }
     else
     {
-        double delta = (double)(tick - handle->previous_tick) / BSP_TICK_MICROSECONDS_PER_SECOND;
-        double pid_error = handle->command - actual;
+        double delta      = (double)(tick - handle->previous_tick) / BSP_TICK_MICROSECONDS_PER_SECOND;
+        double pid_error  = handle->command - actual;
         double derivative = (pid_error - handle->error) / delta;
 
-        handle->integral += pid_error * delta;
-        handle->output = (handle->kp * pid_error) + (handle->ki * handle->integral) + (handle->kd * derivative);
-        handle->error = pid_error;
+        handle->integral     += pid_error * delta;
+        handle->output        = (handle->kp * pid_error) + (handle->ki * handle->integral) + (handle->kd * derivative);
+        handle->error         = pid_error;
         handle->previous_tick = tick;
 
         if (handle->output > handle->maximum)

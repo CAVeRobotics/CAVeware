@@ -3,6 +3,7 @@ project(Boards)
 
 # Set board directory
 set(BOARD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${BOARD})
+add_subdirectory(${BOARD_DIR})
 
 # STM32 HAL
 add_subdirectory(${BOARD_DIR}/generated/cmake/stm32cubemx)
@@ -41,6 +42,16 @@ target_link_libraries(BspUser
     INTERFACE
         stm32cubemx
 )
+
+################################################################################
+# Sensors
+################################################################################
+add_subdirectory(${CMAKE_SOURCE_DIR}/sensors ${CMAKE_BINARY_DIR}/sensors)
+
+################################################################################
+# Bots
+################################################################################
+add_subdirectory(${CMAKE_SOURCE_DIR}/bots ${CMAKE_BINARY_DIR}/bots)
 
 ################################################################################
 # Cavebot User

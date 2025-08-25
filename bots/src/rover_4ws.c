@@ -18,18 +18,23 @@
 #include "cavebot_pid.h"
 #include "cavebot_user.h"
 
-#define ROVER_4WS_WHEEL_OFFSET (double)(3.14159265358979323846 / 2.0)
+#define ROVER_4WS_WHEEL_OFFSET     (double)(3.14159265358979323846 / 2.0)
 #define ROVER_4WS_DOUBLE_SIGN_MASK 0x8000000000000000U
 
 /* TODO read from config */
-static const Bsp_Meter_t kRover4ws_Tread = 0.493800;
-static const Bsp_Meter_t kRover4ws_Wheelbase = 0.466028;
+static const Bsp_Meter_t kRover4ws_Tread       = 0.493800;
+static const Bsp_Meter_t kRover4ws_Wheelbase   = 0.466028;
 static const Bsp_Meter_t kRover4ws_WheelRadius = 0.080000;
 
 /* TODO read from config */
-static const Bsp_Meter_t kRover4ws_HalfTread = kRover4ws_Tread / 2;
-static const Bsp_Meter_t kRover4ws_HalfWheelbase = kRover4ws_Wheelbase / 2;
+static const Bsp_Meter_t kRover4ws_HalfTread         = kRover4ws_Tread / 2;
+static const Bsp_Meter_t kRover4ws_HalfWheelbase     = kRover4ws_Wheelbase / 2;
 static const Bsp_Meter_t kRover4ws_DoubleWheelRadius = kRover4ws_WheelRadius * 2;
+
+/* TODO */
+static CavebotPid_Handle_t Rover4ws_SteeringPid = {
+    0
+};
 
 static Bsp_MetersPerSecond_t Rover4ws_CommandedSpeed = 0.0;
 
@@ -49,22 +54,22 @@ Cavebot_Error_t Rover4ws_ConfigureSteering(const CavebotUser_Servo_t servo,
                                            const Bsp_Radian_t minimum_angle,
                                            const Bsp_Radian_t maximum_angle)
 {
-    Cavebot_Error_t error = ROVER_ERROR_NONE;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
 
-    if (servo >= ROVER_4WS_CONFIG_SERVO_MAX)
+    if (servo >= CAVEBOT_USER_SERVO_MAX)
     {
-        error = ROVER_ERROR_PERIPHERAL;
+        error = CAVEBOT_ERROR_PERIPHERAL;
     }
-    else if (Rover_IsArmed())
+    else if (Cavebot_IsArmed())
     {
-        error = ROVER_ERROR_MODE;
+        error = CAVEBOT_ERROR_MODE;
     }
     else
     {
         CavebotUser_Servos[servo].minimum_duty_cycle = minimum_duty_cycle;
         CavebotUser_Servos[servo].maximum_duty_cycle = maximum_duty_cycle;
-        CavebotUser_Servos[servo].minimum_angle = minimum_angle;
-        CavebotUser_Servos[servo].maximum_angle = maximum_angle;
+        CavebotUser_Servos[servo].minimum_angle      = minimum_angle;
+        CavebotUser_Servos[servo].maximum_angle      = maximum_angle;
     }
 
     return error;
@@ -76,22 +81,22 @@ Cavebot_Error_t Rover4ws_ConfigureMotor(const CavebotUser_Motor_t motor,
                                         const Bsp_RadiansPerSecond_t minimum_speed,
                                         const Bsp_RadiansPerSecond_t maximum_speed)
 {
-    Cavebot_Error_t error = ROVER_ERROR_NONE;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
 
-    if (motor >= ROVER_4WS_CONFIG_MOTOR_MAX)
+    if (motor >= CAVEBOT_USER_MOTOR_MAX)
     {
-        error = ROVER_ERROR_PERIPHERAL;
+        error = CAVEBOT_ERROR_PERIPHERAL;
     }
-    else if (Rover_IsArmed())
+    else if (Cavebot_IsArmed())
     {
-        error = ROVER_ERROR_MODE;
+        error = CAVEBOT_ERROR_MODE;
     }
     else
     {
         CavebotUser_Motors[motor].minimum_duty_cycle = minimum_duty_cycle;
         CavebotUser_Motors[motor].maximum_duty_cycle = maximum_duty_cycle;
-        CavebotUser_Motors[motor].minimum_speed = minimum_speed;
-        CavebotUser_Motors[motor].maximum_speed = maximum_speed;
+        CavebotUser_Motors[motor].minimum_speed      = minimum_speed;
+        CavebotUser_Motors[motor].maximum_speed      = maximum_speed;
     }
 
     return error;
@@ -99,15 +104,15 @@ Cavebot_Error_t Rover4ws_ConfigureMotor(const CavebotUser_Motor_t motor,
 
 Cavebot_Error_t Rover4ws_ConfigureMotorPid(const CavebotUser_Motor_t motor, const double kp, const double ki, const double kd)
 {
-    Cavebot_Error_t error = ROVER_ERROR_NONE;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
 
-    if (motor >= ROVER_4WS_CONFIG_MOTOR_MAX)
+    if (motor >= CAVEBOT_USER_MOTOR_MAX)
     {
-        error = ROVER_ERROR_PERIPHERAL;
+        error = CAVEBOT_ERROR_PERIPHERAL;
     }
-    else if (Rover_IsArmed())
+    else if (Cavebot_IsArmed())
     {
-        error = ROVER_ERROR_MODE;
+        error = CAVEBOT_ERROR_MODE;
     }
     else
     {
@@ -121,17 +126,17 @@ Cavebot_Error_t Rover4ws_ConfigureMotorPid(const CavebotUser_Motor_t motor, cons
 
 Cavebot_Error_t Rover4ws_ConfigureSteeringPid(const double kp, const double ki, const double kd)
 {
-    Cavebot_Error_t error = ROVER_ERROR_NONE;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
 
-    if (Rover_IsArmed())
+    if (Cavebot_IsArmed())
     {
-        error = ROVER_ERROR_MODE;
+        error = CAVEBOT_ERROR_MODE;
     }
     else
     {
-        Rover4wsConfig_SteeringPid.kp = kp;
-        Rover4wsConfig_SteeringPid.ki = ki;
-        Rover4wsConfig_SteeringPid.kd = kd;
+        Rover4ws_SteeringPid.kp = kp;
+        Rover4ws_SteeringPid.ki = ki;
+        Rover4ws_SteeringPid.kd = kd;
     }
 
     return error;
@@ -139,26 +144,26 @@ Cavebot_Error_t Rover4ws_ConfigureSteeringPid(const double kp, const double ki, 
 
 Cavebot_Error_t Rover4ws_ConfigureEncoder(const CavebotUser_Motor_t motor, const double smoothing_factor)
 {
-    Cavebot_Error_t error = ROVER_ERROR_PERIPHERAL;
+    Cavebot_Error_t error = CAVEBOT_ERROR_PERIPHERAL;
 
-    if (motor >= ROVER_4WS_CONFIG_MOTOR_MAX)
+    if (motor >= CAVEBOT_USER_MOTOR_MAX)
     {
     }
-    else if (Rover_IsArmed())
+    else if (Cavebot_IsArmed())
     {
-        error = ROVER_ERROR_MODE;
+        error = CAVEBOT_ERROR_MODE;
     }
-    else if (ROVER_ERROR_NONE == error)
+    else if (CAVEBOT_ERROR_NONE == error)
     {
         BspEncoderUser_Timer_t encoder = CavebotUser_Encoders[motor];
 
-        error = Rover_BspToRoverError(BspEncoder_Stop(encoder));
+        error = Cavebot_BspToCavebotError(BspEncoder_Stop(encoder));
 
-        if (ROVER_ERROR_NONE == error)
+        if (CAVEBOT_ERROR_NONE == error)
         {
             BspEncoderUser_HandleTable[encoder].smoothing_factor = smoothing_factor;
 
-            error = Rover_BspToRoverError(BspEncoder_Start(encoder));
+            error = Cavebot_BspToCavebotError(BspEncoder_Start(encoder));
         }
     }
 
@@ -167,14 +172,14 @@ Cavebot_Error_t Rover4ws_ConfigureEncoder(const CavebotUser_Motor_t motor, const
 
 Cavebot_Error_t Rover4ws_EnableSteering(void)
 {
-    Cavebot_Error_t error = RoverPid_Reset(&Rover4wsConfig_SteeringPid);
+    Cavebot_Error_t error = CavebotPid_Reset(&Rover4ws_SteeringPid);
 
-    if (ROVER_ERROR_NONE == error)
+    if (CAVEBOT_ERROR_NONE == error)
     {
-        error = Rover4ws_BspErrorCheck(BspServo_Start(&CavebotUser_Servos[ROVER_4WS_CONFIG_SERVO_0]),
-                                       BspServo_Start(&CavebotUser_Servos[ROVER_4WS_CONFIG_SERVO_2]),
-                                       BspServo_Start(&CavebotUser_Servos[ROVER_4WS_CONFIG_SERVO_1]),
-                                       BspServo_Start(&CavebotUser_Servos[ROVER_4WS_CONFIG_SERVO_3]));
+        error = Rover4ws_BspErrorCheck(BspServo_Start(&CavebotUser_Servos[CAVEBOT_USER_SERVO_0]),
+                                       BspServo_Start(&CavebotUser_Servos[CAVEBOT_USER_SERVO_2]),
+                                       BspServo_Start(&CavebotUser_Servos[CAVEBOT_USER_SERVO_1]),
+                                       BspServo_Start(&CavebotUser_Servos[CAVEBOT_USER_SERVO_3]));
     }
 
     return error;
@@ -182,32 +187,32 @@ Cavebot_Error_t Rover4ws_EnableSteering(void)
 
 Cavebot_Error_t Rover4ws_DisableSteering(void)
 {
-    return Rover4ws_BspErrorCheck(BspServo_Stop(&CavebotUser_Servos[ROVER_4WS_CONFIG_SERVO_0]),
-                                  BspServo_Stop(&CavebotUser_Servos[ROVER_4WS_CONFIG_SERVO_2]),
-                                  BspServo_Stop(&CavebotUser_Servos[ROVER_4WS_CONFIG_SERVO_1]),
-                                  BspServo_Stop(&CavebotUser_Servos[ROVER_4WS_CONFIG_SERVO_3]));
+    return Rover4ws_BspErrorCheck(BspServo_Stop(&CavebotUser_Servos[CAVEBOT_USER_SERVO_0]),
+                                  BspServo_Stop(&CavebotUser_Servos[CAVEBOT_USER_SERVO_2]),
+                                  BspServo_Stop(&CavebotUser_Servos[CAVEBOT_USER_SERVO_1]),
+                                  BspServo_Stop(&CavebotUser_Servos[CAVEBOT_USER_SERVO_3]));
 }
 
 Cavebot_Error_t Rover4ws_StartMotors(void)
 {
-    Cavebot_Error_t error = Rover4ws_ErrorCheck(RoverPid_Reset(&CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_0]),
-                                                RoverPid_Reset(&CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_2]),
-                                                RoverPid_Reset(&CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_1]),
-                                                RoverPid_Reset(&CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_3]));
+    Cavebot_Error_t error = Rover4ws_ErrorCheck(CavebotPid_Reset(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_0]),
+                                                CavebotPid_Reset(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_2]),
+                                                CavebotPid_Reset(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_1]),
+                                                CavebotPid_Reset(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_3]));
 
     Rover4ws_CommandedSpeed = 0.0;
 
-    if (ROVER_ERROR_NONE == error)
+    if (CAVEBOT_ERROR_NONE == error)
     {
-        error = Rover_BspToRoverError(BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_SLEEP, BSP_GPIO_STATE_SET));
+        error = Cavebot_BspToCavebotError(BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_SLEEP, BSP_GPIO_STATE_SET));
     }
 
-    if (ROVER_ERROR_NONE == error)
+    if (CAVEBOT_ERROR_NONE == error)
     {
-        error = Rover4ws_BspErrorCheck(BspMotor_Start(&CavebotUser_Motors[ROVER_4WS_CONFIG_MOTOR_0]),
-                                       BspMotor_Start(&CavebotUser_Motors[ROVER_4WS_CONFIG_MOTOR_2]),
-                                       BspMotor_Start(&CavebotUser_Motors[ROVER_4WS_CONFIG_MOTOR_1]),
-                                       BspMotor_Start(&CavebotUser_Motors[ROVER_4WS_CONFIG_MOTOR_3]));
+        error = Rover4ws_BspErrorCheck(BspMotor_Start(&CavebotUser_Motors[CAVEBOT_USER_MOTOR_0]),
+                                       BspMotor_Start(&CavebotUser_Motors[CAVEBOT_USER_MOTOR_2]),
+                                       BspMotor_Start(&CavebotUser_Motors[CAVEBOT_USER_MOTOR_1]),
+                                       BspMotor_Start(&CavebotUser_Motors[CAVEBOT_USER_MOTOR_3]));
     }
 
     return error;
@@ -215,14 +220,14 @@ Cavebot_Error_t Rover4ws_StartMotors(void)
 
 Cavebot_Error_t Rover4ws_StopMotors(void)
 {
-    Cavebot_Error_t error = Rover_BspToRoverError(BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_SLEEP, BSP_GPIO_STATE_RESET));
+    Cavebot_Error_t error = Cavebot_BspToCavebotError(BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_SLEEP, BSP_GPIO_STATE_RESET));
 
-    if (ROVER_ERROR_NONE == error)
+    if (CAVEBOT_ERROR_NONE == error)
     {
-        error = Rover4ws_BspErrorCheck(BspMotor_Stop(&CavebotUser_Motors[ROVER_4WS_CONFIG_MOTOR_0]),
-                                       BspMotor_Stop(&CavebotUser_Motors[ROVER_4WS_CONFIG_MOTOR_2]),
-                                       BspMotor_Stop(&CavebotUser_Motors[ROVER_4WS_CONFIG_MOTOR_1]),
-                                       BspMotor_Stop(&CavebotUser_Motors[ROVER_4WS_CONFIG_MOTOR_3]));
+        error = Rover4ws_BspErrorCheck(BspMotor_Stop(&CavebotUser_Motors[CAVEBOT_USER_MOTOR_0]),
+                                       BspMotor_Stop(&CavebotUser_Motors[CAVEBOT_USER_MOTOR_2]),
+                                       BspMotor_Stop(&CavebotUser_Motors[CAVEBOT_USER_MOTOR_1]),
+                                       BspMotor_Stop(&CavebotUser_Motors[CAVEBOT_USER_MOTOR_3]));
     }
 
     return error;
@@ -254,55 +259,56 @@ Cavebot_Error_t Rover4ws_SampleEncoders(void)
 
 Cavebot_Error_t Rover4ws_EnableSpeedControl(void)
 {
-    return Rover4ws_ErrorCheck(RoverPid_Enable(&CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_0]),
-                               RoverPid_Enable(&CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_1]),
-                               RoverPid_Enable(&CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_2]),
-                               RoverPid_Enable(&CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_3]));
+    return Rover4ws_ErrorCheck(CavebotPid_Enable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_0]),
+                               CavebotPid_Enable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_1]),
+                               CavebotPid_Enable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_2]),
+                               CavebotPid_Enable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_3]));
 }
 
 Cavebot_Error_t Rover4ws_DisableSpeedControl(void)
 {
-    return Rover4ws_ErrorCheck(RoverPid_Disable(&CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_0]),
-                               RoverPid_Disable(&CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_1]),
-                               RoverPid_Disable(&CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_2]),
-                               RoverPid_Disable(&CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_3]));
+    return Rover4ws_ErrorCheck(CavebotPid_Disable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_0]),
+                               CavebotPid_Disable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_1]),
+                               CavebotPid_Disable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_2]),
+                               CavebotPid_Disable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_3]));
 }
 
 Cavebot_Error_t Rover4ws_EnableSteeringControl(void)
 {
-    return RoverPid_Enable(&Rover4wsConfig_SteeringPid);
+    return CavebotPid_Enable(&Rover4ws_SteeringPid);
 }
 
 Cavebot_Error_t Rover4ws_DisableSteeringControl(void)
 {
-    return RoverPid_Disable(&Rover4wsConfig_SteeringPid);
+    return CavebotPid_Disable(&Rover4ws_SteeringPid);
 }
 
 Cavebot_Error_t Rover4ws_Task(void)
 {
-    Cavebot_Error_t error = ROVER_ERROR_NONE;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
 
-    if (Rover_IsArmed())
+    if (Cavebot_IsArmed())
     {
-        Rover_GyroscopeReading_t gyroscope = {
+        Gyroscope_Reading_t gyroscope = {
             .x = 0.0,
             .y = 0.0,
-            .z = 0.0};
+            .z = 0.0
+        };
 
         (void)Rover4ws_SampleEncoders();
-        (void)RoverImu_ReadGyroscope(&gyroscope);
+        (void)Gyroscope_Read(&gyroscope);
 
         /* TODO SD-126 test with steering control coupled and decoupled from wheel speed control */
-        (void)RoverPid_Update(&Rover4wsConfig_SteeringPid, gyroscope.z, BspTick_GetMicroseconds());
-        error = Rover4ws_SetSteeringAngle(Rover4wsConfig_SteeringPid.output);
+        (void)CavebotPid_Update(&Rover4ws_SteeringPid, gyroscope.z, BspTick_GetMicroseconds());
+        error = Rover4ws_SetSteeringAngle(Rover4ws_SteeringPid.output);
 
-        if (ROVER_ERROR_NONE == error)
+        if (CAVEBOT_ERROR_NONE == error)
         {
-            Rover4ws_SetSpeed(Rover4ws_CommandedSpeed, Rover4wsConfig_SteeringPid.output);
-            error = Rover4ws_ErrorCheck(Rover4ws_MotorSpeedControl(ROVER_4WS_CONFIG_MOTOR_0),
-                                        Rover4ws_MotorSpeedControl(ROVER_4WS_CONFIG_MOTOR_1),
-                                        Rover4ws_MotorSpeedControl(ROVER_4WS_CONFIG_MOTOR_2),
-                                        Rover4ws_MotorSpeedControl(ROVER_4WS_CONFIG_MOTOR_3));
+            Rover4ws_SetSpeed(Rover4ws_CommandedSpeed, Rover4ws_SteeringPid.output);
+            error = Rover4ws_ErrorCheck(Rover4ws_MotorSpeedControl(CAVEBOT_USER_MOTOR_0),
+                                        Rover4ws_MotorSpeedControl(CAVEBOT_USER_MOTOR_1),
+                                        Rover4ws_MotorSpeedControl(CAVEBOT_USER_MOTOR_2),
+                                        Rover4ws_MotorSpeedControl(CAVEBOT_USER_MOTOR_3));
         }
     }
 
@@ -311,19 +317,19 @@ Cavebot_Error_t Rover4ws_Task(void)
 
 Cavebot_Error_t Rover4ws_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_RadiansPerSecond_t turn_rate)
 {
-    Cavebot_Error_t error = ROVER_ERROR_NONE;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
 
-    if (!Rover_IsArmed())
+    if (!Cavebot_IsArmed())
     {
-        error = ROVER_ERROR_MODE;
+        error = CAVEBOT_ERROR_MODE;
     }
     /* Check for divide by zero */
     else if (0.0 != speed)
     {
-        Bsp_Radian_t steering_angle = atan((turn_rate * kRover4wsConfig_HalfWheelbase) / speed);
+        Bsp_Radian_t steering_angle = atan((turn_rate * kRover4ws_HalfWheelbase) / speed);
 
-        Rover4ws_CommandedSpeed = speed;
-        Rover4wsConfig_SteeringPid.command = steering_angle;
+        Rover4ws_CommandedSpeed      = speed;
+        Rover4ws_SteeringPid.command = steering_angle;
     }
 
     return error;
@@ -334,21 +340,21 @@ Cavebot_Error_t Rover4ws_ErrorCheck(const Cavebot_Error_t error_0,
                                     const Cavebot_Error_t error_2,
                                     const Cavebot_Error_t error_3)
 {
-    Cavebot_Error_t error = ROVER_ERROR_NONE;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
 
-    if (ROVER_ERROR_NONE != error_0)
+    if (CAVEBOT_ERROR_NONE != error_0)
     {
         error = error_0;
     }
-    else if (ROVER_ERROR_NONE != error_1)
+    else if (CAVEBOT_ERROR_NONE != error_1)
     {
         error = error_1;
     }
-    else if (ROVER_ERROR_NONE != error_2)
+    else if (CAVEBOT_ERROR_NONE != error_2)
     {
         error = error_2;
     }
-    else if (ROVER_ERROR_NONE != error_3)
+    else if (CAVEBOT_ERROR_NONE != error_3)
     {
         error = error_3;
     }
@@ -358,25 +364,25 @@ Cavebot_Error_t Rover4ws_ErrorCheck(const Cavebot_Error_t error_0,
 
 static void Rover4ws_SetSpeed(const Bsp_MetersPerSecond_t speed, const Bsp_Radian_t steering_angle)
 {
-    double radius = kRover4wsConfig_HalfWheelbase / tan(steering_angle);
-    double left_angular_speed = (speed * (2 - (kRover4wsConfig_Tread / radius))) / kRover4wsConfig_DoubleWheelRadius;
-    double right_angular_speed = (speed * (2 + (kRover4wsConfig_Tread / radius))) / kRover4wsConfig_DoubleWheelRadius;
+    double radius              = kRover4ws_HalfWheelbase / tan(steering_angle);
+    double left_angular_speed  = (speed * (2 - (kRover4ws_Tread / radius))) / kRover4ws_DoubleWheelRadius;
+    double right_angular_speed = (speed * (2 + (kRover4ws_Tread / radius))) / kRover4ws_DoubleWheelRadius;
 
-    CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_0].command = left_angular_speed;
-    CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_2].command = left_angular_speed;
-    CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_1].command = right_angular_speed;
-    CavebotUser_MotorsPid[ROVER_4WS_CONFIG_MOTOR_3].command = right_angular_speed;
+    CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_0].command = left_angular_speed;
+    CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_2].command = left_angular_speed;
+    CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_1].command = right_angular_speed;
+    CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_3].command = right_angular_speed;
 }
 
 static Cavebot_Error_t Rover4ws_MotorSpeedControl(const CavebotUser_Motor_t motor)
 {
-    Cavebot_Error_t error = ROVER_ERROR_PERIPHERAL;
+    Cavebot_Error_t error = CAVEBOT_ERROR_PERIPHERAL;
 
-    if (motor < ROVER_4WS_CONFIG_MOTOR_MAX)
+    if (motor < CAVEBOT_USER_MOTOR_MAX)
     {
-        error = RoverPid_Update(&CavebotUser_MotorsPid[motor], BspEncoderUser_HandleTable[CavebotUser_Encoders[motor]].angular_rate, BspTick_GetMicroseconds());
+        error = CavebotPid_Update(&CavebotUser_MotorsPid[motor], BspEncoderUser_HandleTable[CavebotUser_Encoders[motor]].angular_rate, BspTick_GetMicroseconds());
 
-        if (ROVER_ERROR_NONE == error)
+        if (CAVEBOT_ERROR_NONE == error)
         {
             error = Rover4ws_SetMotorSpeed(motor, CavebotUser_MotorsPid[motor].output);
         }
@@ -387,22 +393,22 @@ static Cavebot_Error_t Rover4ws_MotorSpeedControl(const CavebotUser_Motor_t moto
 
 static Cavebot_Error_t Rover4ws_SetMotorSpeed(const CavebotUser_Motor_t motor, const Bsp_RadiansPerSecond_t speed)
 {
-    Cavebot_Error_t error = ROVER_ERROR_PERIPHERAL;
+    Cavebot_Error_t error = CAVEBOT_ERROR_PERIPHERAL;
 
-    if (motor < ROVER_4WS_CONFIG_MOTOR_MAX)
+    if (motor < CAVEBOT_USER_MOTOR_MAX)
     {
         if (speed < 0.0)
         {
-            error = Rover_BspToRoverError(BspMotor_Reverse(&CavebotUser_Motors[motor]));
+            error = Cavebot_BspToCavebotError(BspMotor_Reverse(&CavebotUser_Motors[motor]));
         }
         else
         {
-            error = Rover_BspToRoverError(BspMotor_Forward(&CavebotUser_Motors[motor]));
+            error = Cavebot_BspToCavebotError(BspMotor_Forward(&CavebotUser_Motors[motor]));
         }
 
-        if (ROVER_ERROR_NONE == error)
+        if (CAVEBOT_ERROR_NONE == error)
         {
-            error = Rover_BspToRoverError(BspMotor_SetSpeed(&CavebotUser_Motors[motor], fabs(speed)));
+            error = Cavebot_BspToCavebotError(BspMotor_SetSpeed(&CavebotUser_Motors[motor], fabs(speed)));
         }
     }
 
@@ -411,21 +417,21 @@ static Cavebot_Error_t Rover4ws_SetMotorSpeed(const CavebotUser_Motor_t motor, c
 
 static Cavebot_Error_t Rover4ws_SetSteeringAngle(const Bsp_Radian_t steering_angle)
 {
-    Cavebot_Error_t error = ROVER_ERROR_VALUE;
+    Cavebot_Error_t error = CAVEBOT_ERROR_VALUE;
 
-    double tan_delta = tan(steering_angle);
-    Bsp_Meter_t scaled_wheelbase = kRover4wsConfig_HalfWheelbase * tan_delta;
-    Bsp_Meter_t offset = kRover4wsConfig_HalfTread * tan_delta;
+    double      tan_delta        = tan(steering_angle);
+    Bsp_Meter_t scaled_wheelbase = kRover4ws_HalfWheelbase * tan_delta;
+    Bsp_Meter_t offset           = kRover4ws_HalfTread * tan_delta;
 
-    Bsp_Radian_t delta_left = atan(scaled_wheelbase / (kRover4wsConfig_HalfWheelbase - offset));
-    Bsp_Radian_t delta_right = atan(scaled_wheelbase / (kRover4wsConfig_HalfWheelbase + offset));
+    Bsp_Radian_t delta_left  = atan(scaled_wheelbase / (kRover4ws_HalfWheelbase - offset));
+    Bsp_Radian_t delta_right = atan(scaled_wheelbase / (kRover4ws_HalfWheelbase + offset));
 
     if (Rover4ws_CompareDoubleSigns(&delta_left, &delta_right))
     {
-        error = Rover4ws_BspErrorCheck(BspServo_SetAngle(&CavebotUser_Servos[ROVER_4WS_CONFIG_SERVO_0], (ROVER_4WS_WHEEL_OFFSET - delta_left)),
-                                       BspServo_SetAngle(&CavebotUser_Servos[ROVER_4WS_CONFIG_SERVO_1], (ROVER_4WS_WHEEL_OFFSET - delta_right)),
-                                       BspServo_SetAngle(&CavebotUser_Servos[ROVER_4WS_CONFIG_SERVO_2], (ROVER_4WS_WHEEL_OFFSET + delta_left)),
-                                       BspServo_SetAngle(&CavebotUser_Servos[ROVER_4WS_CONFIG_SERVO_3], (ROVER_4WS_WHEEL_OFFSET + delta_right)));
+        error = Rover4ws_BspErrorCheck(BspServo_SetAngle(&CavebotUser_Servos[CAVEBOT_USER_SERVO_0], (ROVER_4WS_WHEEL_OFFSET - delta_left)),
+                                       BspServo_SetAngle(&CavebotUser_Servos[CAVEBOT_USER_SERVO_1], (ROVER_4WS_WHEEL_OFFSET - delta_right)),
+                                       BspServo_SetAngle(&CavebotUser_Servos[CAVEBOT_USER_SERVO_2], (ROVER_4WS_WHEEL_OFFSET + delta_left)),
+                                       BspServo_SetAngle(&CavebotUser_Servos[CAVEBOT_USER_SERVO_3], (ROVER_4WS_WHEEL_OFFSET + delta_right)));
     }
 
     return error;
@@ -436,10 +442,10 @@ static Cavebot_Error_t Rover4ws_BspErrorCheck(const Bsp_Error_t error_0,
                                               const Bsp_Error_t error_2,
                                               const Bsp_Error_t error_3)
 {
-    Cavebot_Error_t rover_error_0 = Rover_BspToRoverError(error_0);
-    Cavebot_Error_t rover_error_1 = Rover_BspToRoverError(error_1);
-    Cavebot_Error_t rover_error_2 = Rover_BspToRoverError(error_2);
-    Cavebot_Error_t rover_error_3 = Rover_BspToRoverError(error_3);
+    Cavebot_Error_t rover_error_0 = Cavebot_BspToCavebotError(error_0);
+    Cavebot_Error_t rover_error_1 = Cavebot_BspToCavebotError(error_1);
+    Cavebot_Error_t rover_error_2 = Cavebot_BspToCavebotError(error_2);
+    Cavebot_Error_t rover_error_3 = Cavebot_BspToCavebotError(error_3);
 
     return Rover4ws_ErrorCheck(rover_error_0, rover_error_1, rover_error_2, rover_error_3);
 }
@@ -447,5 +453,5 @@ static Cavebot_Error_t Rover4ws_BspErrorCheck(const Bsp_Error_t error_0,
 static inline bool Rover4ws_CompareDoubleSigns(const double *const value_1, const double *const value_2)
 {
     /* TODO CVW-49 make portable */
-    return !(bool)((*(uint64_t *)(value_1)&ROVER_4WS_DOUBLE_SIGN_MASK) ^ (*(uint64_t *)(value_2)&ROVER_4WS_DOUBLE_SIGN_MASK));
+    return !(bool)((*(uint64_t *)(value_1) & ROVER_4WS_DOUBLE_SIGN_MASK) ^ (*(uint64_t *)(value_2) & ROVER_4WS_DOUBLE_SIGN_MASK));
 }

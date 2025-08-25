@@ -4,11 +4,13 @@ project(Bots)
 set(BOTS_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 set(BOTS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
+option(ROVER_4WS "Enable Rover 4WS bot configuration" OFF)
+
 set(BOTS_SRCS "")
 
 if (ROVER_4WS)
     message(STATUS "Adding support for Rover 4WS.")
-    list(APPEND BOTS_SRCS ${BOTS_SRCS}/rover_4ws.c)
+    list(APPEND BOTS_SRCS ${BOTS_SRC_DIR}/rover_4ws.c)
 endif()
 
 add_library(${PROJECT_NAME} INTERFACE)

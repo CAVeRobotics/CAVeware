@@ -16,13 +16,15 @@
 #define CAVEBOT_LOOP_LOG_PERIOD (Bsp_Microsecond_t)((Bsp_Microsecond_t)5U * BSP_TICK_MICROSECONDS_PER_SECOND)
 
 static const char *kCavebot_LogTag = "CAVEBOT";
-static bool Cavebot_Armed = false;
+static bool        Cavebot_Armed   = false;
 
+static void Cavebot_Initialize(void);
+static void Cavebot_Task(void);
 static void Cavebot_MeasureLoopRate(void);
 
 int main(void)
 {
-   Bsp_Initialize();
+    Bsp_Initialize();
 
     if (BSP_ERROR_NONE != BspTick_Start())
     {
@@ -55,25 +57,6 @@ int main(void)
     }
 
     return 0;
-}
-
-
-void Cavebot_Initialize(void)
-{
-    /* TODO CVW-50 handle return codes */
-    (void)Cavebot_Disarm();
-    (void)Accelerometer_Initialize();
-    (void)Gyroscope_Initialize();
-}
-
-void Cavebot_Task(void)
-{
-    Cavebot_Error_t error = Rover4ws_Task();
-
-    if (CAVEBOT_ERROR_NONE != error)
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Task error %d", (int)error);
-    }
 }
 
 Cavebot_Error_t Cavebot_BspToCavebotError(const Bsp_Error_t bsp_error)
@@ -201,6 +184,24 @@ Cavebot_Error_t Cavebot_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_Radia
     }
 
     return error;
+}
+
+static void Cavebot_Initialize(void)
+{
+    /* TODO CVW-50 handle return codes */
+    (void)Cavebot_Disarm();
+    (void)Accelerometer_Initialize();
+    (void)Gyroscope_Initialize();
+}
+
+static void Cavebot_Task(void)
+{
+    Cavebot_Error_t error = Rover4ws_Task();
+
+    if (CAVEBOT_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Task error %d", (int)error);
+    }
 }
 
 static void Cavebot_MeasureLoopRate(void)

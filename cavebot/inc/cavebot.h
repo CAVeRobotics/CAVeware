@@ -15,8 +15,6 @@ typedef enum
     CAVEBOT_ERROR_VALUE
 } Cavebot_Error_t;
 
-void Cavebot_Initialize(void);
-void Cavebot_Task(void);
 Cavebot_Error_t Cavebot_BspToCavebotError(const Bsp_Error_t bsp_error);
 Cavebot_Error_t Cavebot_Arm(void);
 Cavebot_Error_t Cavebot_Disarm(void);

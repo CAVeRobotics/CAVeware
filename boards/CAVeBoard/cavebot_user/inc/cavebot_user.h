@@ -6,6 +6,8 @@
 #include "bsp_motor.h"
 #include "bsp_servo.h"
 
+#include "cavebot_pid.h"
+
 typedef enum
 {
     CAVEBOT_USER_SERVO_0,
@@ -37,6 +39,7 @@ typedef enum
 
 extern BspServo_Handle_t CavebotUser_Servos[CAVEBOT_USER_SERVO_MAX];
 extern BspMotor_Handle_t CavebotUser_Motors[CAVEBOT_USER_MOTOR_MAX];
+extern CavebotPid_Handle_t CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_MAX];
 extern BspEncoderUser_Timer_t CavebotUser_Encoders[CAVEBOT_USER_MOTOR_MAX];
 
 #endif /* CAVEBOT_USER_H */
