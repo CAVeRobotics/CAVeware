@@ -41,6 +41,7 @@ set_source_files_properties(
     PROPERTIES
     COMPILE_OPTIONS "-Werror"
 )
+# TODO add compile options to device sources
 get_target_property(SENSORS_SRCS Sensors INTERFACE_SOURCES)
 set_source_files_properties(
     ${SENSORS_SRCS}
@@ -67,20 +68,6 @@ set_source_files_properties(
 target_link_libraries(Bsp
     INTERFACE
         BspUser
-)
-
-################################################################################
-# LSM6DSV16X driver
-################################################################################
-set(LSM6DSV16X_DIR ${CMAKE_SOURCE_DIR}/external/lsm6dsv16x-pid)
-add_library(lsm6dsv16x INTERFACE)
-target_sources(lsm6dsv16x
-    INTERFACE
-        ${LSM6DSV16X_DIR}/lsm6dsv16x_reg.c
-)
-target_include_directories(lsm6dsv16x
-    INTERFACE
-        ${LSM6DSV16X_DIR}
 )
 
 ################################################################################
@@ -156,11 +143,11 @@ target_sources(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         Bsp
+        Devices
         Sensors
         Bots
         CavebotUser
         CAVeTalk-c
-        lsm6dsv16x
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -173,6 +160,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 # CI and tools
 ################################################################################
 set(TOOLS_DIR ${CMAKE_SOURCE_DIR}/tools)
+# TODO add device sources to static analysis and formatting checks
 set(CPPCHECK_SOURCES ${BSP_SRCS} ${BSP_USER_SRCS} ${SENSORS_SRCS} ${BOTS_SRCS} ${CAVEBOT_USER_SRCS} ${CAVEBOT_SRCS})
 include(${TOOLS_DIR}/cppcheck/cppcheck.cmake)
 get_target_property(BSP_USER_INC_DIRS BspUser INTERFACE_INCLUDE_DIRECTORIES)
