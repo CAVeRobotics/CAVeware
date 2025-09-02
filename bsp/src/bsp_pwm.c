@@ -73,7 +73,7 @@ Bsp_Error_t BspPwm_SetDutyCycle(const BspPwmUser_Timer_t timer, const Bsp_TimerC
     {
         error = BSP_ERROR_PERIPHERAL;
     }
-    else if ((duty_cycle < 0) | (duty_cycle > 1.0))
+    else if ((duty_cycle < 0) || (duty_cycle > 1.0))
     {
         error = BSP_ERROR_VALUE;
     }

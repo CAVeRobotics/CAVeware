@@ -94,7 +94,7 @@ Cavebot_Error_t Cavebot_Arm(void)
 
     if (CAVEBOT_ERROR_NONE == error)
     {
-    error = Rover4ws_StartMotors();
+        error = Rover4ws_StartMotors();
     }
 
     if (CAVEBOT_ERROR_NONE == error)

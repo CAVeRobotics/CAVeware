@@ -31,10 +31,10 @@
         <id>staticFunction</id>
         <symbolName>BspAdc_ReadRaw</symbolName>
     </suppress>
-    <!-- <suppress>
+    <suppress>
         <id>staticFunction</id>
         <symbolName>Lsm6dsv16x_Calibrate</symbolName>
-    </suppress> -->
+    </suppress>
 
     <!-- Suppress double sign comparison portability error -->
     <suppress>
