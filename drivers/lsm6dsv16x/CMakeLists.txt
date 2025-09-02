@@ -29,3 +29,10 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
         Devices
 )
+
+if(COMMAND append_sources)
+    append_sources("${LSM6DSV16X_SRC_DIR}/lsm6dsv16x.c")
+endif()
+if(COMMAND append_include_directories)
+    append_include_directories("${LSM6DSV16X_INC_DIR}")
+endif()

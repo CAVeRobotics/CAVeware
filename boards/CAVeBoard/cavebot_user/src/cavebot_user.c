@@ -32,4 +32,4 @@ BspEncoderUser_Timer_t CavebotUser_Encoders[CAVEBOT_USER_MOTOR_MAX] = {
 
 /* TODO */
 Accelerometer_Handle_t CavebotUser_Accelerometer;
-Gyroscope_Handle_t CavebotUser_Gyroscope;
+Gyroscope_Handle_t     CavebotUser_Gyroscope;

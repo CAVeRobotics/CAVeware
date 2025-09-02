@@ -58,3 +58,16 @@ target_sources(${PROJECT_NAME}
         $<TARGET_PROPERTY:BspUser,INTERFACE_SOURCES>
         ${BSP_SRCS}
 )
+
+if(COMMAND append_sources)
+    append_sources("${BSP_SRCS}")
+endif()
+if(COMMAND collect_sources)
+    collect_sources(BspUser)
+endif()
+if(COMMAND append_include_directories)
+    append_include_directories("${BSP_INC_DIR}")
+endif()
+if(COMMAND collect_include_directories)
+    collect_include_directories(BspUser)
+endif()

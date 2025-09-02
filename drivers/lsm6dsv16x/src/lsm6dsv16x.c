@@ -14,14 +14,14 @@
 #include "accelerometer.h"
 #include "gyroscope.h"
 
-#define LSM6DSV16X_BOOT_TIME (Bsp_Millisecond_t)10U
-#define LSM6DSV16X_TIMEOUT (Bsp_Millisecond_t)10U
-#define LSM6DSV16X_CALIBRATION_SETTLE_TIME (Bsp_Millisecond_t)100U
-#define LSM6DSV16X_REGISTER_READ 0x80U
+#define LSM6DSV16X_BOOT_TIME                        (Bsp_Millisecond_t)10U
+#define LSM6DSV16X_TIMEOUT                          (Bsp_Millisecond_t)10U
+#define LSM6DSV16X_CALIBRATION_SETTLE_TIME          (Bsp_Millisecond_t)100U
+#define LSM6DSV16X_REGISTER_READ                    0x80U
 #define LSM6DSV16X_FS2_TO_METERS_PER_SECOND_SQUARED (double)5.985e-4
-#define LSM6DSV16X_125DPS_TO_RADIANS_PER_SECOND (double)6.658e-5
-#define LSM6DSV16X_ERROR_NONE (int32_t)0
-#define LSM6DSV16X_MILLIG_TO_G 1e3
+#define LSM6DSV16X_125DPS_TO_RADIANS_PER_SECOND     (double)6.658e-5
+#define LSM6DSV16X_ERROR_NONE                       (int32_t)0
+#define LSM6DSV16X_MILLIG_TO_G                      1e3
 
 typedef int32_t Lsm6dsv16x_Error_t;
 
@@ -107,21 +107,21 @@ Bsp_Error_t Lsm6dsv16x_Initialize(Lsm6dsv16x_Context_t *const context)
 
         /* Configure filtering chain */
         lsm6dsv16x_filt_settling_mask_t filter_settling_mask;
-        filter_settling_mask.drdy = PROPERTY_ENABLE;
+        filter_settling_mask.drdy   = PROPERTY_ENABLE;
         filter_settling_mask.irq_xl = PROPERTY_ENABLE;
-        filter_settling_mask.irq_g = PROPERTY_ENABLE;
-        error |= lsm6dsv16x_filt_settling_mask_set(&context->interface, filter_settling_mask);
-        error |= lsm6dsv16x_filt_gy_lp1_set(&context->interface, PROPERTY_ENABLE);
-        error |= lsm6dsv16x_filt_gy_lp1_bandwidth_set(&context->interface, LSM6DSV16X_GY_ULTRA_LIGHT);
-        error |= lsm6dsv16x_filt_xl_lp2_set(&context->interface, PROPERTY_ENABLE);
-        error |= lsm6dsv16x_filt_xl_lp2_bandwidth_set(&context->interface, LSM6DSV16X_XL_STRONG);
+        filter_settling_mask.irq_g  = PROPERTY_ENABLE;
+        error                      |= lsm6dsv16x_filt_settling_mask_set(&context->interface, filter_settling_mask);
+        error                      |= lsm6dsv16x_filt_gy_lp1_set(&context->interface, PROPERTY_ENABLE);
+        error                      |= lsm6dsv16x_filt_gy_lp1_bandwidth_set(&context->interface, LSM6DSV16X_GY_ULTRA_LIGHT);
+        error                      |= lsm6dsv16x_filt_xl_lp2_set(&context->interface, PROPERTY_ENABLE);
+        error                      |= lsm6dsv16x_filt_xl_lp2_bandwidth_set(&context->interface, LSM6DSV16X_XL_STRONG);
 
         /* Enable game rotation vector */
         lsm6dsv16x_fifo_sflp_raw_t fifo_sflp;
         fifo_sflp.game_rotation = 1;
-        fifo_sflp.gravity = 0;
-        fifo_sflp.gbias = 0;
-        error |= lsm6dsv16x_fifo_sflp_batch_set(&context->interface, fifo_sflp);
+        fifo_sflp.gravity       = 0;
+        fifo_sflp.gbias         = 0;
+        error                  |= lsm6dsv16x_fifo_sflp_batch_set(&context->interface, fifo_sflp);
 
         /* Set FIFO mode to Continuous mode */
         error |= lsm6dsv16x_fifo_mode_set(&context->interface, LSM6DSV16X_STREAM_MODE);
@@ -164,21 +164,27 @@ bool Lsm6dsv16x_IsInitialized(const Lsm6dsv16x_Context_t *const context)
 
 Bsp_Error_t Lsm6dsv16x_Calibrate(Lsm6dsv16x_Context_t *const context)
 {
-    Lsm6dsv16x_Error_t error = LSM6DSV16X_ERROR_NONE;
-    lsm6dsv16x_fifo_status_t fifo_status = {0U};
-    uint16_t xl_samples = 0U;
-    uint16_t gy_samples = 0U;
-    int32_t xl_data[LSM6DSV16X_AXIS_MAX] = {0U};
-    int32_t gy_data[LSM6DSV16X_AXIS_MAX] = {0U};
-    int32_t gravity_offset = (int32_t)(LSM6DSV16X_MILLIG_TO_G / Lsm6dsv16x_FsToMilliG(context, 1));
-    lsm6dsv16x_data_rate_t xl_data_rate;
-    lsm6dsv16x_data_rate_t gy_data_rate;
-    lsm6dsv16x_fifo_xl_batch_t xl_fifo_batch;
-    lsm6dsv16x_fifo_gy_batch_t gy_fifo_batch;
-    lsm6dsv16x_fifo_mode_t fifo_mode;
-    lsm6dsv16x_fifo_sflp_raw_t fifo_sflp;
+    Lsm6dsv16x_Error_t          error       = LSM6DSV16X_ERROR_NONE;
+    lsm6dsv16x_fifo_status_t    fifo_status = {
+        0U
+    };
+    uint16_t                    xl_samples                   = 0U;
+    uint16_t                    gy_samples                   = 0U;
+    int32_t                     xl_data[LSM6DSV16X_AXIS_MAX] = {
+        0U
+    };
+    int32_t                     gy_data[LSM6DSV16X_AXIS_MAX] = {
+        0U
+    };
+    int32_t                     gravity_offset = (int32_t)(LSM6DSV16X_MILLIG_TO_G / Lsm6dsv16x_FsToMilliG(context, 1));
+    lsm6dsv16x_data_rate_t      xl_data_rate;
+    lsm6dsv16x_data_rate_t      gy_data_rate;
+    lsm6dsv16x_fifo_xl_batch_t  xl_fifo_batch;
+    lsm6dsv16x_fifo_gy_batch_t  gy_fifo_batch;
+    lsm6dsv16x_fifo_mode_t      fifo_mode;
+    lsm6dsv16x_fifo_sflp_raw_t  fifo_sflp;
     lsm6dsv16x_sflp_data_rate_t sflp_data_rate;
-    uint8_t game_rotation_enabled;
+    uint8_t                     game_rotation_enabled;
 
     BSP_LOGGER_LOG_DEBUG(kLsm6dsv16x_LogTag, "Calibrating");
 
@@ -213,10 +219,10 @@ Bsp_Error_t Lsm6dsv16x_Calibrate(Lsm6dsv16x_Context_t *const context)
         /* Disable SFLP */
         lsm6dsv16x_fifo_sflp_raw_t fifo_sflp_disabled;
         fifo_sflp_disabled.game_rotation = 0;
-        fifo_sflp_disabled.gravity = 0;
-        fifo_sflp_disabled.gbias = 0;
-        error |= lsm6dsv16x_fifo_sflp_batch_set(&context->interface, fifo_sflp_disabled);
-        error |= lsm6dsv16x_sflp_game_rotation_set(&context->interface, PROPERTY_DISABLE);
+        fifo_sflp_disabled.gravity       = 0;
+        fifo_sflp_disabled.gbias         = 0;
+        error                           |= lsm6dsv16x_fifo_sflp_batch_set(&context->interface, fifo_sflp_disabled);
+        error                           |= lsm6dsv16x_sflp_game_rotation_set(&context->interface, PROPERTY_DISABLE);
 
         Bsp_Delay(LSM6DSV16X_CALIBRATION_SETTLE_TIME);
 
@@ -369,8 +375,8 @@ Lsm6dsv16x_Error_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu_regist
 
 Lsm6dsv16x_Error_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size)
 {
-    Lsm6dsv16x_Error_t error = LSM6DSV16X_ERROR_NONE;
-    uint8_t register_read = imu_register | LSM6DSV16X_REGISTER_READ;
+    Lsm6dsv16x_Error_t error         = LSM6DSV16X_ERROR_NONE;
+    uint8_t            register_read = imu_register | LSM6DSV16X_REGISTER_READ;
 
     if ((BSP_ERROR_NONE != BspGpio_Write(BSP_GPIO_USER_PIN_IMU_CS, BSP_GPIO_STATE_RESET)) ||
         (BSP_ERROR_NONE != (Bsp_Error_t)HAL_SPI_Transmit(handle, &register_read, 1U, LSM6DSV16X_TIMEOUT)) ||
@@ -385,7 +391,7 @@ Lsm6dsv16x_Error_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_registe
 
 static Bsp_Error_t Lsm6dsv16x_ReadAll(Lsm6dsv16x_Context_t *const context)
 {
-    Lsm6dsv16x_Error_t error = LSM6DSV16X_ERROR_NONE;
+    Lsm6dsv16x_Error_t      error = LSM6DSV16X_ERROR_NONE;
     lsm6dsv16x_data_ready_t data_ready;
 
     error |= lsm6dsv16x_flag_data_ready_get(&context->interface, &data_ready);
@@ -422,12 +428,14 @@ static Bsp_Error_t Lsm6dsv16x_ReadAll(Lsm6dsv16x_Context_t *const context)
 static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context)
 {
     lsm6dsv16x_fifo_status_t fifo_status;
-    float_t quaternion[LSM6DSV16X_QUATERION_AXIS_MAX] = {
-        0U};
-    float_t quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_MAX] = {
-        0U};
-    uint16_t game_rotation_vector_samples = 0U;
-    Lsm6dsv16x_Error_t error = lsm6dsv16x_fifo_status_get(&context->interface, &fifo_status);
+    float_t                  quaternion[LSM6DSV16X_QUATERION_AXIS_MAX] = {
+        0U
+    };
+    float_t                  quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_MAX] = {
+        0U
+    };
+    uint16_t                 game_rotation_vector_samples = 0U;
+    Lsm6dsv16x_Error_t       error                        = lsm6dsv16x_fifo_status_get(&context->interface, &fifo_status);
 
     for (uint16_t i = 0U; i < fifo_status.fifo_level; i++)
     {
@@ -470,7 +478,7 @@ static inline Bsp_Error_t Lsm6dsv16x_ImuToBspError(const Lsm6dsv16x_Error_t erro
 
 static inline float Lsm6dsv16x_FsToMilliG(const Lsm6dsv16x_Context_t *const context, const Lsm6dsv16x_RawData_t fs)
 {
-    float mg = 0.0f;
+    float                      mg = 0.0f;
     lsm6dsv16x_xl_full_scale_t xl_full_scale;
 
     (void)lsm6dsv16x_xl_full_scale_get(&context->interface, &xl_full_scale);
@@ -516,7 +524,8 @@ static float_t npy_half_to_float(uint16_t h)
     {
         float_t ret;
         uint32_t retbits;
-    } conv;
+    }
+    conv;
     conv.retbits = lsm6dsv16x_from_f16_to_f32(h);
     return conv.ret;
 }
@@ -542,7 +551,7 @@ static void sflp2q(float_t quat[4], const uint16_t sflp[3])
         quat[0] /= n;
         quat[1] /= n;
         quat[2] /= n;
-        sumsq = 1.0f;
+        sumsq    = 1.0f;
     }
 
     quat[3] = sqrtf(1.0f - sumsq);

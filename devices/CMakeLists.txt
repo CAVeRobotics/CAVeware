@@ -39,3 +39,10 @@ target_compile_options(${PROJECT_NAME}
     PRIVATE
         "-Werror"
 )
+
+if(COMMAND collect_sources)
+    collect_sources(${PROJECT_NAME})
+endif()
+if(COMMAND collect_include_directories)
+    collect_include_directories(${PROJECT_NAME})
+endif()
