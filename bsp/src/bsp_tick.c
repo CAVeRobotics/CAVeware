@@ -8,7 +8,7 @@
 #include "bsp_tick_user.h"
 
 extern __IO uint32_t uwTick;
-extern void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle);
+extern void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *tim_baseHandle);
 
 static volatile Bsp_Microsecond_t BspTick_MicrosecondsElapsed       = 0U;
 static volatile Bsp_Microsecond_t BspTick_MicrosecondsElapsedShadow = 0U;
