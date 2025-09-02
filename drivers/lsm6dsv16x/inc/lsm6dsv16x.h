@@ -36,15 +36,21 @@ typedef struct
     Lsm6dsv16x_RawData_t raw_accelerometer[LSM6DSV16X_AXIS_MAX];
     Lsm6dsv16x_RawData_t raw_gyroscope[LSM6DSV16X_AXIS_MAX];
     double quaternion[LSM6DSV16X_QUATERION_AXIS_MAX];
-    /* Onboard registers may not have enough precision to store offset */
-    Lsm6dsv16x_RawData_t accelerometer_offset[LSM6DSV16X_AXIS_MAX];
-    Lsm6dsv16x_RawData_t gyroscope_offset[LSM6DSV16X_AXIS_MAX];
+    Lsm6dsv16x_RawData_t accelerometer_offset[LSM6DSV16X_AXIS_MAX]; /* Onboard registers may not have enough precision to store offset */
+    Lsm6dsv16x_RawData_t gyroscope_offset[LSM6DSV16X_AXIS_MAX];     /* Onboard registers may not have enough precision to store offset */
 } Lsm6dsv16x_Context_t;
 
 extern int32_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu_register, const uint8_t *const data, const uint16_t size);
 extern int32_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size);
 
-#define LSM6DSV16X_INSTANTIATE(spi_handle)           \
+Bsp_Error_t Lsm6dsv16x_Initialize(Lsm6dsv16x_Context_t *const context);
+bool Lsm6dsv16x_IsInitialized(const Lsm6dsv16x_Context_t *const context);
+Bsp_Error_t Lsm6dsv16x_Calibrate(Lsm6dsv16x_Context_t *const context);
+Bsp_Error_t Lsm6dsv16x_ReadAccelerometer(Lsm6dsv16x_Context_t *const context, Accelerometer_Reading_t *const reading);
+Bsp_Error_t Lsm6dsv16x_ReadGyroscope(Lsm6dsv16x_Context_t *const context, Gyroscope_Reading_t *const reading);
+Bsp_Error_t Lsm6dsv16x_ReadQuaterion(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion);
+
+#define LSM6DSV16X_CONTEXT(spi_handle)               \
         {                                            \
             .interface     = {                       \
                 .write_reg = Lsm6dsv16x_Write,       \
@@ -81,11 +87,19 @@ extern int32_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_register, u
             },                                       \
         }
 
-Bsp_Error_t Lsm6dsv16x_Initialize(Lsm6dsv16x_Context_t *const context);
-bool Lsm6dsv16x_IsInitialized(const Lsm6dsv16x_Context_t *const context);
-Bsp_Error_t Lsm6dsv16x_Calibrate(Lsm6dsv16x_Context_t *const context);
-Bsp_Error_t Lsm6dsv16x_ReadAccelerometer(Lsm6dsv16x_Context_t *const context, Accelerometer_Reading_t *const reading);
-Bsp_Error_t Lsm6dsv16x_ReadGyroscope(Lsm6dsv16x_Context_t *const context, Gyroscope_Reading_t *const reading);
-Bsp_Error_t Lsm6dsv16x_ReadQuaterion(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion);
+#define LSM6DSV16X_ACCELEROMETER_HANDLE(lsm6dsv16x_context)                   \
+        {                                                                     \
+            .context    = (void *)&lsm6dsv16x_context,                        \
+            .initialize = (Accelerometer_Initialize_t)Lsm6dsv16x_Initialize,  \
+            .read       = (Accelerometer_Read_t)Lsm6dsv16x_ReadAccelerometer, \
+        }
+
+#define LSM6DSV16X_GYROSCOPE_HANDLE(lsm6dsv16x_context)                             \
+        {                                                                           \
+            .context         = (void *)&lsm6dsv16x_context,                         \
+            .initialize      = (Gyroscope_Initialize_t)Lsm6dsv16x_Initialize,       \
+            .read            = (Gyroscope_Read_t)Lsm6dsv16x_ReadGyroscope,          \
+            .read_quaternion = (Gyroscope_ReadQuaternion_t)Lsm6dsv16x_ReadQuaterion \
+        }
 
 #endif /* LSM6DSV16X_H */

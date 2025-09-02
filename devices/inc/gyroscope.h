@@ -18,12 +18,16 @@ typedef struct
     double z;
 } Gyroscope_Quaternion_t;
 
+typedef Bsp_Error_t (*Gyroscope_Initialize_t)(void *const context);
+typedef Bsp_Error_t (*Gyroscope_Read_t)(void *const context, Gyroscope_Reading_t *const reading);
+typedef Bsp_Error_t (*Gyroscope_ReadQuaternion_t)(void *const context, Gyroscope_Quaternion_t *const quaternion);
+
 typedef struct
 {
     void *context;
-    Bsp_Error_t (*initialize)(void *const context);
-    Bsp_Error_t (*read)(void *const context, Gyroscope_Reading_t *const reading);
-    Bsp_Error_t (*read_quaternion)(void *const context, Gyroscope_Quaternion_t *const quaternion);
+    Gyroscope_Initialize_t initialize;
+    Gyroscope_Read_t read;
+    Gyroscope_ReadQuaternion_t read_quaternion;
 } Gyroscope_Handle_t;
 
 Bsp_Error_t Gyroscope_Initialize(Gyroscope_Handle_t *const handle);
