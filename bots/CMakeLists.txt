@@ -24,3 +24,9 @@ target_sources(${PROJECT_NAME}
     INTERFACE
         ${BOTS_SRCS}
 )
+
+set_source_files_properties(
+    ${BOTS_SRCS}
+    PROPERTIES
+    COMPILE_OPTIONS "-Werror"
+)
