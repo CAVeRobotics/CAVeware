@@ -19,6 +19,12 @@ target_sources(${PROJECT_NAME}
         ${LSM6DSV16X_SRC_DIR}/lsm6dsv16x.c
 )
 
+set_source_files_properties(
+    ${LSM6DSV16X_SRC_DIR}/lsm6dsv16x.c
+    PROPERTIES
+    COMPILE_OPTIONS "-Werror"
+)
+
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         Devices

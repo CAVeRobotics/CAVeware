@@ -34,3 +34,8 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
         Bsp
 )
+
+target_compile_options(${PROJECT_NAME}
+    PRIVATE
+        "-Werror"
+)

@@ -54,7 +54,6 @@ static void sflp2q(float_t quat[4], const uint16_t sflp[3]);
 Bsp_Error_t Lsm6dsv16x_Initialize(Lsm6dsv16x_Context_t *const context)
 {
     Lsm6dsv16x_Error_t error = LSM6DSV16X_ERROR_NONE;
-    Lsm6dsv16x_Error_t unused_var;
 
     /* Wait sensor boot time */
     Bsp_Delay(LSM6DSV16X_BOOT_TIME);
