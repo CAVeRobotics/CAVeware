@@ -168,14 +168,6 @@ Bsp_Error_t Lsm6dsv16x_Calibrate(Lsm6dsv16x_Context_t *const context)
     lsm6dsv16x_fifo_status_t    fifo_status = {
         0U
     };
-    uint16_t                    xl_samples                   = 0U;
-    uint16_t                    gy_samples                   = 0U;
-    int32_t                     xl_data[LSM6DSV16X_AXIS_MAX] = {
-        0U
-    };
-    int32_t                     gy_data[LSM6DSV16X_AXIS_MAX] = {
-        0U
-    };
     int32_t                     gravity_offset = (int32_t)(LSM6DSV16X_MILLIG_TO_G / Lsm6dsv16x_FsToMilliG(context, 1));
     lsm6dsv16x_data_rate_t      xl_data_rate;
     lsm6dsv16x_data_rate_t      gy_data_rate;
@@ -196,6 +188,15 @@ Bsp_Error_t Lsm6dsv16x_Calibrate(Lsm6dsv16x_Context_t *const context)
     }
     else
     {
+        uint16_t xl_samples                   = 0U;
+        uint16_t gy_samples                   = 0U;
+        int32_t  xl_data[LSM6DSV16X_AXIS_MAX] = {
+            0U
+        };
+        int32_t  gy_data[LSM6DSV16X_AXIS_MAX] = {
+            0U
+        };
+
         /* Save existing data rate */
         error |= lsm6dsv16x_xl_data_rate_get(&context->interface, &xl_data_rate);
         error |= lsm6dsv16x_gy_data_rate_get(&context->interface, &gy_data_rate);
