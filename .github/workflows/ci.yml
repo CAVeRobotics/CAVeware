@@ -42,6 +42,7 @@ jobs:
       - name: Cppcheck
         run: cmake --build --preset CAVeBoard_Release -j$(nproc) --target cppcheck
       - name: Generate HTML Report
+        if: ${{ failure() }}
         run: cmake --build --preset CAVeBoard_Release -j$(nproc) --target cppcheck-htmlreport
       - name: Upload Cppcheck Report
         if: ${{ failure() }}
