@@ -54,26 +54,3 @@ target_sources(BspUser
 # BSP
 ################################################################################
 add_subdirectory(${CMAKE_SOURCE_DIR}/bsp ${CMAKE_BINARY_DIR}/bsp)
-
-################################################################################
-# Cavebot User
-################################################################################
-set(CAVEBOT_USER_DIR ${BOARD_DIR}/cavebot_user)
-set(CAVEBOT_USER_INC_DIR ${CAVEBOT_USER_DIR}/inc)
-set(CAVEBOT_USER_SRC_DIR ${CAVEBOT_USER_DIR}/src)
-
-set(CAVEBOT_USER_SRCS
-    ${CAVEBOT_USER_SRC_DIR}/cavebot_user.c
-)
-
-add_library(CavebotUser INTERFACE)
-
-target_include_directories(CavebotUser
-    INTERFACE
-        ${CAVEBOT_USER_INC_DIR}
-)
-
-target_sources(CavebotUser
-    INTERFACE
-        ${CAVEBOT_USER_SRCS}
-)

@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 #include "lsm6dsv16x_reg.h"
-#include "spi.h"
 #include "stm32f4xx_hal.h"
 
 #include "bsp.h"
@@ -53,14 +52,13 @@ typedef enum
 } Lsm6dsv16x_FifoData_t;
 
 static const char *kLsm6dsv16x_LogTag = "LSM6DSV16X";
-static bool Lsm6dsv16x_Initialized = false;
 
-static int32_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu_register, const uint8_t *const data, const uint16_t size);
-static int32_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size);
-static Bsp_Error_t Lsm6dsv16x_ReadAll(void);
-static Bsp_Error_t Lsm6dsv16x_ReadFifo(void);
+int32_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu_register, const uint8_t *const data, const uint16_t size);
+int32_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size);
+static Bsp_Error_t Lsm6dsv16x_ReadAll(const Lsm6dsv16x_Context_t *const context);
+static Bsp_Error_t Lsm6dsv16x_ReadFifo(const Lsm6dsv16x_Context_t *const context);
 static inline Bsp_Error_t Lsm6dsv16x_ImuToBspError(const Lsm6dsv16x_Error_t error);
-static inline float Lsm6dsv16x_FsToMilliG(const Lsm6dsv16x_RawData_t fs);
+static inline float Lsm6dsv16x_FsToMilliG(const Lsm6dsv16x_Context_t *const context, const Lsm6dsv16x_RawData_t fs);
 static inline Bsp_MetersPerSecondSquared_t Lsm6dsv16x_Fs2ToMetersPerSecondSquared(const Lsm6dsv16x_RawData_t fs2);
 static inline Bsp_MetersPerSecondSquared_t Lsm6dsv16x_125dpsToRadiansPerSecond(const Lsm6dsv16x_RawData_t dps);
 
@@ -70,13 +68,6 @@ static inline Bsp_MetersPerSecondSquared_t Lsm6dsv16x_125dpsToRadiansPerSecond(c
  */
 static float_t npy_half_to_float(uint16_t h);
 static void sflp2q(float_t quat[4], const uint16_t sflp[3]);
-
-static stmdev_ctx_t Lsm6dsv16x_DeviceHandle = {
-    .write_reg = Lsm6dsv16x_Write,
-    .read_reg = Lsm6dsv16x_Read,
-    .mdelay = Bsp_Delay,
-    .handle = &hspi2,
-};
 
 static Lsm6dsv16x_RawData_t Lsm6dsv16x_RawAccelerometer[LSM6DSV16X_AXIS_MAX] = {
     [LSM6DSV16X_AXIS_X] = 0,
@@ -102,17 +93,27 @@ static Lsm6dsv16x_RawData_t Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_MAX] = {
     [LSM6DSV16X_AXIS_Y] = 0,
     [LSM6DSV16X_AXIS_Z] = 0};
 
-Bsp_Error_t Lsm6dsv16x_Initialize(void)
+Bsp_Error_t Lsm6dsv16x_Initialize(Lsm6dsv16x_Context_t *const context)
 {
     Lsm6dsv16x_Error_t error = LSM6DSV16X_ERROR_NONE;
+    Lsm6dsv16x_Error_t unused_var;
 
     /* Wait sensor boot time */
     Bsp_Delay(LSM6DSV16X_BOOT_TIME);
 
     /* Check device ID */
     uint8_t whoami = 0U;
-    error |= lsm6dsv16x_device_id_get(&Lsm6dsv16x_DeviceHandle, &whoami);
-    if (LSM6DSV16X_ID != whoami)
+    if (NULL == context)
+    {
+        error = 1;
+
+        BSP_LOGGER_LOG_ERROR(kLsm6dsv16x_LogTag, "Context is NULL");
+    }
+    else if (context->initialized)
+    {
+        /* Do nothing */
+    }
+    else if ((0 != lsm6dsv16x_device_id_get(&context->interface, &whoami)) || (LSM6DSV16X_ID != whoami))
     {
         error = 1;
 
@@ -125,87 +126,94 @@ Bsp_Error_t Lsm6dsv16x_Initialize(void)
         /* Restore default configuration */
         BSP_LOGGER_LOG_DEBUG(kLsm6dsv16x_LogTag, "Resetting IMU");
         lsm6dsv16x_reset_t imu_reset;
-        error |= lsm6dsv16x_reset_set(&Lsm6dsv16x_DeviceHandle, LSM6DSV16X_RESTORE_CTRL_REGS);
-        error |= lsm6dsv16x_reset_get(&Lsm6dsv16x_DeviceHandle, &imu_reset);
+        error |= lsm6dsv16x_reset_set(&context->interface, LSM6DSV16X_RESTORE_CTRL_REGS);
+        error |= lsm6dsv16x_reset_get(&context->interface, &imu_reset);
         while (LSM6DSV16X_READY != imu_reset)
         {
-            error |= lsm6dsv16x_reset_get(&Lsm6dsv16x_DeviceHandle, &imu_reset);
+            error |= lsm6dsv16x_reset_get(&context->interface, &imu_reset);
         }
         BSP_LOGGER_LOG_DEBUG(kLsm6dsv16x_LogTag, "IMU reset");
 
         /* Enable Block Data Update */
-        error |= lsm6dsv16x_block_data_update_set(&Lsm6dsv16x_DeviceHandle, PROPERTY_ENABLE);
+        error |= lsm6dsv16x_block_data_update_set(&context->interface, PROPERTY_ENABLE);
 
         /* Set Output Data Rate.
          * Selected data rate have to be equal or greater with respect
          * with MLC data rate.
          */
-        error |= lsm6dsv16x_xl_data_rate_set(&Lsm6dsv16x_DeviceHandle, LSM6DSV16X_ODR_AT_7680Hz);
-        error |= lsm6dsv16x_gy_data_rate_set(&Lsm6dsv16x_DeviceHandle, LSM6DSV16X_ODR_AT_7680Hz);
+        error |= lsm6dsv16x_xl_data_rate_set(&context->interface, LSM6DSV16X_ODR_AT_7680Hz);
+        error |= lsm6dsv16x_gy_data_rate_set(&context->interface, LSM6DSV16X_ODR_AT_7680Hz);
 
         /* Set full scale */
-        error |= lsm6dsv16x_xl_full_scale_set(&Lsm6dsv16x_DeviceHandle, LSM6DSV16X_2g);
-        error |= lsm6dsv16x_gy_full_scale_set(&Lsm6dsv16x_DeviceHandle, LSM6DSV16X_125dps);
+        error |= lsm6dsv16x_xl_full_scale_set(&context->interface, LSM6DSV16X_2g);
+        error |= lsm6dsv16x_gy_full_scale_set(&context->interface, LSM6DSV16X_125dps);
 
         /* Configure filtering chain */
         lsm6dsv16x_filt_settling_mask_t filter_settling_mask;
         filter_settling_mask.drdy = PROPERTY_ENABLE;
         filter_settling_mask.irq_xl = PROPERTY_ENABLE;
         filter_settling_mask.irq_g = PROPERTY_ENABLE;
-        error |= lsm6dsv16x_filt_settling_mask_set(&Lsm6dsv16x_DeviceHandle, filter_settling_mask);
-        error |= lsm6dsv16x_filt_gy_lp1_set(&Lsm6dsv16x_DeviceHandle, PROPERTY_ENABLE);
-        error |= lsm6dsv16x_filt_gy_lp1_bandwidth_set(&Lsm6dsv16x_DeviceHandle, LSM6DSV16X_GY_ULTRA_LIGHT);
-        error |= lsm6dsv16x_filt_xl_lp2_set(&Lsm6dsv16x_DeviceHandle, PROPERTY_ENABLE);
-        error |= lsm6dsv16x_filt_xl_lp2_bandwidth_set(&Lsm6dsv16x_DeviceHandle, LSM6DSV16X_XL_STRONG);
+        error |= lsm6dsv16x_filt_settling_mask_set(&context->interface, filter_settling_mask);
+        error |= lsm6dsv16x_filt_gy_lp1_set(&context->interface, PROPERTY_ENABLE);
+        error |= lsm6dsv16x_filt_gy_lp1_bandwidth_set(&context->interface, LSM6DSV16X_GY_ULTRA_LIGHT);
+        error |= lsm6dsv16x_filt_xl_lp2_set(&context->interface, PROPERTY_ENABLE);
+        error |= lsm6dsv16x_filt_xl_lp2_bandwidth_set(&context->interface, LSM6DSV16X_XL_STRONG);
 
         /* Enable game rotation vector */
         lsm6dsv16x_fifo_sflp_raw_t fifo_sflp;
         fifo_sflp.game_rotation = 1;
         fifo_sflp.gravity = 0;
         fifo_sflp.gbias = 0;
-        error |= lsm6dsv16x_fifo_sflp_batch_set(&Lsm6dsv16x_DeviceHandle, fifo_sflp);
+        error |= lsm6dsv16x_fifo_sflp_batch_set(&context->interface, fifo_sflp);
 
         /* Set FIFO mode to Continuous mode */
-        error |= lsm6dsv16x_fifo_mode_set(&Lsm6dsv16x_DeviceHandle, LSM6DSV16X_STREAM_MODE);
+        error |= lsm6dsv16x_fifo_mode_set(&context->interface, LSM6DSV16X_STREAM_MODE);
 
         /* Set Game Vector Output Data Rate */
-        error |= lsm6dsv16x_sflp_data_rate_set(&Lsm6dsv16x_DeviceHandle, LSM6DSV16X_SFLP_480Hz);
-        error |= lsm6dsv16x_sflp_game_rotation_set(&Lsm6dsv16x_DeviceHandle, PROPERTY_ENABLE);
+        error |= lsm6dsv16x_sflp_data_rate_set(&context->interface, LSM6DSV16X_SFLP_480Hz);
+        error |= lsm6dsv16x_sflp_game_rotation_set(&context->interface, PROPERTY_ENABLE);
+
+        if (BSP_ERROR_NONE != Lsm6dsv16x_Calibrate(context))
+        {
+            error = 1;
+        }
+        else
+        {
+            context->initialized = true;
+
+            BSP_LOGGER_LOG_DEBUG(kLsm6dsv16x_LogTag, "Initialized");
+        }
     }
 
-    if ((LSM6DSV16X_ERROR_NONE != error) || (BSP_ERROR_NONE != Lsm6dsv16x_Calibrate()))
+    if (LSM6DSV16X_ERROR_NONE != error)
     {
-        error = 1;
-
         BSP_LOGGER_LOG_ERROR(kLsm6dsv16x_LogTag, "Failed to initialize");
-    }
-    else
-    {
-
-        Lsm6dsv16x_Initialized = true;
-        BSP_LOGGER_LOG_DEBUG(kLsm6dsv16x_LogTag, "Initialized");
     }
 
     return Lsm6dsv16x_ImuToBspError(error);
 }
 
-bool Lsm6dsv16x_IsInitialized(void)
+bool Lsm6dsv16x_IsInitialized(const Lsm6dsv16x_Context_t *const context)
 {
-    return Lsm6dsv16x_Initialized;
+    bool initialized = false;
+
+    if (NULL != context)
+    {
+        initialized = context->initialized;
+    }
+
+    return initialized;
 }
 
-Bsp_Error_t Lsm6dsv16x_Calibrate(void)
+Bsp_Error_t Lsm6dsv16x_Calibrate(const Lsm6dsv16x_Context_t *const context)
 {
     Lsm6dsv16x_Error_t error = LSM6DSV16X_ERROR_NONE;
-    lsm6dsv16x_fifo_status_t fifo_status = {
-        0U};
+    lsm6dsv16x_fifo_status_t fifo_status = {0U};
     uint16_t xl_samples = 0U;
     uint16_t gy_samples = 0U;
-    int32_t xl_data[LSM6DSV16X_AXIS_MAX] = {
-        0U};
-    int32_t gy_data[LSM6DSV16X_AXIS_MAX] = {
-        0U};
-    int32_t gravity_offset = (int32_t)(LSM6DSV16X_MILLIG_TO_G / Lsm6dsv16x_FsToMilliG(1));
+    int32_t xl_data[LSM6DSV16X_AXIS_MAX] = {0U};
+    int32_t gy_data[LSM6DSV16X_AXIS_MAX] = {0U};
+    int32_t gravity_offset = (int32_t)(LSM6DSV16X_MILLIG_TO_G / Lsm6dsv16x_FsToMilliG(context, 1));
     lsm6dsv16x_data_rate_t xl_data_rate;
     lsm6dsv16x_data_rate_t gy_data_rate;
     lsm6dsv16x_fifo_xl_batch_t xl_fifo_batch;
@@ -217,105 +225,114 @@ Bsp_Error_t Lsm6dsv16x_Calibrate(void)
 
     BSP_LOGGER_LOG_DEBUG(kLsm6dsv16x_LogTag, "Calibrating");
 
-    /* Save existing data rate */
-    error |= lsm6dsv16x_xl_data_rate_get(&Lsm6dsv16x_DeviceHandle, &xl_data_rate);
-    error |= lsm6dsv16x_gy_data_rate_get(&Lsm6dsv16x_DeviceHandle, &gy_data_rate);
-    error |= lsm6dsv16x_fifo_xl_batch_get(&Lsm6dsv16x_DeviceHandle, &xl_fifo_batch);
-    error |= lsm6dsv16x_fifo_gy_batch_get(&Lsm6dsv16x_DeviceHandle, &gy_fifo_batch);
-
-    /* Save exisitng FIFO mode */
-    error |= lsm6dsv16x_fifo_mode_get(&Lsm6dsv16x_DeviceHandle, &fifo_mode);
-
-    /* Save existing SFLP settings */
-    error |= lsm6dsv16x_fifo_sflp_batch_get(&Lsm6dsv16x_DeviceHandle, &fifo_sflp);
-    error |= lsm6dsv16x_sflp_data_rate_get(&Lsm6dsv16x_DeviceHandle, &sflp_data_rate);
-    error |= lsm6dsv16x_sflp_game_rotation_get(&Lsm6dsv16x_DeviceHandle, &game_rotation_enabled);
-
-    /* Set new data rate for calibration period (1s~2s) to fill FIFO */
-    error |= lsm6dsv16x_xl_data_rate_set(&Lsm6dsv16x_DeviceHandle, LSM6DSV16X_ODR_AT_240Hz);
-    error |= lsm6dsv16x_gy_data_rate_set(&Lsm6dsv16x_DeviceHandle, LSM6DSV16X_ODR_AT_240Hz);
-    error |= lsm6dsv16x_fifo_xl_batch_set(&Lsm6dsv16x_DeviceHandle, LSM6DSV16X_XL_BATCHED_AT_240Hz);
-    error |= lsm6dsv16x_fifo_gy_batch_set(&Lsm6dsv16x_DeviceHandle, LSM6DSV16X_GY_BATCHED_AT_240Hz);
-
-    /* Disable SFLP */
-    lsm6dsv16x_fifo_sflp_raw_t fifo_sflp_disabled;
-    fifo_sflp_disabled.game_rotation = 0;
-    fifo_sflp_disabled.gravity = 0;
-    fifo_sflp_disabled.gbias = 0;
-    error |= lsm6dsv16x_fifo_sflp_batch_set(&Lsm6dsv16x_DeviceHandle, fifo_sflp_disabled);
-    error |= lsm6dsv16x_sflp_game_rotation_set(&Lsm6dsv16x_DeviceHandle, PROPERTY_DISABLE);
-
-    Bsp_Delay(LSM6DSV16X_CALIBRATION_SETTLE_TIME);
-
-    /* Flush FIFO */
-    error |= lsm6dsv16x_fifo_status_get(&Lsm6dsv16x_DeviceHandle, &fifo_status);
-    for (uint16_t i = 0U; i < fifo_status.fifo_level; i++)
+    if (NULL == context)
     {
-        lsm6dsv16x_fifo_out_raw_t fifo_data;
-        error |= lsm6dsv16x_fifo_out_raw_get(&Lsm6dsv16x_DeviceHandle, &fifo_data);
+        error = 1;
+
+        BSP_LOGGER_LOG_ERROR(kLsm6dsv16x_LogTag, "Context is NULL");
     }
-
-    /* Set FIFO to FIFO mode */
-    error |= lsm6dsv16x_fifo_mode_set(&Lsm6dsv16x_DeviceHandle, LSM6DSV16X_FIFO_MODE);
-
-    /* Wait until FIFO is full */
-    while (0U == fifo_status.fifo_full)
+    else
     {
-        error |= lsm6dsv16x_fifo_status_get(&Lsm6dsv16x_DeviceHandle, &fifo_status);
-    }
+        /* Save existing data rate */
+        error |= lsm6dsv16x_xl_data_rate_get(&context->interface, &xl_data_rate);
+        error |= lsm6dsv16x_gy_data_rate_get(&context->interface, &gy_data_rate);
+        error |= lsm6dsv16x_fifo_xl_batch_get(&context->interface, &xl_fifo_batch);
+        error |= lsm6dsv16x_fifo_gy_batch_get(&context->interface, &gy_fifo_batch);
 
-    /* Read and average FIFO samples */
-    for (uint16_t i = 0U; i < fifo_status.fifo_level; i++)
-    {
-        lsm6dsv16x_fifo_out_raw_t fifo_data;
-        error |= lsm6dsv16x_fifo_out_raw_get(&Lsm6dsv16x_DeviceHandle, &fifo_data);
+        /* Save exisitng FIFO mode */
+        error |= lsm6dsv16x_fifo_mode_get(&context->interface, &fifo_mode);
 
-        Lsm6dsv16x_RawData_t x = *(Lsm6dsv16x_RawData_t *)&fifo_data.data[LSM6DSV16X_FIFO_DATA_X];
-        Lsm6dsv16x_RawData_t y = *(Lsm6dsv16x_RawData_t *)&fifo_data.data[LSM6DSV16X_FIFO_DATA_Y];
-        Lsm6dsv16x_RawData_t z = *(Lsm6dsv16x_RawData_t *)&fifo_data.data[LSM6DSV16X_FIFO_DATA_Z];
+        /* Save existing SFLP settings */
+        error |= lsm6dsv16x_fifo_sflp_batch_get(&context->interface, &fifo_sflp);
+        error |= lsm6dsv16x_sflp_data_rate_get(&context->interface, &sflp_data_rate);
+        error |= lsm6dsv16x_sflp_game_rotation_get(&context->interface, &game_rotation_enabled);
 
-        switch (fifo_data.tag)
+        /* Set new data rate for calibration period (1s~2s) to fill FIFO */
+        error |= lsm6dsv16x_xl_data_rate_set(&context->interface, LSM6DSV16X_ODR_AT_240Hz);
+        error |= lsm6dsv16x_gy_data_rate_set(&context->interface, LSM6DSV16X_ODR_AT_240Hz);
+        error |= lsm6dsv16x_fifo_xl_batch_set(&context->interface, LSM6DSV16X_XL_BATCHED_AT_240Hz);
+        error |= lsm6dsv16x_fifo_gy_batch_set(&context->interface, LSM6DSV16X_GY_BATCHED_AT_240Hz);
+
+        /* Disable SFLP */
+        lsm6dsv16x_fifo_sflp_raw_t fifo_sflp_disabled;
+        fifo_sflp_disabled.game_rotation = 0;
+        fifo_sflp_disabled.gravity = 0;
+        fifo_sflp_disabled.gbias = 0;
+        error |= lsm6dsv16x_fifo_sflp_batch_set(&context->interface, fifo_sflp_disabled);
+        error |= lsm6dsv16x_sflp_game_rotation_set(&context->interface, PROPERTY_DISABLE);
+
+        Bsp_Delay(LSM6DSV16X_CALIBRATION_SETTLE_TIME);
+
+        /* Flush FIFO */
+        error |= lsm6dsv16x_fifo_status_get(&context->interface, &fifo_status);
+        for (uint16_t i = 0U; i < fifo_status.fifo_level; i++)
         {
-        case LSM6DSV16X_XL_NC_TAG:
-            xl_data[LSM6DSV16X_AXIS_X] += (int32_t)x;
-            xl_data[LSM6DSV16X_AXIS_Y] += (int32_t)y;
-            xl_data[LSM6DSV16X_AXIS_Z] += (int32_t)z;
-            xl_samples++;
-            break;
-        case LSM6DSV16X_GY_NC_TAG:
-            gy_data[LSM6DSV16X_AXIS_X] += (int32_t)x;
-            gy_data[LSM6DSV16X_AXIS_Y] += (int32_t)y;
-            gy_data[LSM6DSV16X_AXIS_Z] += (int32_t)z;
-            gy_samples++;
-            break;
-        default:
-            break;
+            lsm6dsv16x_fifo_out_raw_t fifo_data;
+            error |= lsm6dsv16x_fifo_out_raw_get(&context->interface, &fifo_data);
         }
+
+        /* Set FIFO to FIFO mode */
+        error |= lsm6dsv16x_fifo_mode_set(&context->interface, LSM6DSV16X_FIFO_MODE);
+
+        /* Wait until FIFO is full */
+        while (0U == fifo_status.fifo_full)
+        {
+            error |= lsm6dsv16x_fifo_status_get(&context->interface, &fifo_status);
+        }
+
+        /* Read and average FIFO samples */
+        for (uint16_t i = 0U; i < fifo_status.fifo_level; i++)
+        {
+            lsm6dsv16x_fifo_out_raw_t fifo_data;
+            error |= lsm6dsv16x_fifo_out_raw_get(&context->interface, &fifo_data);
+
+            Lsm6dsv16x_RawData_t x = *(Lsm6dsv16x_RawData_t *)&fifo_data.data[LSM6DSV16X_FIFO_DATA_X];
+            Lsm6dsv16x_RawData_t y = *(Lsm6dsv16x_RawData_t *)&fifo_data.data[LSM6DSV16X_FIFO_DATA_Y];
+            Lsm6dsv16x_RawData_t z = *(Lsm6dsv16x_RawData_t *)&fifo_data.data[LSM6DSV16X_FIFO_DATA_Z];
+
+            switch (fifo_data.tag)
+            {
+            case LSM6DSV16X_XL_NC_TAG:
+                xl_data[LSM6DSV16X_AXIS_X] += (int32_t)x;
+                xl_data[LSM6DSV16X_AXIS_Y] += (int32_t)y;
+                xl_data[LSM6DSV16X_AXIS_Z] += (int32_t)z;
+                xl_samples++;
+                break;
+            case LSM6DSV16X_GY_NC_TAG:
+                gy_data[LSM6DSV16X_AXIS_X] += (int32_t)x;
+                gy_data[LSM6DSV16X_AXIS_Y] += (int32_t)y;
+                gy_data[LSM6DSV16X_AXIS_Z] += (int32_t)z;
+                gy_samples++;
+                break;
+            default:
+                break;
+            }
+        }
+
+        /* Calculate accelerometer offset */
+        Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_X] = (int16_t)(xl_data[LSM6DSV16X_AXIS_X] / (int32_t)xl_samples);
+        Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_Y] = (int16_t)(xl_data[LSM6DSV16X_AXIS_Y] / (int32_t)xl_samples);
+        Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_Z] = (int16_t)((xl_data[LSM6DSV16X_AXIS_Z] / (int32_t)xl_samples) - gravity_offset);
+
+        /* Calculate gyroscope offset */
+        Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_X] = (int16_t)(gy_data[LSM6DSV16X_AXIS_X] / (int32_t)gy_samples);
+        Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_Y] = (int16_t)(gy_data[LSM6DSV16X_AXIS_Y] / (int32_t)gy_samples);
+        Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_Z] = (int16_t)(gy_data[LSM6DSV16X_AXIS_Z] / (int32_t)gy_samples);
+
+        /* Restore data rate */
+        error |= lsm6dsv16x_xl_data_rate_set(&context->interface, xl_data_rate);
+        error |= lsm6dsv16x_gy_data_rate_set(&context->interface, gy_data_rate);
+        error |= lsm6dsv16x_fifo_xl_batch_set(&context->interface, xl_fifo_batch);
+        error |= lsm6dsv16x_fifo_gy_batch_set(&context->interface, gy_fifo_batch);
+
+        /* Restore FIFO mode */
+        error |= lsm6dsv16x_fifo_mode_set(&context->interface, fifo_mode);
+
+        /* Restore SFLP settings */
+        error |= lsm6dsv16x_fifo_sflp_batch_set(&context->interface, fifo_sflp);
+        error |= lsm6dsv16x_sflp_data_rate_set(&context->interface, sflp_data_rate);
+        error |= lsm6dsv16x_sflp_game_rotation_set(&context->interface, game_rotation_enabled);
     }
-
-    /* Calculate accelerometer offset */
-    Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_X] = (int16_t)(xl_data[LSM6DSV16X_AXIS_X] / (int32_t)xl_samples);
-    Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_Y] = (int16_t)(xl_data[LSM6DSV16X_AXIS_Y] / (int32_t)xl_samples);
-    Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_Z] = (int16_t)((xl_data[LSM6DSV16X_AXIS_Z] / (int32_t)xl_samples) - gravity_offset);
-
-    /* Calculate gyroscope offset */
-    Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_X] = (int16_t)(gy_data[LSM6DSV16X_AXIS_X] / (int32_t)gy_samples);
-    Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_Y] = (int16_t)(gy_data[LSM6DSV16X_AXIS_Y] / (int32_t)gy_samples);
-    Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_Z] = (int16_t)(gy_data[LSM6DSV16X_AXIS_Z] / (int32_t)gy_samples);
-
-    /* Restore data rate */
-    error |= lsm6dsv16x_xl_data_rate_set(&Lsm6dsv16x_DeviceHandle, xl_data_rate);
-    error |= lsm6dsv16x_gy_data_rate_set(&Lsm6dsv16x_DeviceHandle, gy_data_rate);
-    error |= lsm6dsv16x_fifo_xl_batch_set(&Lsm6dsv16x_DeviceHandle, xl_fifo_batch);
-    error |= lsm6dsv16x_fifo_gy_batch_set(&Lsm6dsv16x_DeviceHandle, gy_fifo_batch);
-
-    /* Restore FIFO mode */
-    error |= lsm6dsv16x_fifo_mode_set(&Lsm6dsv16x_DeviceHandle, fifo_mode);
-
-    /* Restore SFLP settings */
-    error |= lsm6dsv16x_fifo_sflp_batch_set(&Lsm6dsv16x_DeviceHandle, fifo_sflp);
-    error |= lsm6dsv16x_sflp_data_rate_set(&Lsm6dsv16x_DeviceHandle, sflp_data_rate);
-    error |= lsm6dsv16x_sflp_game_rotation_set(&Lsm6dsv16x_DeviceHandle, game_rotation_enabled);
 
     if (LSM6DSV16X_ERROR_NONE != error)
     {
@@ -329,13 +346,13 @@ Bsp_Error_t Lsm6dsv16x_Calibrate(void)
     return Lsm6dsv16x_ImuToBspError(error);
 }
 
-Bsp_Error_t Lsm6dsv16x_ReadAccelerometer(Accelerometer_Reading_t *const reading)
+Bsp_Error_t Lsm6dsv16x_ReadAccelerometer(const Lsm6dsv16x_Context_t *const context, Accelerometer_Reading_t *const reading)
 {
     Bsp_Error_t error = BSP_ERROR_NULL;
 
-    if (NULL != reading)
+    if ((NULL != context) && (NULL != reading))
     {
-        error = Lsm6dsv16x_ReadAll();
+        error = Lsm6dsv16x_ReadAll(context);
 
         reading->x = Lsm6dsv16x_Fs2ToMetersPerSecondSquared(Lsm6dsv16x_RawAccelerometer[LSM6DSV16X_AXIS_X]);
         reading->y = Lsm6dsv16x_Fs2ToMetersPerSecondSquared(Lsm6dsv16x_RawAccelerometer[LSM6DSV16X_AXIS_Y]);
@@ -345,13 +362,13 @@ Bsp_Error_t Lsm6dsv16x_ReadAccelerometer(Accelerometer_Reading_t *const reading)
     return error;
 }
 
-Bsp_Error_t Lsm6dsv16x_ReadGyroscope(Gyroscope_Reading_t *const reading)
+Bsp_Error_t Lsm6dsv16x_ReadGyroscope(const Lsm6dsv16x_Context_t *const context, Gyroscope_Reading_t *const reading)
 {
     Bsp_Error_t error = BSP_ERROR_NULL;
 
-    if (NULL != reading)
+    if ((NULL != context) && (NULL != reading))
     {
-        error = Lsm6dsv16x_ReadAll();
+        error = Lsm6dsv16x_ReadAll(context);
 
         reading->x = Lsm6dsv16x_125dpsToRadiansPerSecond(Lsm6dsv16x_RawGyroscope[LSM6DSV16X_AXIS_X]);
         reading->y = Lsm6dsv16x_125dpsToRadiansPerSecond(Lsm6dsv16x_RawGyroscope[LSM6DSV16X_AXIS_Y]);
@@ -361,13 +378,13 @@ Bsp_Error_t Lsm6dsv16x_ReadGyroscope(Gyroscope_Reading_t *const reading)
     return error;
 }
 
-Bsp_Error_t Lsm6dsv16x_ReadQuaterion(Gyroscope_Quaternion_t *const quaternion)
+Bsp_Error_t Lsm6dsv16x_ReadQuaterion(const Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion)
 {
     Bsp_Error_t error = BSP_ERROR_NULL;
 
-    if (NULL != quaternion)
+    if ((context != NULL) && (NULL != quaternion))
     {
-        error = Lsm6dsv16x_ReadFifo();
+        error = Lsm6dsv16x_ReadFifo(context);
 
         quaternion->w = Lsm6dsv16x_Quaternion[LSM6DSV16X_QUATERION_AXIS_W];
         quaternion->x = Lsm6dsv16x_Quaternion[LSM6DSV16X_QUATERION_AXIS_X];
@@ -378,7 +395,7 @@ Bsp_Error_t Lsm6dsv16x_ReadQuaterion(Gyroscope_Quaternion_t *const quaternion)
     return error;
 }
 
-static Lsm6dsv16x_Error_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu_register, const uint8_t *const data, const uint16_t size)
+Lsm6dsv16x_Error_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu_register, const uint8_t *const data, const uint16_t size)
 {
     Lsm6dsv16x_Error_t error = LSM6DSV16X_ERROR_NONE;
 
@@ -393,7 +410,7 @@ static Lsm6dsv16x_Error_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu
     return error;
 }
 
-static Lsm6dsv16x_Error_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size)
+Lsm6dsv16x_Error_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size)
 {
     Lsm6dsv16x_Error_t error = LSM6DSV16X_ERROR_NONE;
     uint8_t register_read = imu_register | LSM6DSV16X_REGISTER_READ;
@@ -409,16 +426,16 @@ static Lsm6dsv16x_Error_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_
     return error;
 }
 
-static Bsp_Error_t Lsm6dsv16x_ReadAll(void)
+static Bsp_Error_t Lsm6dsv16x_ReadAll(const Lsm6dsv16x_Context_t *const context)
 {
     Lsm6dsv16x_Error_t error = LSM6DSV16X_ERROR_NONE;
     lsm6dsv16x_data_ready_t data_ready;
 
-    error |= lsm6dsv16x_flag_data_ready_get(&Lsm6dsv16x_DeviceHandle, &data_ready);
+    error |= lsm6dsv16x_flag_data_ready_get(&context->interface, &data_ready);
 
     if (data_ready.drdy_xl)
     {
-        error |= lsm6dsv16x_acceleration_raw_get(&Lsm6dsv16x_DeviceHandle, Lsm6dsv16x_RawAccelerometer);
+        error |= lsm6dsv16x_acceleration_raw_get(&context->interface, Lsm6dsv16x_RawAccelerometer);
 
         Lsm6dsv16x_RawAccelerometer[LSM6DSV16X_AXIS_X] -= Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_X];
         Lsm6dsv16x_RawAccelerometer[LSM6DSV16X_AXIS_Y] -= Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_Y];
@@ -431,7 +448,7 @@ static Bsp_Error_t Lsm6dsv16x_ReadAll(void)
 
     if (data_ready.drdy_gy)
     {
-        error |= lsm6dsv16x_angular_rate_raw_get(&Lsm6dsv16x_DeviceHandle, Lsm6dsv16x_RawGyroscope);
+        error |= lsm6dsv16x_angular_rate_raw_get(&context->interface, Lsm6dsv16x_RawGyroscope);
 
         Lsm6dsv16x_RawGyroscope[LSM6DSV16X_AXIS_X] -= Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_X];
         Lsm6dsv16x_RawGyroscope[LSM6DSV16X_AXIS_Y] -= Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_Y];
@@ -445,7 +462,7 @@ static Bsp_Error_t Lsm6dsv16x_ReadAll(void)
     return Lsm6dsv16x_ImuToBspError(error);
 }
 
-static Bsp_Error_t Lsm6dsv16x_ReadFifo(void)
+static Bsp_Error_t Lsm6dsv16x_ReadFifo(const Lsm6dsv16x_Context_t *const context)
 {
     lsm6dsv16x_fifo_status_t fifo_status;
     float_t quaternion[LSM6DSV16X_QUATERION_AXIS_MAX] = {
@@ -453,12 +470,12 @@ static Bsp_Error_t Lsm6dsv16x_ReadFifo(void)
     float_t quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_MAX] = {
         0U};
     uint16_t game_rotation_vector_samples = 0U;
-    Lsm6dsv16x_Error_t error = lsm6dsv16x_fifo_status_get(&Lsm6dsv16x_DeviceHandle, &fifo_status);
+    Lsm6dsv16x_Error_t error = lsm6dsv16x_fifo_status_get(&context->interface, &fifo_status);
 
     for (uint16_t i = 0U; i < fifo_status.fifo_level; i++)
     {
         lsm6dsv16x_fifo_out_raw_t fifo_data;
-        error |= lsm6dsv16x_fifo_out_raw_get(&Lsm6dsv16x_DeviceHandle, &fifo_data);
+        error |= lsm6dsv16x_fifo_out_raw_get(&context->interface, &fifo_data);
 
         switch (fifo_data.tag)
         {
@@ -494,12 +511,12 @@ static inline Bsp_Error_t Lsm6dsv16x_ImuToBspError(const Lsm6dsv16x_Error_t erro
     return bsp_error;
 }
 
-static inline float Lsm6dsv16x_FsToMilliG(const Lsm6dsv16x_RawData_t fs)
+static inline float Lsm6dsv16x_FsToMilliG(const Lsm6dsv16x_Context_t *const context, const Lsm6dsv16x_RawData_t fs)
 {
     float mg = 0.0f;
     lsm6dsv16x_xl_full_scale_t xl_full_scale;
 
-    (void)lsm6dsv16x_xl_full_scale_get(&Lsm6dsv16x_DeviceHandle, &xl_full_scale);
+    (void)lsm6dsv16x_xl_full_scale_get(&context->interface, &xl_full_scale);
 
     switch (xl_full_scale)
     {

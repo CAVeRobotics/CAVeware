@@ -483,23 +483,23 @@ static void CavebotCaveTalk_SendOdometry(void)
         .y = 0.0,
         .z = 0.0,
     };
-    (void)Accelerometer_Read(&accelerometer_reading);
+    (void)Accelerometer_Read(&CavebotUser_Accelerometer, &accelerometer_reading);
 
     imu_message.accel.x_meters_per_second_squared = accelerometer_reading.x;
     imu_message.accel.y_meters_per_second_squared = accelerometer_reading.y;
     imu_message.accel.z_meters_per_second_squared = accelerometer_reading.z;
     imu_message.has_accel                         = true;
 
-    Gyroscope_Reading_t gyro_reading = {
+    Gyroscope_Reading_t gyroscope_reading = {
         .x = 0.0,
         .y = 0.0,
         .z = 0.0,
     };
-    (void)Gyroscope_Read(&gyro_reading);
+    (void)Gyroscope_Read(&CavebotUser_Gyroscope, &gyroscope_reading);
 
-    imu_message.gyro.roll_radians_per_second  = gyro_reading.x;
-    imu_message.gyro.pitch_radians_per_second = gyro_reading.y;
-    imu_message.gyro.yaw_radians_per_second   = gyro_reading.z;
+    imu_message.gyro.roll_radians_per_second  = gyroscope_reading.x;
+    imu_message.gyro.pitch_radians_per_second = gyroscope_reading.y;
+    imu_message.gyro.yaw_radians_per_second   = gyroscope_reading.z;
     imu_message.has_gyro                      = true;
 
     Gyroscope_Quaternion_t quaternion = {
@@ -508,7 +508,7 @@ static void CavebotCaveTalk_SendOdometry(void)
         .y = 0.0,
         .z = 0.0
     };
-    (void)Gyroscope_ReadQuaternion(&quaternion);
+    (void)Gyroscope_ReadQuaternion(&CavebotUser_Gyroscope, &quaternion);
 
     imu_message.quat.w   = quaternion.w;
     imu_message.quat.x   = quaternion.x;
