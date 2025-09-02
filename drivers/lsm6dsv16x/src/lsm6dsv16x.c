@@ -24,24 +24,6 @@
 #define LSM6DSV16X_MILLIG_TO_G 1e3
 
 typedef int32_t Lsm6dsv16x_Error_t;
-typedef int16_t Lsm6dsv16x_RawData_t;
-
-typedef enum
-{
-    LSM6DSV16X_AXIS_X,
-    LSM6DSV16X_AXIS_Y,
-    LSM6DSV16X_AXIS_Z,
-    LSM6DSV16X_AXIS_MAX
-} Lsm6dsv16x_Axis_t;
-
-typedef enum
-{
-    LSM6DSV16X_QUATERION_AXIS_W,
-    LSM6DSV16X_QUATERION_AXIS_X,
-    LSM6DSV16X_QUATERION_AXIS_Y,
-    LSM6DSV16X_QUATERION_AXIS_Z,
-    LSM6DSV16X_QUATERION_AXIS_MAX
-} Lsm6dsv16x_QuaterionAxis_t;
 
 typedef enum
 {
@@ -55,8 +37,8 @@ static const char *kLsm6dsv16x_LogTag = "LSM6DSV16X";
 
 int32_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu_register, const uint8_t *const data, const uint16_t size);
 int32_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size);
-static Bsp_Error_t Lsm6dsv16x_ReadAll(const Lsm6dsv16x_Context_t *const context);
-static Bsp_Error_t Lsm6dsv16x_ReadFifo(const Lsm6dsv16x_Context_t *const context);
+static Bsp_Error_t Lsm6dsv16x_ReadAll(Lsm6dsv16x_Context_t *const context);
+static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context);
 static inline Bsp_Error_t Lsm6dsv16x_ImuToBspError(const Lsm6dsv16x_Error_t error);
 static inline float Lsm6dsv16x_FsToMilliG(const Lsm6dsv16x_Context_t *const context, const Lsm6dsv16x_RawData_t fs);
 static inline Bsp_MetersPerSecondSquared_t Lsm6dsv16x_Fs2ToMetersPerSecondSquared(const Lsm6dsv16x_RawData_t fs2);
@@ -68,30 +50,6 @@ static inline Bsp_MetersPerSecondSquared_t Lsm6dsv16x_125dpsToRadiansPerSecond(c
  */
 static float_t npy_half_to_float(uint16_t h);
 static void sflp2q(float_t quat[4], const uint16_t sflp[3]);
-
-static Lsm6dsv16x_RawData_t Lsm6dsv16x_RawAccelerometer[LSM6DSV16X_AXIS_MAX] = {
-    [LSM6DSV16X_AXIS_X] = 0,
-    [LSM6DSV16X_AXIS_Y] = 0,
-    [LSM6DSV16X_AXIS_Z] = 0};
-static Lsm6dsv16x_RawData_t Lsm6dsv16x_RawGyroscope[LSM6DSV16X_AXIS_MAX] = {
-    [LSM6DSV16X_AXIS_X] = 0,
-    [LSM6DSV16X_AXIS_Y] = 0,
-    [LSM6DSV16X_AXIS_Z] = 0};
-static double Lsm6dsv16x_Quaternion[LSM6DSV16X_QUATERION_AXIS_MAX] = {
-    [LSM6DSV16X_QUATERION_AXIS_W] = 0.0,
-    [LSM6DSV16X_QUATERION_AXIS_X] = 0.0,
-    [LSM6DSV16X_QUATERION_AXIS_Y] = 0.0,
-    [LSM6DSV16X_QUATERION_AXIS_Z] = 0.0};
-
-/* Onboard registers may not have enough precision to store offset */
-static Lsm6dsv16x_RawData_t Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_MAX] = {
-    [LSM6DSV16X_AXIS_X] = 0,
-    [LSM6DSV16X_AXIS_Y] = 0,
-    [LSM6DSV16X_AXIS_Z] = 0};
-static Lsm6dsv16x_RawData_t Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_MAX] = {
-    [LSM6DSV16X_AXIS_X] = 0,
-    [LSM6DSV16X_AXIS_Y] = 0,
-    [LSM6DSV16X_AXIS_Z] = 0};
 
 Bsp_Error_t Lsm6dsv16x_Initialize(Lsm6dsv16x_Context_t *const context)
 {
@@ -205,7 +163,7 @@ bool Lsm6dsv16x_IsInitialized(const Lsm6dsv16x_Context_t *const context)
     return initialized;
 }
 
-Bsp_Error_t Lsm6dsv16x_Calibrate(const Lsm6dsv16x_Context_t *const context)
+Bsp_Error_t Lsm6dsv16x_Calibrate(Lsm6dsv16x_Context_t *const context)
 {
     Lsm6dsv16x_Error_t error = LSM6DSV16X_ERROR_NONE;
     lsm6dsv16x_fifo_status_t fifo_status = {0U};
@@ -310,14 +268,14 @@ Bsp_Error_t Lsm6dsv16x_Calibrate(const Lsm6dsv16x_Context_t *const context)
         }
 
         /* Calculate accelerometer offset */
-        Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_X] = (int16_t)(xl_data[LSM6DSV16X_AXIS_X] / (int32_t)xl_samples);
-        Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_Y] = (int16_t)(xl_data[LSM6DSV16X_AXIS_Y] / (int32_t)xl_samples);
-        Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_Z] = (int16_t)((xl_data[LSM6DSV16X_AXIS_Z] / (int32_t)xl_samples) - gravity_offset);
+        context->accelerometer_offset[LSM6DSV16X_AXIS_X] = (int16_t)(xl_data[LSM6DSV16X_AXIS_X] / (int32_t)xl_samples);
+        context->accelerometer_offset[LSM6DSV16X_AXIS_Y] = (int16_t)(xl_data[LSM6DSV16X_AXIS_Y] / (int32_t)xl_samples);
+        context->accelerometer_offset[LSM6DSV16X_AXIS_Z] = (int16_t)((xl_data[LSM6DSV16X_AXIS_Z] / (int32_t)xl_samples) - gravity_offset);
 
         /* Calculate gyroscope offset */
-        Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_X] = (int16_t)(gy_data[LSM6DSV16X_AXIS_X] / (int32_t)gy_samples);
-        Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_Y] = (int16_t)(gy_data[LSM6DSV16X_AXIS_Y] / (int32_t)gy_samples);
-        Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_Z] = (int16_t)(gy_data[LSM6DSV16X_AXIS_Z] / (int32_t)gy_samples);
+        context->gyroscope_offset[LSM6DSV16X_AXIS_X] = (int16_t)(gy_data[LSM6DSV16X_AXIS_X] / (int32_t)gy_samples);
+        context->gyroscope_offset[LSM6DSV16X_AXIS_Y] = (int16_t)(gy_data[LSM6DSV16X_AXIS_Y] / (int32_t)gy_samples);
+        context->gyroscope_offset[LSM6DSV16X_AXIS_Z] = (int16_t)(gy_data[LSM6DSV16X_AXIS_Z] / (int32_t)gy_samples);
 
         /* Restore data rate */
         error |= lsm6dsv16x_xl_data_rate_set(&context->interface, xl_data_rate);
@@ -346,7 +304,7 @@ Bsp_Error_t Lsm6dsv16x_Calibrate(const Lsm6dsv16x_Context_t *const context)
     return Lsm6dsv16x_ImuToBspError(error);
 }
 
-Bsp_Error_t Lsm6dsv16x_ReadAccelerometer(const Lsm6dsv16x_Context_t *const context, Accelerometer_Reading_t *const reading)
+Bsp_Error_t Lsm6dsv16x_ReadAccelerometer(Lsm6dsv16x_Context_t *const context, Accelerometer_Reading_t *const reading)
 {
     Bsp_Error_t error = BSP_ERROR_NULL;
 
@@ -354,15 +312,15 @@ Bsp_Error_t Lsm6dsv16x_ReadAccelerometer(const Lsm6dsv16x_Context_t *const conte
     {
         error = Lsm6dsv16x_ReadAll(context);
 
-        reading->x = Lsm6dsv16x_Fs2ToMetersPerSecondSquared(Lsm6dsv16x_RawAccelerometer[LSM6DSV16X_AXIS_X]);
-        reading->y = Lsm6dsv16x_Fs2ToMetersPerSecondSquared(Lsm6dsv16x_RawAccelerometer[LSM6DSV16X_AXIS_Y]);
-        reading->z = Lsm6dsv16x_Fs2ToMetersPerSecondSquared(Lsm6dsv16x_RawAccelerometer[LSM6DSV16X_AXIS_Z]);
+        reading->x = Lsm6dsv16x_Fs2ToMetersPerSecondSquared(context->raw_accelerometer[LSM6DSV16X_AXIS_X]);
+        reading->y = Lsm6dsv16x_Fs2ToMetersPerSecondSquared(context->raw_accelerometer[LSM6DSV16X_AXIS_Y]);
+        reading->z = Lsm6dsv16x_Fs2ToMetersPerSecondSquared(context->raw_accelerometer[LSM6DSV16X_AXIS_Z]);
     }
 
     return error;
 }
 
-Bsp_Error_t Lsm6dsv16x_ReadGyroscope(const Lsm6dsv16x_Context_t *const context, Gyroscope_Reading_t *const reading)
+Bsp_Error_t Lsm6dsv16x_ReadGyroscope(Lsm6dsv16x_Context_t *const context, Gyroscope_Reading_t *const reading)
 {
     Bsp_Error_t error = BSP_ERROR_NULL;
 
@@ -370,15 +328,15 @@ Bsp_Error_t Lsm6dsv16x_ReadGyroscope(const Lsm6dsv16x_Context_t *const context, 
     {
         error = Lsm6dsv16x_ReadAll(context);
 
-        reading->x = Lsm6dsv16x_125dpsToRadiansPerSecond(Lsm6dsv16x_RawGyroscope[LSM6DSV16X_AXIS_X]);
-        reading->y = Lsm6dsv16x_125dpsToRadiansPerSecond(Lsm6dsv16x_RawGyroscope[LSM6DSV16X_AXIS_Y]);
-        reading->z = Lsm6dsv16x_125dpsToRadiansPerSecond(Lsm6dsv16x_RawGyroscope[LSM6DSV16X_AXIS_Z]);
+        reading->x = Lsm6dsv16x_125dpsToRadiansPerSecond(context->raw_gyroscope[LSM6DSV16X_AXIS_X]);
+        reading->y = Lsm6dsv16x_125dpsToRadiansPerSecond(context->raw_gyroscope[LSM6DSV16X_AXIS_Y]);
+        reading->z = Lsm6dsv16x_125dpsToRadiansPerSecond(context->raw_gyroscope[LSM6DSV16X_AXIS_Z]);
     }
 
     return error;
 }
 
-Bsp_Error_t Lsm6dsv16x_ReadQuaterion(const Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion)
+Bsp_Error_t Lsm6dsv16x_ReadQuaterion(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion)
 {
     Bsp_Error_t error = BSP_ERROR_NULL;
 
@@ -386,10 +344,10 @@ Bsp_Error_t Lsm6dsv16x_ReadQuaterion(const Lsm6dsv16x_Context_t *const context, 
     {
         error = Lsm6dsv16x_ReadFifo(context);
 
-        quaternion->w = Lsm6dsv16x_Quaternion[LSM6DSV16X_QUATERION_AXIS_W];
-        quaternion->x = Lsm6dsv16x_Quaternion[LSM6DSV16X_QUATERION_AXIS_X];
-        quaternion->y = Lsm6dsv16x_Quaternion[LSM6DSV16X_QUATERION_AXIS_Y];
-        quaternion->z = Lsm6dsv16x_Quaternion[LSM6DSV16X_QUATERION_AXIS_Z];
+        quaternion->w = context->quaternion[LSM6DSV16X_QUATERION_AXIS_W];
+        quaternion->x = context->quaternion[LSM6DSV16X_QUATERION_AXIS_X];
+        quaternion->y = context->quaternion[LSM6DSV16X_QUATERION_AXIS_Y];
+        quaternion->z = context->quaternion[LSM6DSV16X_QUATERION_AXIS_Z];
     }
 
     return error;
@@ -426,7 +384,7 @@ Lsm6dsv16x_Error_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_registe
     return error;
 }
 
-static Bsp_Error_t Lsm6dsv16x_ReadAll(const Lsm6dsv16x_Context_t *const context)
+static Bsp_Error_t Lsm6dsv16x_ReadAll(Lsm6dsv16x_Context_t *const context)
 {
     Lsm6dsv16x_Error_t error = LSM6DSV16X_ERROR_NONE;
     lsm6dsv16x_data_ready_t data_ready;
@@ -435,34 +393,34 @@ static Bsp_Error_t Lsm6dsv16x_ReadAll(const Lsm6dsv16x_Context_t *const context)
 
     if (data_ready.drdy_xl)
     {
-        error |= lsm6dsv16x_acceleration_raw_get(&context->interface, Lsm6dsv16x_RawAccelerometer);
+        error |= lsm6dsv16x_acceleration_raw_get(&context->interface, context->raw_accelerometer);
 
-        Lsm6dsv16x_RawAccelerometer[LSM6DSV16X_AXIS_X] -= Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_X];
-        Lsm6dsv16x_RawAccelerometer[LSM6DSV16X_AXIS_Y] -= Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_Y];
-        Lsm6dsv16x_RawAccelerometer[LSM6DSV16X_AXIS_Z] -= Lsm6dsv16x_AccelerometerOffset[LSM6DSV16X_AXIS_Z];
+        context->raw_accelerometer[LSM6DSV16X_AXIS_X] -= context->accelerometer_offset[LSM6DSV16X_AXIS_X];
+        context->raw_accelerometer[LSM6DSV16X_AXIS_Y] -= context->accelerometer_offset[LSM6DSV16X_AXIS_Y];
+        context->raw_accelerometer[LSM6DSV16X_AXIS_Z] -= context->accelerometer_offset[LSM6DSV16X_AXIS_Z];
 
         /* Correct for IMU orientation in bot */
-        Lsm6dsv16x_RawAccelerometer[LSM6DSV16X_AXIS_X] *= -1;
-        Lsm6dsv16x_RawAccelerometer[LSM6DSV16X_AXIS_Y] *= -1;
+        context->raw_accelerometer[LSM6DSV16X_AXIS_X] *= -1;
+        context->raw_accelerometer[LSM6DSV16X_AXIS_Y] *= -1;
     }
 
     if (data_ready.drdy_gy)
     {
-        error |= lsm6dsv16x_angular_rate_raw_get(&context->interface, Lsm6dsv16x_RawGyroscope);
+        error |= lsm6dsv16x_angular_rate_raw_get(&context->interface, context->raw_gyroscope);
 
-        Lsm6dsv16x_RawGyroscope[LSM6DSV16X_AXIS_X] -= Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_X];
-        Lsm6dsv16x_RawGyroscope[LSM6DSV16X_AXIS_Y] -= Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_Y];
-        Lsm6dsv16x_RawGyroscope[LSM6DSV16X_AXIS_Z] -= Lsm6dsv16x_GyroscopeOffset[LSM6DSV16X_AXIS_Z];
+        context->raw_gyroscope[LSM6DSV16X_AXIS_X] -= context->gyroscope_offset[LSM6DSV16X_AXIS_X];
+        context->raw_gyroscope[LSM6DSV16X_AXIS_Y] -= context->gyroscope_offset[LSM6DSV16X_AXIS_Y];
+        context->raw_gyroscope[LSM6DSV16X_AXIS_Z] -= context->gyroscope_offset[LSM6DSV16X_AXIS_Z];
 
         /* Correct for IMU orientation in bot */
-        Lsm6dsv16x_RawGyroscope[LSM6DSV16X_AXIS_X] *= -1;
-        Lsm6dsv16x_RawGyroscope[LSM6DSV16X_AXIS_Y] *= -1;
+        context->raw_gyroscope[LSM6DSV16X_AXIS_X] *= -1;
+        context->raw_gyroscope[LSM6DSV16X_AXIS_Y] *= -1;
     }
 
     return Lsm6dsv16x_ImuToBspError(error);
 }
 
-static Bsp_Error_t Lsm6dsv16x_ReadFifo(const Lsm6dsv16x_Context_t *const context)
+static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context)
 {
     lsm6dsv16x_fifo_status_t fifo_status;
     float_t quaternion[LSM6DSV16X_QUATERION_AXIS_MAX] = {
@@ -491,10 +449,10 @@ static Bsp_Error_t Lsm6dsv16x_ReadFifo(const Lsm6dsv16x_Context_t *const context
         }
     }
 
-    Lsm6dsv16x_Quaternion[LSM6DSV16X_QUATERION_AXIS_W] = (double)quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_W] / game_rotation_vector_samples;
-    Lsm6dsv16x_Quaternion[LSM6DSV16X_QUATERION_AXIS_X] = (double)quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_X] / game_rotation_vector_samples;
-    Lsm6dsv16x_Quaternion[LSM6DSV16X_QUATERION_AXIS_Y] = (double)quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Y] / game_rotation_vector_samples;
-    Lsm6dsv16x_Quaternion[LSM6DSV16X_QUATERION_AXIS_Z] = (double)quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Z] / game_rotation_vector_samples;
+    context->quaternion[LSM6DSV16X_QUATERION_AXIS_W] = (double)quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_W] / game_rotation_vector_samples;
+    context->quaternion[LSM6DSV16X_QUATERION_AXIS_X] = (double)quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_X] / game_rotation_vector_samples;
+    context->quaternion[LSM6DSV16X_QUATERION_AXIS_Y] = (double)quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Y] / game_rotation_vector_samples;
+    context->quaternion[LSM6DSV16X_QUATERION_AXIS_Z] = (double)quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Z] / game_rotation_vector_samples;
 
     return Lsm6dsv16x_ImuToBspError(error);
 }
