@@ -24,3 +24,16 @@ target_sources(${PROJECT_NAME}
     INTERFACE
         ${BOTS_SRCS}
 )
+
+set_source_files_properties(
+    ${BOTS_SRCS}
+    PROPERTIES
+    COMPILE_OPTIONS "-Werror"
+)
+
+if(COMMAND collect_sources)
+    collect_sources(${PROJECT_NAME})
+endif()
+if(COMMAND collect_include_directories)
+    collect_include_directories(${PROJECT_NAME})
+endif()

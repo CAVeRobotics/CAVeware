@@ -41,12 +41,17 @@ jobs:
         uses: ./.github/actions/setup
       - name: Cppcheck
         run: cmake --build --preset CAVeBoard_Release -j$(nproc) --target cppcheck
+      - name: Generate HTML Report
+        if: ${{ failure() }}
+        run: cmake --build --preset CAVeBoard_Release -j$(nproc) --target cppcheck-htmlreport
       - name: Upload Cppcheck Report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: cppcheck-report
-          path: build/cppcheck_report.xml
+          path: |
+            build/CAVeBoard_Release/cppcheck_report.xml
+            build/CAVeBoard_Release/cppcheck_htmlreport/
   uncrustify:
     runs-on: ubuntu-latest
     container:
@@ -65,7 +70,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: uncrustify-report
-          path: build/uncrustify_report.txt
+          path: build/CAVeBoard_Release/uncrustify_report.txt
   # unit-tests:
   #   runs-on: ubuntu-latest
   #   container:

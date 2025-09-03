@@ -21,67 +21,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 # Project with support for ASM and C languages
 project(CAVeware LANGUAGES C ASM)
 
+# Collection functions
+include(${CMAKE_SOURCE_DIR}/collect.cmake)
+
 # CAVeTalk library
 include(${CMAKE_SOURCE_DIR}/CAVeTalk.cmake)
 
 ################################################################################
-# Boards
+# Subdirectories
 ################################################################################
 add_subdirectory(${CMAKE_SOURCE_DIR}/boards)
-# TODO set compile options in boards CMakeLists.txt
-get_target_property(BSP_USER_SRCS BspUser INTERFACE_SOURCES)
-set_source_files_properties(
-    ${BSP_USER_SRCS}
-    PROPERTIES
-    COMPILE_OPTIONS "-Werror"
-)
-get_target_property(CAVEBOT_USER_SRCS CavebotUser INTERFACE_SOURCES)
-set_source_files_properties(
-    ${CAVEBOT_USER_SRCS}
-    PROPERTIES
-    COMPILE_OPTIONS "-Werror"
-)
-get_target_property(SENSORS_SRCS Sensors INTERFACE_SOURCES)
-set_source_files_properties(
-    ${SENSORS_SRCS}
-    PROPERTIES
-    COMPILE_OPTIONS "-Werror"
-)
-get_target_property(BOTS_SRCS Bots INTERFACE_SOURCES)
-set_source_files_properties(
-    ${BOTS_SRCS}
-    PROPERTIES
-    COMPILE_OPTIONS "-Werror"
-)
-
-################################################################################
-# BSP
-################################################################################
-add_subdirectory(${CMAKE_SOURCE_DIR}/bsp)
-get_target_property(BSP_SRCS Bsp INTERFACE_SOURCES)
-set_source_files_properties(
-    ${BSP_SRCS}
-    PROPERTIES
-    COMPILE_OPTIONS "-Werror"
-)
-target_link_libraries(Bsp
-    INTERFACE
-        BspUser
-)
-
-################################################################################
-# LSM6DSV16X driver
-################################################################################
-set(LSM6DSV16X_DIR ${CMAKE_SOURCE_DIR}/external/lsm6dsv16x-pid)
-add_library(lsm6dsv16x INTERFACE)
-target_sources(lsm6dsv16x
-    INTERFACE
-        ${LSM6DSV16X_DIR}/lsm6dsv16x_reg.c
-)
-target_include_directories(lsm6dsv16x
-    INTERFACE
-        ${LSM6DSV16X_DIR}
-)
+add_subdirectory(${CMAKE_SOURCE_DIR}/devices)
+add_subdirectory(${CMAKE_SOURCE_DIR}/drivers)
+add_subdirectory(${CMAKE_SOURCE_DIR}/bots)
 
 ################################################################################
 # Versioning
@@ -132,6 +84,7 @@ set(CAVEBOT_SRCS
     ${CAVEBOT_SRC_DIR}/cavebot.c
     ${CAVEBOT_SRC_DIR}/cavebot_cavetalk.c
     ${CAVEBOT_SRC_DIR}/cavebot_pid.c
+    ${CMAKE_SOURCE_DIR}/boards/${BOARD}/cavebot_user/src/cavebot_user.c
 )
 
 set_source_files_properties(
@@ -145,7 +98,7 @@ add_executable(${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME}
     PRIVATE
         ${CAVEBOT_INC_DIR}
-        ${ROVER_INC_DIR}
+        ${CMAKE_SOURCE_DIR}/boards/${BOARD}/cavebot_user/inc
 )
 
 target_sources(${PROJECT_NAME}
@@ -156,11 +109,9 @@ target_sources(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         Bsp
-        Sensors
+        Drivers
         Bots
-        CavebotUser
         CAVeTalk-c
-        lsm6dsv16x
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -169,14 +120,23 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_OBJCOPY} -O binary -S "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.elf" "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.bin"
 )
 
+if(COMMAND collect_sources)
+    collect_sources(${PROJECT_NAME})
+endif()
+if(COMMAND collect_include_directories)
+    collect_include_directories(${PROJECT_NAME})
+endif()
+
 ################################################################################
 # CI and tools
 ################################################################################
 set(TOOLS_DIR ${CMAKE_SOURCE_DIR}/tools)
-set(CPPCHECK_SOURCES ${BSP_SRCS} ${BSP_USER_SRCS} ${SENSORS_SRCS} ${BOTS_SRCS} ${CAVEBOT_USER_SRCS} ${CAVEBOT_SRCS})
-include(${TOOLS_DIR}/cppcheck/cppcheck.cmake)
-get_target_property(BSP_USER_INC_DIRS BspUser INTERFACE_INCLUDE_DIRECTORIES)
-get_target_property(BSP_INC_DIRS Bsp INTERFACE_INCLUDE_DIRECTORIES)
-set(UNCRUSTIFY_SOURCES ${CPPCHECK_SOURCES})
-set(UNCRUSTIFY_INC_DIRS ${BSP_INC_DIRS} ${BSP_USER_INC_DIRS} ${SENSORS_INC_DIR} ${BOTS_INC_DIR} ${CAVEBOT_USER_INC_DIR} ${CAVEBOT_INC_DIR})
-include(${TOOLS_DIR}/uncrustify/uncrustify.cmake)
+get_property(CPPCHECK_SOURCES GLOBAL PROPERTY SOURCE_COLLECTION)
+get_property(UNCRUSTIFY_INC_DIRS GLOBAL PROPERTY INCLUDE_DIRECTORIES_COLLECTION)
+if (CPPCHECK_SOURCES)
+    include(${TOOLS_DIR}/cppcheck/cppcheck.cmake)
+endif()
+if (CPPCHECK_SOURCES AND UNCRUSTIFY_INC_DIRS)
+    set(UNCRUSTIFY_SOURCES ${CPPCHECK_SOURCES})
+    include(${TOOLS_DIR}/uncrustify/uncrustify.cmake)
+endif()

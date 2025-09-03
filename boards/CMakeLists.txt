@@ -5,7 +5,9 @@ project(Boards)
 set(BOARD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${BOARD})
 add_subdirectory(${BOARD_DIR})
 
+################################################################################
 # STM32 HAL
+################################################################################
 add_subdirectory(${BOARD_DIR}/generated/cmake/stm32cubemx)
 
 ################################################################################
@@ -28,6 +30,16 @@ set(BSP_USER_SRCS
 
 add_library(BspUser INTERFACE)
 
+target_compile_definitions(BspUser
+    INTERFACE
+        $<$<CONFIG:Debug>:BSP_LOGGER>
+        $<$<CONFIG:Debug>:BSP_LOGGER_USER_CUSTOM_LOGGER>
+        # TODO CVW-55
+        $<$<STREQUAL:${BOARD},CAVeBoard>:BOARD_CAVEBOARD>
+        $<$<STREQUAL:${BOARD},Nucleo-64>:BOARD_NUCLEO_64>
+        $<$<STREQUAL:${BOARD},STM32-E407>:BOARD_STM32_E407>
+)
+
 target_include_directories(BspUser
     INTERFACE
         ${BSP_USER_INC_DIR}
@@ -38,40 +50,7 @@ target_sources(BspUser
         ${BSP_USER_SRCS}
 )
 
-target_link_libraries(BspUser
-    INTERFACE
-        stm32cubemx
-)
-
 ################################################################################
-# Sensors
+# BSP
 ################################################################################
-add_subdirectory(${CMAKE_SOURCE_DIR}/sensors ${CMAKE_BINARY_DIR}/sensors)
-
-################################################################################
-# Bots
-################################################################################
-add_subdirectory(${CMAKE_SOURCE_DIR}/bots ${CMAKE_BINARY_DIR}/bots)
-
-################################################################################
-# Cavebot User
-################################################################################
-set(CAVEBOT_USER_DIR ${BOARD_DIR}/cavebot_user)
-set(CAVEBOT_USER_INC_DIR ${CAVEBOT_USER_DIR}/inc)
-set(CAVEBOT_USER_SRC_DIR ${CAVEBOT_USER_DIR}/src)
-
-set(CAVEBOT_USER_SRCS
-    ${CAVEBOT_USER_SRC_DIR}/cavebot_user.c
-)
-
-add_library(CavebotUser INTERFACE)
-
-target_include_directories(CavebotUser
-    INTERFACE
-        ${CAVEBOT_USER_INC_DIR}
-)
-
-target_sources(CavebotUser
-    INTERFACE
-        ${CAVEBOT_USER_SRCS}
-)
+add_subdirectory(${CMAKE_SOURCE_DIR}/bsp ${CMAKE_BINARY_DIR}/bsp)

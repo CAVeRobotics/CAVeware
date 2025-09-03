@@ -28,3 +28,25 @@ if(${CPPCHECK_NAME}_BIN)
 else()
     message(WARNING "${CPPCHECK_NAME} not found.")
 endif()
+
+set(CPPCHECK_HTMLREPORT_NAME ${CPPCHECK_NAME}-htmlreport)
+set(CPPCHECK_HTMLREPORT_SEARCH_PATH
+    ${CPPCHECK_DIR}/cppcheck/htmlreport/
+    /opt/cppcheck/htmlreport/
+)
+find_program(${CPPCHECK_HTMLREPORT_NAME}_BIN
+    NAMES ${CPPCHECK_HTMLREPORT_NAME}
+    HINTS ${CPPCHECK_HTMLREPORT_SEARCH_PATH}
+)
+if(${CPPCHECK_HTMLREPORT_NAME}_BIN)
+    message(STATUS "Found ${CPPCHECK_HTMLREPORT_NAME} at: ${${CPPCHECK_HTMLREPORT_NAME}_BIN}")
+
+    add_custom_target(
+        cppcheck-htmlreport
+        ${${CPPCHECK_HTMLREPORT_NAME}_BIN}
+        --file=cppcheck_report.xml
+        --report-dir=cppcheck_htmlreport
+    )
+else()
+    message(WARNING "${CPPCHECK_HTMLREPORT_NAME} not found.")
+endif()

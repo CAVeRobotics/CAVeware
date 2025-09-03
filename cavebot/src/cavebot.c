@@ -10,6 +10,7 @@
 #include "gyroscope.h"
 
 #include "cavebot_cavetalk.h"
+#include "cavebot_user.h"
 #include "cavebot_version.h"
 #include "rover_4ws.h"
 
@@ -190,8 +191,8 @@ static void Cavebot_Initialize(void)
 {
     /* TODO CVW-50 handle return codes */
     (void)Cavebot_Disarm();
-    (void)Accelerometer_Initialize();
-    (void)Gyroscope_Initialize();
+    (void)Accelerometer_Initialize(&CavebotUser_Accelerometer);
+    (void)Gyroscope_Initialize(&CavebotUser_Gyroscope);
 }
 
 static void Cavebot_Task(void)

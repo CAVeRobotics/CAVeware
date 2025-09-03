@@ -20,9 +20,9 @@ Bsp_Adc_t BspAdcUser_HandleTable[BSP_ADC_USER_ADC_MAX] = {
     },
 };
 
-Bsp_Adc_t* BspAdcUser_GetAdc(const Bsp_AdcHandle_t *const adc_handle)
+Bsp_Adc_t *BspAdcUser_GetAdc(const Bsp_AdcHandle_t *const adc_handle)
 {
-    Bsp_Adc_t* adc = NULL;
+    Bsp_Adc_t *adc = NULL;
 
     if (adc_handle == BspAdcUser_HandleTable[BSP_ADC_USER_ADC_1].adc_handle)
     {
