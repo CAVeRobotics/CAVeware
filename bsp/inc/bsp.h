@@ -7,9 +7,10 @@
 
 #include "stm32f4xx_hal.h"
 
-#define BSP_UNUSED(x)          (void)(x)
-#define BSP_PI                 (double)3.14159265358979323846
-#define BSP_DEGREES_PER_RADIAN (double)(BSP_PI / 180.0)
+#define BSP_UNUSED(x)                   (void)(x)
+#define BSP_PI                          (double)3.14159265358979323846
+#define BSP_DEGREES_PER_RADIAN          (double)(BSP_PI / 180.0)
+#define BSP_DEGREES_TO_RADIANS(degrees) (double)((double)degrees * BSP_DEGREES_PER_RADIAN)
 
 typedef double   Bsp_Percent_t;
 typedef double   Bsp_Radian_t;
