@@ -12,6 +12,7 @@
 #include "gyroscope.h"
 
 typedef int16_t Lsm6dsv16x_RawData_t;
+
 typedef enum
 {
     LSM6DSV16X_AXIS_X,

@@ -21,17 +21,17 @@
 #define ROVER_4WS_WHEEL_OFFSET     (double)(3.14159265358979323846 / 2.0)
 #define ROVER_4WS_DOUBLE_SIGN_MASK 0x8000000000000000U
 
-/* TODO read from config */
+/* TODO CVW-21 read from config */
 static const Bsp_Meter_t kRover4ws_Tread       = 0.493800;
 static const Bsp_Meter_t kRover4ws_Wheelbase   = 0.466028;
 static const Bsp_Meter_t kRover4ws_WheelRadius = 0.080000;
 
-/* TODO read from config */
+/* TODO CVW-21 read from config */
 static const Bsp_Meter_t kRover4ws_HalfTread         = kRover4ws_Tread / 2;
 static const Bsp_Meter_t kRover4ws_HalfWheelbase     = kRover4ws_Wheelbase / 2;
 static const Bsp_Meter_t kRover4ws_DoubleWheelRadius = kRover4ws_WheelRadius * 2;
 
-/* TODO */
+/* TODO CVW-21 read from config */
 static CavebotPid_Handle_t Rover4ws_SteeringPid = {
     0
 };

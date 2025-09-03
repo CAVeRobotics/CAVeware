@@ -8,8 +8,7 @@
 #include "bsp_encoder_user.h"
 #include "bsp_tick.h"
 
-#define BSP_ENCODER_PI                   3.14159265358979323846
-#define BSP_ENCODER_RADIANS_PER_ROTATION (2 * BSP_ENCODER_PI)
+#define BSP_ENCODER_RADIANS_PER_ROTATION (2 * BSP_PI)
 #define BSP_ENCODER_PHASES               (Bsp_EncoderPulse_t)2
 
 extern void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef *tim_encoderHandle);
