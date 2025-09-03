@@ -1,12 +1,12 @@
-#include "rover_pid.h"
+#include "cavebot_pid.h"
 
 #include "bsp_tick.h"
 
-#include "rover.h"
+#include "cavebot.h"
 
-Rover_Error_t RoverPid_Reset(RoverPid_Handle_t *const handle)
+Cavebot_Error_t CavebotPid_Reset(CavebotPid_Handle_t *const handle)
 {
-    Rover_Error_t error = ROVER_ERROR_NULL;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
 
     if (NULL != handle)
     {
@@ -16,48 +16,48 @@ Rover_Error_t RoverPid_Reset(RoverPid_Handle_t *const handle)
         handle->output        = 0.0;
         handle->previous_tick = 0U;
 
-        error = ROVER_ERROR_NONE;
+        error = CAVEBOT_ERROR_NONE;
     }
 
     return error;
 }
 
-Rover_Error_t RoverPid_Enable(RoverPid_Handle_t *const handle)
+Cavebot_Error_t CavebotPid_Enable(CavebotPid_Handle_t *const handle)
 {
-    Rover_Error_t error = ROVER_ERROR_NULL;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
 
     if (NULL != handle)
     {
-        (void)RoverPid_Reset(handle);
+        (void)CavebotPid_Reset(handle);
         handle->enabled = true;
 
-        error = ROVER_ERROR_NONE;
+        error = CAVEBOT_ERROR_NONE;
     }
 
     return error;
 }
 
-Rover_Error_t RoverPid_Disable(RoverPid_Handle_t *const handle)
+Cavebot_Error_t CavebotPid_Disable(CavebotPid_Handle_t *const handle)
 {
-    Rover_Error_t error = ROVER_ERROR_NULL;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
 
     if (NULL != handle)
     {
         handle->enabled = false;
 
-        error = ROVER_ERROR_NONE;
+        error = CAVEBOT_ERROR_NONE;
     }
 
     return error;
 }
 
-Rover_Error_t RoverPid_Update(RoverPid_Handle_t *const handle, const double actual, const Rover_Microsecond_t tick)
+Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const double actual, const Bsp_Microsecond_t tick)
 {
-    Rover_Error_t error = ROVER_ERROR_NONE;
+    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
 
     if (NULL == handle)
     {
-        error = ROVER_ERROR_NULL;
+        error = CAVEBOT_ERROR_NULL;
     }
     else if (!handle->enabled)
     {

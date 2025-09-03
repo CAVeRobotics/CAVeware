@@ -29,17 +29,17 @@
     </suppress>
     <suppress>
         <id>staticFunction</id>
-        <symbolName>RoverImuConfig_Calibrate</symbolName>
+        <symbolName>BspAdc_ReadRaw</symbolName>
     </suppress>
     <suppress>
         <id>staticFunction</id>
-        <symbolName>BspAdc_ReadRaw</symbolName>
+        <symbolName>Lsm6dsv16x_Calibrate</symbolName>
     </suppress>
 
     <!-- Suppress double sign comparison portability error -->
     <suppress>
         <id>invalidPointerCast</id>
-        <fileName>*/rover/src/rover_4ws.c</fileName>
+        <fileName>*/bots/src/rover_4ws.c</fileName>
     </suppress>
 
 </suppressions>

@@ -11,7 +11,7 @@
 
 static const char *kBspUart_LogTag = "BSP UART";
 
-extern void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle);
+extern void HAL_UART_MspInit(UART_HandleTypeDef *uartHandle);
 
 static void BspUart_TxCallback(Bsp_UartHandle_t *uart_handle);
 static Bsp_Error_t BspUart_StartTransmit(Bsp_Uart_t *const uart);
@@ -95,7 +95,7 @@ Bsp_Error_t BspUart_Transmit(const BspUartUser_Uart_t uart, const uint8_t *const
             {
                 uint32_t bytes_to_end = BspUartUser_HandleTable[uart].tx_buffer_size - write_pointer;
                 memcpy((uint8_t *)((uint32_t)BspUartUser_HandleTable[uart].tx_buffer + write_pointer), data, bytes_to_end);
-                memcpy(BspUartUser_HandleTable[uart].tx_buffer, (uint8_t*)((uint32_t)data + bytes_to_end), (uint16_t)(size - bytes_to_end));
+                memcpy(BspUartUser_HandleTable[uart].tx_buffer, (uint8_t *)((uint32_t)data + bytes_to_end), (uint16_t)(size - bytes_to_end));
             }
             else
             {
@@ -137,12 +137,12 @@ Bsp_Error_t BspUart_Receive(const BspUartUser_Uart_t uart, uint8_t *const data, 
         if ((read_pointer + *bytes_read) > BspUartUser_HandleTable[uart].rx_buffer_size)
         {
             uint32_t bytes_to_end = BspUartUser_HandleTable[uart].rx_buffer_size - read_pointer;
-            memcpy(data, (uint8_t*)((uint32_t)BspUartUser_HandleTable[uart].rx_buffer + read_pointer), bytes_to_end);
-            memcpy((uint8_t*)((uint32_t)data + bytes_to_end), BspUartUser_HandleTable[uart].rx_buffer, (uint16_t)(*bytes_read - bytes_to_end));
+            memcpy(data, (uint8_t *)((uint32_t)BspUartUser_HandleTable[uart].rx_buffer + read_pointer), bytes_to_end);
+            memcpy((uint8_t *)((uint32_t)data + bytes_to_end), BspUartUser_HandleTable[uart].rx_buffer, (uint16_t)(*bytes_read - bytes_to_end));
         }
         else
         {
-            memcpy(data, (uint8_t*)((uint32_t)BspUartUser_HandleTable[uart].rx_buffer + read_pointer), *bytes_read);
+            memcpy(data, (uint8_t *)((uint32_t)BspUartUser_HandleTable[uart].rx_buffer + read_pointer), *bytes_read);
         }
 
         BspUartUser_HandleTable[uart].read_pointer += *bytes_read;
@@ -154,7 +154,7 @@ Bsp_Error_t BspUart_Receive(const BspUartUser_Uart_t uart, uint8_t *const data, 
 
 static void BspUart_TxCallback(Bsp_UartHandle_t *uart_handle)
 {
-    Bsp_Uart_t* uart = BspUartUser_GetUart(uart_handle);
+    Bsp_Uart_t *uart = BspUartUser_GetUart(uart_handle);
 
     if (NULL != uart)
     {
@@ -196,7 +196,7 @@ static Bsp_Error_t BspUart_StartTransmit(Bsp_Uart_t *const uart)
 
         if (bytes_read > 0U)
         {
-            error = (Bsp_Error_t)HAL_UART_Transmit_DMA(uart->uart_handle, (uint8_t*)((uint32_t)uart->tx_buffer + read_pointer), (uint16_t)bytes_read);
+            error = (Bsp_Error_t)HAL_UART_Transmit_DMA(uart->uart_handle, (uint8_t *)((uint32_t)uart->tx_buffer + read_pointer), (uint16_t)bytes_read);
 
             if (BSP_ERROR_NONE == error)
             {
@@ -211,7 +211,7 @@ static Bsp_Error_t BspUart_StartTransmit(Bsp_Uart_t *const uart)
 
 static void BspUart_ErrorCallback(Bsp_UartHandle_t *uart_handle)
 {
-    const Bsp_Uart_t* const uart = BspUartUser_GetUart(uart_handle);
+    const Bsp_Uart_t *const uart = BspUartUser_GetUart(uart_handle);
 
     if (NULL != uart)
     {
