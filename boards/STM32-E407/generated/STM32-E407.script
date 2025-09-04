@@ -1,3 +1,0 @@
-config load STM32-E407.ioc
-project generate
-exit

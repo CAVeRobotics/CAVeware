@@ -36,8 +36,6 @@ target_compile_definitions(BspUser
         $<$<CONFIG:Debug>:BSP_LOGGER_USER_CUSTOM_LOGGER>
         # TODO CVW-55
         $<$<STREQUAL:${BOARD},CAVeBoard>:BOARD_CAVEBOARD>
-        $<$<STREQUAL:${BOARD},Nucleo-64>:BOARD_NUCLEO_64>
-        $<$<STREQUAL:${BOARD},STM32-E407>:BOARD_STM32_E407>
 )
 
 target_include_directories(BspUser
