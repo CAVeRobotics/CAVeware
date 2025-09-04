@@ -36,6 +36,7 @@ target_compile_definitions(BspUser
         $<$<CONFIG:Debug>:BSP_LOGGER_USER_CUSTOM_LOGGER>
         # TODO CVW-55
         $<$<STREQUAL:${BOARD},CAVeBoard>:BOARD_CAVEBOARD>
+        $<$<STREQUAL:${BOARD},CAVeBoard-Mini>:BOARD_CAVEBOARD_MINI>
 )
 
 target_include_directories(BspUser
