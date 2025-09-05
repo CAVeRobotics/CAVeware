@@ -17,6 +17,7 @@ static void BspLoggerUser_CustomLogger(const char *const buffer, const size_t si
 void BspLoggerUser_RegisterCustomLogger(void)
 {
 #ifdef BSP_LOGGER_USER_CUSTOM_LOGGER
+    BspUart_Start(BSP_UART_USER_0);
     BspLogger_RegisterCustomLogger(BspLoggerUser_CustomLogger, BspLoggerUser_LogBuffer, sizeof(BspLoggerUser_LogBuffer));
 #endif /* BSP_LOGGER_USER_CUSTOM_LOGGER */
 }

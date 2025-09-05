@@ -22,10 +22,7 @@ void Bsp_Initialize(void)
 
     BspUser_Initialize();
 
-    BspAdc_Start(BSP_ADC_USER_ADC_1);
-
     /* Initialize custom logger */
-    BspUart_Start(BSP_UART_USER_0);
     BspLoggerUser_RegisterCustomLogger();
     BSP_LOGGER_LOG_INFO(kBsp_LogTag, "Initialized");
 }

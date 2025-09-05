@@ -7,20 +7,41 @@ project(Bsp)
 set(BSP_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 set(BSP_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-
-# TODO CVW-54
 set(BSP_SRCS
     ${BSP_SRC_DIR}/bsp.c
-    ${BSP_SRC_DIR}/bsp_adc.c
-    ${BSP_SRC_DIR}/bsp_encoder.c
-    ${BSP_SRC_DIR}/bsp_gpio.c
     ${BSP_SRC_DIR}/bsp_logger.c
-    ${BSP_SRC_DIR}/bsp_motor.c
-    ${BSP_SRC_DIR}/bsp_pwm.c
-    ${BSP_SRC_DIR}/bsp_servo.c
     ${BSP_SRC_DIR}/bsp_tick.c
-    ${BSP_SRC_DIR}/bsp_uart.c
 )
+
+option(BSP_ADC "Enable ADC" OFF)
+option(BSP_ENCODER "Enable encoders" OFF)
+option(BSP_GPIO "Enable GPIO" OFF)
+option(BSP_MOTOR "Enable motors" OFF)
+option(BSP_PWM "Enable PWM" OFF)
+option(BSP_SERVO "Enable servos" OFF)
+option(BSP_UART "Enable UART" OFF)
+
+if(BSP_ADC)
+    message(STATUS "BSP ADC enabled.")
+endif()
+if(BSP_ENCODER)
+    message(STATUS "BSP Encoders enabled.")
+endif()
+if(BSP_GPIO)
+    message(STATUS "BSP GPIO enabled.")
+endif()
+if(BSP_MOTOR)
+    message(STATUS "BSP Motors enabled.")
+endif()
+if(BSP_PWM)
+    message(STATUS "BSP PWM enabled.")
+endif()
+if(BSP_SERVO)
+    message(STATUS "BSP Servos enabled.")
+endif()
+if(BSP_UART)
+    message(STATUS "BSP UART enabled.")
+endif()
 
 set_source_files_properties(
     ${BSP_SRCS}
