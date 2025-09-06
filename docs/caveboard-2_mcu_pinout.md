@@ -10,10 +10,10 @@ Based on STM32F407ZGTx
 | Motor 0 -                | PWM               | PE11                       |
 | Motor 1 +                | PWM               | PE13                       |
 | Motor 1 -                | PWM               | PE14                       |
-| Motor 2 +                | PWM               | PC6                        |
-| Motor 2 -                | PWM               | PC7                        |
-| Motor 3 +                | PWM               | PC8                        |
-| Motor 3 -                | PWM               | PC9                        |
+| Motor 2 +                | PWM               | PA0-WKUP                   |
+| Motor 2 -                | PWM               | PA3                        |
+| Motor 3 +                | PWM               | PF8                        |
+| Motor 3 -                | PWM               | PF9                        |
 | Steering Servo 0         | PWM               | PE5                        |
 | Steering Servo 1         | PWM               | PE6                        |
 | Steering Servo 2         | PWM               | PB14                       |
@@ -26,8 +26,8 @@ Based on STM32F407ZGTx
 | Encoder 1 B              | Timer             | PB5                        |
 | Encoder 2 A              | Timer             | PD12                       |
 | Encoder 2 B              | Timer             | PD13                       |
-| Encoder 3 A              | Timer             | PA0-WKUP                   |
-| Encoder 3 B              | Timer             | PA1                        |
+| Encoder 3 A              | Timer             | PC6                        |
+| Encoder 3 B              | Timer             | PC7                        |
 | IMU SCL                  | SPI Clock         | PB10                       |
 | IMU SDA                  | SPI PICO (MOSI)   | PC3                        |
 | IMU SDO                  | SPI POCI (MISO)   | PC2                        |
@@ -64,12 +64,12 @@ Based on STM32F407ZGTx
 | SWDIO                    | SWDIO             | PA13                       |
 | Reset                    | NRST              | NRST                       |
 | SWO                      | SWO               | In Use (Encoder 0 B - PB3) |
-| Gas Sensor AOUT          | ADC               | PA2                        |
-| Temperature Sensor       | ADC               | PA3                        |
+| Gas Sensor AOUT          | ADC               | PB1                        |
+| Temperature Sensor       | ADC               | PC0                        |
 | Motor 0 current          | ADC               | PA4                        |
 | Motor 1 current          | ADC               | PA5                        |
 | Motor 2 current          | ADC               | PA6                        |
-| Motor 3 current          | ADC               | PA7                        |
+| Motor 3 current          | ADC               | PB0                        |
 | I2C 1 SCL                | I2C SCL           | PB6                        |
 | I2C 1 SDA                | I2C SDA           | PB7                        |
 | I2C 2 SCL                | I2C SCL           | PF1                        |
@@ -82,3 +82,12 @@ Based on STM32F407ZGTx
 | Logging UART RX          | UART RX           | PB11                       |
 | HSE IN                   | HSE               | PH0                        |
 | HSE OUT                  | HSE               | PH1                        |
+| RMII REF CLK             | Ethernet          | PA1                        |
+| RMII MDIO                | Ethernet          | PA2                        |
+| RMII CRSDV               | Ethernet          | PA7                        |
+| RMII TX EN               | Ethernet          | PB11                       |
+| RMII TXD0                | Ethernet          | PB12                       |
+| RMII TXD1                | Ethernet          | PB13                       |
+| RMII MDC                 | Ethernet          | PC1                        |
+| RMII RXD0                | Ethernet          | PC4                        |
+| RMII RXD1                | Ethernet          | PC5                        |
