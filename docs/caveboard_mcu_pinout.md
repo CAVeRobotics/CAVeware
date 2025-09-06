@@ -1,6 +1,6 @@
-# Rover Controller MCU Pinout
+# CAVeBoard MCU Pinout
 
-Revision 9
+Revision 10
 
 Based on STM32F407ZGTx
 
