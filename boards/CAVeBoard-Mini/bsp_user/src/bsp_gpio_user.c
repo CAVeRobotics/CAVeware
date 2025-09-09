@@ -70,7 +70,7 @@ Bsp_Gpio_t BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MAX] = {
         .previous  = 0U,
     },
     [BSP_GPIO_USER_PIN_MOTOR_0_FAULT] = {
-        .gpio_port = MOTOR_0_FAULT_GPIO_PORT,
+        .gpio_port = MOTOR_0_FAULT_GPIO_Port,
         .gpio_pin  = MOTOR_0_FAULT_Pin,
         .mode      = BSP_GPIO_MODE_INPUT,
         .callback  = NULL,
@@ -78,7 +78,7 @@ Bsp_Gpio_t BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MAX] = {
         .previous  = 0U,
     },
     [BSP_GPIO_USER_PIN_MOTOR_1_FAULT] = {
-        .gpio_port = MOTOR_1_FAULT_GPIO_PORT,
+        .gpio_port = MOTOR_1_FAULT_GPIO_Port,
         .gpio_pin  = MOTOR_1_FAULT_Pin,
         .mode      = BSP_GPIO_MODE_INPUT,
         .callback  = NULL,
@@ -86,7 +86,7 @@ Bsp_Gpio_t BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MAX] = {
         .previous  = 0U,
     },
     [BSP_GPIO_USER_PIN_MOTOR_2_FAULT] = {
-        .gpio_port = MOTOR_2_FAULT_GPIO_PORT,
+        .gpio_port = MOTOR_2_FAULT_GPIO_Port,
         .gpio_pin  = MOTOR_2_FAULT_Pin,
         .mode      = BSP_GPIO_MODE_INPUT,
         .callback  = NULL,
@@ -94,7 +94,7 @@ Bsp_Gpio_t BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MAX] = {
         .previous  = 0U,
     },
     [BSP_GPIO_USER_PIN_MOTOR_3_FAULT] = {
-        .gpio_port = MOTOR_3_FAULT_GPIO_PORT,
+        .gpio_port = MOTOR_3_FAULT_GPIO_Port,
         .gpio_pin  = MOTOR_3_FAULT_Pin,
         .mode      = BSP_GPIO_MODE_INPUT,
         .callback  = NULL,

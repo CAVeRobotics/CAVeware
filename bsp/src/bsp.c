@@ -2,12 +2,8 @@
 
 #include <stdint.h>
 
-#include "bsp_adc.h"
-#include "bsp_adc_user.h"
 #include "bsp_logger.h"
 #include "bsp_logger_user.h"
-#include "bsp_uart.h"
-#include "bsp_uart_user.h"
 #include "bsp_user.h"
 
 static const char *kBsp_LogTag = "BSP";
