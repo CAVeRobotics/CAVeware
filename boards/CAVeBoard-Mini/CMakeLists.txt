@@ -4,7 +4,6 @@ project(CAVeBoard-Mini)
 ################################################################################
 # BSP
 ################################################################################
-set(BSP_ADC ON CACHE BOOL "Enable BSP ADC")
 set(BSP_ENCODER ON CACHE BOOL "Enable BSP encoders")
 set(BSP_GPIO ON CACHE BOOL "Enable BSP GPIO")
 set(BSP_MOTOR ON CACHE BOOL "Enable BSP motors")
