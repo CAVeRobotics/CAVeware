@@ -5,38 +5,6 @@
 #include "bsp.h"
 
 Bsp_Gpio_t BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MAX] = {
-    [BSP_GPIO_USER_PIN_HEADLIGHTS_0] = {
-        .gpio_port = LED_POD_0_GPIO_Port,
-        .gpio_pin  = LED_POD_0_Pin,
-        .mode      = BSP_GPIO_MODE_OUTPUT,
-        .callback  = NULL,
-        .debounce  = 0U,
-        .previous  = 0U,
-    },
-    [BSP_GPIO_USER_PIN_HEADLIGHTS_1] = {
-        .gpio_port = LED_POD_1_GPIO_Port,
-        .gpio_pin  = LED_POD_1_Pin,
-        .mode      = BSP_GPIO_MODE_OUTPUT,
-        .callback  = NULL,
-        .debounce  = 0U,
-        .previous  = 0U,
-    },
-    [BSP_GPIO_USER_PIN_HEADLIGHTS_2] = {
-        .gpio_port = LED_POD_2_GPIO_Port,
-        .gpio_pin  = LED_POD_2_Pin,
-        .mode      = BSP_GPIO_MODE_OUTPUT,
-        .callback  = NULL,
-        .debounce  = 0U,
-        .previous  = 0U,
-    },
-    [BSP_GPIO_USER_PIN_HEADLIGHTS_ENABLE] = {
-        .gpio_port = HEADLIGHTS_ENABLE_BUTTON_GPIO_Port,
-        .gpio_pin  = HEADLIGHTS_ENABLE_BUTTON_Pin,
-        .mode      = BSP_GPIO_MODE_INPUT,
-        .callback  = NULL,
-        .debounce  = 50000U, /* TODO SD-130 tune for normal button press */
-        .previous  = 0U,
-    },
     [BSP_GPIO_USER_PIN_IMU_CS] = {
         .gpio_port = IMU_CS_GPIO_Port,
         .gpio_pin  = IMU_CS_Pin,
@@ -45,7 +13,23 @@ Bsp_Gpio_t BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MAX] = {
         .debounce  = 0U,
         .previous  = 0U,
     },
-    [BSP_GPIO_USER_PIN_IMU_STATUS] = {
+    [BSP_GPIO_USER_PIN_IMU_INT1] = {
+        .gpio_port = IMU_INT1_GPIO_Port,
+        .gpio_pin  = IMU_INT1_Pin,
+        .mode      = BSP_GPIO_MODE_INPUT,
+        .callback  = NULL,
+        .debounce  = 0U,
+        .previous  = 0U,
+    },
+    [BSP_GPIO_USER_PIN_IMU_INT2] = {
+        .gpio_port = IMU_INT2_GPIO_Port,
+        .gpio_pin  = IMU_INT2_Pin,
+        .mode      = BSP_GPIO_MODE_INPUT,
+        .callback  = NULL,
+        .debounce  = 0U,
+        .previous  = 0U,
+    },
+    [BSP_GPIO_USER_PIN_IMU_STATUS_LED] = {
         .gpio_port = IMU_STATUS_LED_GPIO_Port,
         .gpio_pin  = IMU_STATUS_LED_Pin,
         .mode      = BSP_GPIO_MODE_OUTPUT,
@@ -53,37 +37,69 @@ Bsp_Gpio_t BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MAX] = {
         .debounce  = 0U,
         .previous  = 0U,
     },
-    [BSP_GPIO_USER_PIN_COMMS_STATUS] = {
-        .gpio_port = JETSON_COMMS_LED_GPIO_Port,
-        .gpio_pin  = JETSON_COMMS_LED_Pin,
+    [BSP_GPIO_USER_PIN_MOTOR_0_SLEEP] = {
+        .gpio_port = MOTOR_0_SLEEP_GPIO_Port,
+        .gpio_pin  = MOTOR_0_SLEEP_Pin,
         .mode      = BSP_GPIO_MODE_OUTPUT,
         .callback  = NULL,
         .debounce  = 0U,
         .previous  = 0U,
     },
-    [BSP_GPIO_USER_PIN_START] = {
-        .gpio_port = START_BUTTON_GPIO_Port,
-        .gpio_pin  = START_BUTTON_Pin,
-        .mode      = BSP_GPIO_MODE_INPUT,
-        .callback  = NULL,
-        .debounce  = 50000U,
-        .previous  = 0U,
-    },
-    [BSP_GPIO_USER_PIN_ENABLE] = {
-        .gpio_port = MOTOR_ENABLE_BUTTON_GPIO_Port,
-        .gpio_pin  = MOTOR_ENABLE_BUTTON_Pin,
-        .mode      = BSP_GPIO_MODE_INPUT,
-        .callback  = NULL,
-        .debounce  = 50000U,
-        .previous  = 0U,
-    },
-    [BSP_GPIO_USER_PIN_MOTOR_SLEEP] = {
-        .gpio_port = MOTOR_SLEEP_GPIO_Port,
-        .gpio_pin  = MOTOR_SLEEP_Pin,
+    [BSP_GPIO_USER_PIN_MOTOR_1_SLEEP] = {
+        .gpio_port = MOTOR_1_SLEEP_GPIO_Port,
+        .gpio_pin  = MOTOR_1_SLEEP_Pin,
         .mode      = BSP_GPIO_MODE_OUTPUT,
         .callback  = NULL,
         .debounce  = 0U,
-        .previous  = 0U
+        .previous  = 0U,
+    },
+    [BSP_GPIO_USER_PIN_MOTOR_2_SLEEP] = {
+        .gpio_port = MOTOR_2_SLEEP_GPIO_Port,
+        .gpio_pin  = MOTOR_2_SLEEP_Pin,
+        .mode      = BSP_GPIO_MODE_OUTPUT,
+        .callback  = NULL,
+        .debounce  = 0U,
+        .previous  = 0U,
+    },
+    [BSP_GPIO_USER_PIN_MOTOR_3_SLEEP] = {
+        .gpio_port = MOTOR_3_SLEEP_GPIO_Port,
+        .gpio_pin  = MOTOR_3_SLEEP_Pin,
+        .mode      = BSP_GPIO_MODE_OUTPUT,
+        .callback  = NULL,
+        .debounce  = 0U,
+        .previous  = 0U,
+    },
+    [BSP_GPIO_USER_PIN_MOTOR_0_FAULT] = {
+        .gpio_port = MOTOR_0_FAULT_GPIO_PORT,
+        .gpio_pin  = MOTOR_0_FAULT_Pin,
+        .mode      = BSP_GPIO_MODE_INPUT,
+        .callback  = NULL,
+        .debounce  = 0U,
+        .previous  = 0U,
+    },
+    [BSP_GPIO_USER_PIN_MOTOR_1_FAULT] = {
+        .gpio_port = MOTOR_1_FAULT_GPIO_PORT,
+        .gpio_pin  = MOTOR_1_FAULT_Pin,
+        .mode      = BSP_GPIO_MODE_INPUT,
+        .callback  = NULL,
+        .debounce  = 0U,
+        .previous  = 0U,
+    },
+    [BSP_GPIO_USER_PIN_MOTOR_2_FAULT] = {
+        .gpio_port = MOTOR_2_FAULT_GPIO_PORT,
+        .gpio_pin  = MOTOR_2_FAULT_Pin,
+        .mode      = BSP_GPIO_MODE_INPUT,
+        .callback  = NULL,
+        .debounce  = 0U,
+        .previous  = 0U,
+    },
+    [BSP_GPIO_USER_PIN_MOTOR_3_FAULT] = {
+        .gpio_port = MOTOR_3_FAULT_GPIO_PORT,
+        .gpio_pin  = MOTOR_3_FAULT_Pin,
+        .mode      = BSP_GPIO_MODE_INPUT,
+        .callback  = NULL,
+        .debounce  = 0U,
+        .previous  = 0U,
     },
 };
 
@@ -93,14 +109,23 @@ Bsp_Gpio_t *BspGpioUser_GetGpioHandle(const Bsp_GpioPin_t exti_pin)
 
     switch (exti_pin)
     {
-    case HEADLIGHTS_ENABLE_BUTTON_Pin:
-        gpio = &BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_HEADLIGHTS_ENABLE];
+    case IMU_INT1_Pin:
+        gpio = &BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_IMU_INT1];
         break;
-    case START_BUTTON_Pin:
-        gpio = &BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_START];
+    case IMU_INT2_Pin:
+        gpio = &BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_IMU_INT2];
         break;
-    case MOTOR_ENABLE_BUTTON_Pin:
-        gpio = &BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_ENABLE];
+    case MOTOR_0_FAULT_Pin:
+        gpio = &BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MOTOR_0_FAULT];
+        break;
+    case MOTOR_1_FAULT_Pin:
+        gpio = &BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MOTOR_1_FAULT];
+        break;
+    case MOTOR_2_FAULT_Pin:
+        gpio = &BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MOTOR_2_FAULT];
+        break;
+    case MOTOR_3_FAULT_Pin:
+        gpio = &BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MOTOR_3_FAULT];
         break;
     default:
         break;
