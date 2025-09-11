@@ -65,7 +65,7 @@ if(BSP_USER_SRCS)
     )
 endif()
 
-add_library(${PROJECT_NAME})
+add_library(${PROJECT_NAME} OBJECT)
 
 target_compile_definitions(${PROJECT_NAME}
     PUBLIC
