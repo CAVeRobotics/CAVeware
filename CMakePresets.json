@@ -46,63 +46,31 @@
             }
         },
         {
-            "name": "Nucleo-64_Debug",
+            "name": "CAVeBoard-Mini_Debug",
             "inherits": "CAVeBoard_Debug",
             "cacheVariables": {
-                "BOARD": "Nucleo-64",
-                "LINKER_SCRIPT": "stm32f411retx_flash.ld"
+                "BOARD": "CAVeBoard-Mini"
             }
         },
         {
-            "name": "Nucleo-64_RelWithDebInfo",
+            "name": "CAVeBoard-Mini_RelWithDebInfo",
             "inherits": "CAVeBoard_RelWithDebInfo",
             "cacheVariables": {
-                "BOARD": "Nucleo-64",
-                "LINKER_SCRIPT": "stm32f411retx_flash.ld"
+                "BOARD": "CAVeBoard-Mini"
             }
         },
         {
-            "name": "Nucleo-64_Release",
+            "name": "CAVeBoard-Mini_Release",
             "inherits": "CAVeBoard_Release",
             "cacheVariables": {
-                "BOARD": "Nucleo-64",
-                "LINKER_SCRIPT": "stm32f411retx_flash.ld"
+                "BOARD": "CAVeBoard-Mini"
             }
         },
         {
-            "name": "Nucleo-64_MinSizeRel",
+            "name": "CAVeBoard-Mini_MinSizeRel",
             "inherits": "CAVeBoard_MinSizeRel",
             "cacheVariables": {
-                "BOARD": "Nucleo-64",
-                "LINKER_SCRIPT": "stm32f411retx_flash.ld"
-            }
-        },
-        {
-            "name": "STM32-E407_Debug",
-            "inherits": "CAVeBoard_Debug",
-            "cacheVariables": {
-                "BOARD": "STM32-E407"
-            }
-        },
-        {
-            "name": "STM32-E407_RelWithDebInfo",
-            "inherits": "CAVeBoard_RelWithDebInfo",
-            "cacheVariables": {
-                "BOARD": "STM32-E407"
-            }
-        },
-        {
-            "name": "STM32-E407_Release",
-            "inherits": "CAVeBoard_Release",
-            "cacheVariables": {
-                "BOARD": "STM32-E407"
-            }
-        },
-        {
-            "name": "STM32-E407_MinSizeRel",
-            "inherits": "CAVeBoard_MinSizeRel",
-            "cacheVariables": {
-                "BOARD": "STM32-E407"
+                "BOARD": "CAVeBoard-Mini"
             }
         }
     ],
@@ -124,36 +92,20 @@
             "configurePreset": "CAVeBoard_MinSizeRel"
         },
         {
-            "name": "Nucleo-64_Debug",
-            "configurePreset": "Nucleo-64_Debug"
+            "name": "CAVeBoard-Mini_Debug",
+            "configurePreset": "CAVeBoard-Mini_Debug"
         },
         {
-            "name": "Nucleo-64_RelWithDebInfo",
-            "configurePreset": "Nucleo-64_RelWithDebInfo"
+            "name": "CAVeBoard-Mini_RelWithDebInfo",
+            "configurePreset": "CAVeBoard-Mini_RelWithDebInfo"
         },
         {
-            "name": "Nucleo-64_Release",
-            "configurePreset": "Nucleo-64_Release"
+            "name": "CAVeBoard-Mini_Release",
+            "configurePreset": "CAVeBoard-Mini_Release"
         },
         {
-            "name": "Nucleo-64_MinSizeRel",
-            "configurePreset": "Nucleo-64_MinSizeRel"
-        },
-        {
-            "name": "STM32-E407_Debug",
-            "configurePreset": "STM32-E407_Debug"
-        },
-        {
-            "name": "STM32-E407_RelWithDebInfo",
-            "configurePreset": "STM32-E407_RelWithDebInfo"
-        },
-        {
-            "name": "STM32-E407_Release",
-            "configurePreset": "STM32-E407_Release"
-        },
-        {
-            "name": "STM32-E407_MinSizeRel",
-            "configurePreset": "STM32-E407_MinSizeRel"
+            "name": "CAVeBoard-Mini_MinSizeRel",
+            "configurePreset": "CAVeBoard-Mini_MinSizeRel"
         }
     ]
 }

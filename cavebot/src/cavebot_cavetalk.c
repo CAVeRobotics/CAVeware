@@ -25,7 +25,9 @@
 
 #include "cavebot.h"
 #include "cavebot_user.h"
+#ifdef BOARD_CAVEBOARD
 #include "rover_4ws.h"
+#endif
 
 #define CAVEBOT_CAVE_TALK_BUFFER_SIZE     1024U
 #define CAVEBOT_CAVE_TALK_HEADER_SIZE     3U
@@ -120,7 +122,9 @@ void CavebotCaveTalk_Task(void)
         {
             CavebotCaveTalk_Connected = false;
             CavebotCaveTalk_WasArmed  = Cavebot_IsArmed();
+#ifdef BOARD_CAVEBOARD
             BspGpio_Write(BSP_GPIO_USER_PIN_COMMS_STATUS, BSP_GPIO_STATE_RESET);
+#endif
             BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Disconnected");
 
             if (CavebotCaveTalk_WasArmed)
@@ -203,7 +207,9 @@ static void CavebotCaveTalk_HearOogaBooga(const cave_talk_Say ooga_booga)
         if (!CavebotCaveTalk_Connected)
         {
             CavebotCaveTalk_Connected = true;
+#ifdef BOARD_CAVEBOARD
             BspGpio_Write(BSP_GPIO_USER_PIN_COMMS_STATUS, BSP_GPIO_STATE_SET);
+#endif
             BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Connected");
 
             if (CavebotCaveTalk_WasArmed)
@@ -228,6 +234,7 @@ static void CavebotCaveTalk_HearLights(const bool headlights)
 {
     CavebotCaveTalk_HeardMessage("lights");
 
+#ifdef BOARD_CAVEBOARD
     if (headlights)
     {
         (void)BspGpio_Write(BSP_GPIO_USER_PIN_HEADLIGHTS_0, BSP_GPIO_STATE_SET);
@@ -240,6 +247,9 @@ static void CavebotCaveTalk_HearLights(const bool headlights)
         (void)BspGpio_Write(BSP_GPIO_USER_PIN_HEADLIGHTS_1, BSP_GPIO_STATE_RESET);
         (void)BspGpio_Write(BSP_GPIO_USER_PIN_HEADLIGHTS_2, BSP_GPIO_STATE_RESET);
     }
+#else
+    BSP_UNUSED(headlights);
+#endif
 }
 
 static void CavebotCaveTalk_HearArm(const bool arm)
@@ -267,6 +277,7 @@ static void CavebotCaveTalk_HearConfigServoWheels(const cave_talk_Servo *const s
 
     if ((NULL != servo_wheel_0) && (NULL != servo_wheel_1) && (NULL != servo_wheel_2) && (NULL != servo_wheel_3))
     {
+#ifdef BOARD_CAVEBOARD
         error = Rover4ws_ErrorCheck(Rover4ws_ConfigureSteering(CAVEBOT_USER_SERVO_0,
                                                                servo_wheel_0->min_duty_cycle_percentage,
                                                                servo_wheel_0->max_duty_cycle_percentage,
@@ -287,6 +298,7 @@ static void CavebotCaveTalk_HearConfigServoWheels(const cave_talk_Servo *const s
                                                                servo_wheel_3->max_duty_cycle_percentage,
                                                                servo_wheel_3->min_angle_radian,
                                                                servo_wheel_3->max_angle_radian));
+#endif
     }
 
     if (CAVEBOT_ERROR_NONE != error)
@@ -310,6 +322,7 @@ static void CavebotCaveTalk_HearConfigMotors(const cave_talk_Motor *const motor_
 
     if ((NULL != motor_wheel_0) && (NULL != motor_wheel_1) && (NULL != motor_wheel_2) && (NULL != motor_wheel_3))
     {
+#ifdef BOARD_CAVEBOARD
         error = Rover4ws_ErrorCheck(Rover4ws_ConfigureMotor(CAVEBOT_USER_MOTOR_0,
                                                             motor_wheel_0->min_duty_cycle_percentage,
                                                             motor_wheel_0->max_duty_cycle_percentage,
@@ -330,6 +343,7 @@ static void CavebotCaveTalk_HearConfigMotors(const cave_talk_Motor *const motor_
                                                             motor_wheel_3->max_duty_cycle_percentage,
                                                             motor_wheel_3->min_speed_loaded_meters_per_second,
                                                             motor_wheel_3->max_speed_loaded_meters_per_second));
+#endif
     }
 
     if (CAVEBOT_ERROR_NONE != error)
@@ -353,10 +367,12 @@ static void CavebotCaveTalk_HearConfigEncoders(const cave_talk_ConfigEncoder *co
 
     if ((NULL != encoder_wheel_0) && (NULL != encoder_wheel_1) && (NULL != encoder_wheel_2) && (NULL != encoder_wheel_3))
     {
+#ifdef BOARD_CAVEBOARD
         error = Rover4ws_ErrorCheck(Rover4ws_ConfigureEncoder(CAVEBOT_USER_MOTOR_0, encoder_wheel_0->smoothing_factor),
                                     Rover4ws_ConfigureEncoder(CAVEBOT_USER_MOTOR_1, encoder_wheel_1->smoothing_factor),
                                     Rover4ws_ConfigureEncoder(CAVEBOT_USER_MOTOR_2, encoder_wheel_2->smoothing_factor),
                                     Rover4ws_ConfigureEncoder(CAVEBOT_USER_MOTOR_3, encoder_wheel_3->smoothing_factor));
+#endif
     }
 
     if (CAVEBOT_ERROR_NONE != error)
@@ -389,10 +405,12 @@ static void CavebotCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *con
 
     if ((NULL != wheel_0_params) && (NULL != wheel_1_params) && (NULL != wheel_2_params) && (NULL != wheel_3_params))
     {
+#ifdef BOARD_CAVEBOARD
         error = Rover4ws_ErrorCheck(Rover4ws_ConfigureMotorPid(CAVEBOT_USER_MOTOR_0, wheel_0_params->Kp, wheel_0_params->Ki, wheel_0_params->Kd),
                                     Rover4ws_ConfigureMotorPid(CAVEBOT_USER_MOTOR_1, wheel_1_params->Kp, wheel_1_params->Ki, wheel_1_params->Kd),
                                     Rover4ws_ConfigureMotorPid(CAVEBOT_USER_MOTOR_2, wheel_2_params->Kp, wheel_2_params->Ki, wheel_2_params->Kd),
                                     Rover4ws_ConfigureMotorPid(CAVEBOT_USER_MOTOR_3, wheel_3_params->Kp, wheel_3_params->Ki, wheel_3_params->Kd));
+#endif
     }
 
     if (CAVEBOT_ERROR_NONE != error)
@@ -404,6 +422,7 @@ static void CavebotCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *con
         BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Wheel speed control configured");
     }
 
+#ifdef BOARD_CAVEBOARD
     if (enabled)
     {
         error = Rover4ws_EnableSpeedControl();
@@ -412,6 +431,7 @@ static void CavebotCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *con
     {
         error = Rover4ws_DisableSpeedControl();
     }
+#endif
 
     if (CAVEBOT_ERROR_NONE != error)
     {
@@ -435,7 +455,9 @@ static void CavebotCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const
 
     if (NULL != turn_rate_params)
     {
+#ifdef BOARD_CAVEBOARD
         error = Rover4ws_ConfigureSteeringPid(turn_rate_params->Kp, turn_rate_params->Ki, turn_rate_params->Kd);
+#endif
     }
 
     if (CAVEBOT_ERROR_NONE != error)
@@ -447,6 +469,7 @@ static void CavebotCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const
         BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Steering control configured");
     }
 
+#ifdef BOARD_CAVEBOARD
     if (enabled)
     {
         error = Rover4ws_EnableSpeedControl();
@@ -455,6 +478,7 @@ static void CavebotCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const
     {
         error = Rover4ws_DisableSpeedControl();
     }
+#endif
 
     if (CAVEBOT_ERROR_NONE != error)
     {

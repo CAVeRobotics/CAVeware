@@ -1,0 +1,27 @@
+#ifndef BSP_GPIO_USER_H
+#define BSP_GPIO_USER_H
+
+#include "bsp.h"
+
+typedef enum
+{
+    BSP_GPIO_USER_PIN_IMU_CS,
+    BSP_GPIO_USER_PIN_IMU_INT1,
+    BSP_GPIO_USER_PIN_IMU_INT2,
+    BSP_GPIO_USER_PIN_IMU_STATUS_LED,
+    BSP_GPIO_USER_PIN_MOTOR_0_SLEEP,
+    BSP_GPIO_USER_PIN_MOTOR_1_SLEEP,
+    BSP_GPIO_USER_PIN_MOTOR_2_SLEEP,
+    BSP_GPIO_USER_PIN_MOTOR_3_SLEEP,
+    BSP_GPIO_USER_PIN_MOTOR_0_FAULT,
+    BSP_GPIO_USER_PIN_MOTOR_1_FAULT,
+    BSP_GPIO_USER_PIN_MOTOR_2_FAULT,
+    BSP_GPIO_USER_PIN_MOTOR_3_FAULT,
+    BSP_GPIO_USER_PIN_MAX
+} BspGpioUser_Pin_t;
+
+extern Bsp_Gpio_t BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MAX];
+
+Bsp_Gpio_t *BspGpioUser_GetGpioHandle(const Bsp_GpioPin_t exti_pin);
+
+#endif /* BSP_GPIO_USER_H */

@@ -12,7 +12,9 @@
 #include "cavebot_cavetalk.h"
 #include "cavebot_user.h"
 #include "cavebot_version.h"
+#ifdef BOARD_CAVEBOARD
 #include "rover_4ws.h"
+#endif
 
 #define CAVEBOT_LOOP_LOG_PERIOD (Bsp_Microsecond_t)((Bsp_Microsecond_t)5U * BSP_TICK_MICROSECONDS_PER_SECOND)
 
@@ -45,8 +47,10 @@ int main(void)
     }
 
     /* TODO SD-348 testing */
+#ifdef BOARD_CAVEBOARD
     (void)Rover4ws_DisableSpeedControl();
     (void)Rover4ws_DisableSteeringControl();
+#endif
 
     BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Initialized");
 
@@ -90,12 +94,18 @@ Cavebot_Error_t Cavebot_BspToCavebotError(const Bsp_Error_t bsp_error)
 
 Cavebot_Error_t Cavebot_Arm(void)
 {
+#ifdef BOARD_CAVEBOARD
     Cavebot_Error_t error = Rover4ws_EnableSteering();
+#else
+    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
+#endif
 
+#ifdef BOARD_CAVEBOARD
     if (CAVEBOT_ERROR_NONE == error)
     {
         error = Rover4ws_StartMotors();
     }
+#endif
 
     if (CAVEBOT_ERROR_NONE == error)
     {
@@ -113,12 +123,18 @@ Cavebot_Error_t Cavebot_Arm(void)
 
 Cavebot_Error_t Cavebot_Disarm(void)
 {
+#ifdef BOARD_CAVEBOARD
     Cavebot_Error_t error = Rover4ws_DisableSteering();
+#else
+    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
+#endif
 
+#ifdef BOARD_CAVEBOARD
     if (CAVEBOT_ERROR_NONE == error)
     {
         error = Rover4ws_StopMotors();
     }
+#endif
 
     if (CAVEBOT_ERROR_NONE == error)
     {
@@ -141,7 +157,11 @@ bool Cavebot_IsArmed(void)
 
 Cavebot_Error_t Cavebot_EnableControl(void)
 {
+#ifdef BOARD_CAVEBOARD
     Cavebot_Error_t error = Rover4ws_EnableSpeedControl();
+#else
+    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
+#endif
 
     if (CAVEBOT_ERROR_NONE != error)
     {
@@ -157,7 +177,11 @@ Cavebot_Error_t Cavebot_EnableControl(void)
 
 Cavebot_Error_t Cavebot_DisableControl(void)
 {
+#ifdef BOARD_CAVEBOARD
     Cavebot_Error_t error = Rover4ws_DisableSpeedControl();
+#else
+    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
+#endif
 
     if (CAVEBOT_ERROR_NONE != error)
     {
@@ -173,7 +197,11 @@ Cavebot_Error_t Cavebot_DisableControl(void)
 
 Cavebot_Error_t Cavebot_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_RadiansPerSecond_t turn_rate)
 {
+#ifdef BOARD_CAVEBOARD
     Cavebot_Error_t error = Rover4ws_Drive(speed, turn_rate);
+#else
+    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
+#endif
 
     if (CAVEBOT_ERROR_NONE != error)
     {
@@ -197,7 +225,11 @@ static void Cavebot_Initialize(void)
 
 static void Cavebot_Task(void)
 {
+#ifdef BOARD_CAVEBOARD
     Cavebot_Error_t error = Rover4ws_Task();
+#else
+    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
+#endif
 
     if (CAVEBOT_ERROR_NONE != error)
     {
