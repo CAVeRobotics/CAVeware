@@ -12,16 +12,17 @@
 #include "cavebot_cavetalk.h"
 #include "cavebot_user.h"
 #include "cavebot_version.h"
-#ifdef BOARD_CAVEBOARD
-#include "rover_4ws.h"
+#ifdef ROVER_4WD
+#include "rover_4wd.h"
 #endif
 
 #define CAVEBOT_LOOP_LOG_PERIOD (Bsp_Microsecond_t)((Bsp_Microsecond_t)5U * BSP_TICK_MICROSECONDS_PER_SECOND)
 
-static const char *kCavebot_LogTag = "CAVEBOT";
-static bool        Cavebot_Armed   = false;
+static const char *  kCavebot_LogTag = "CAVEBOT";
+static bool          Cavebot_Armed   = false;
+static Cavebot_Bot_t Cavebot_Bot     = CAVEBOT_BOT_4WD;
 
-static void Cavebot_Initialize(void);
+static Cavebot_Error_t Cavebot_Initialize(void);
 static void Cavebot_Task(void);
 static void Cavebot_MeasureLoopRate(void);
 
@@ -29,36 +30,37 @@ int main(void)
 {
     Bsp_Initialize();
 
-    if (BSP_ERROR_NONE != BspTick_Start())
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to start BSP Tick");
-    }
-
+    /* Immediately print out build info in case there is a problem starting BSP tick */
     BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build branch: %s", CAVEBOT_GIT_BRANCH);
     BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build commit: %s", CAVEBOT_GIT_COMMIT_HASH);
     BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build tag: %s", CAVEBOT_GIT_TAG);
     BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build status: %s", CAVEBOT_GIT_DIRTY);
 
-    Cavebot_Initialize();
-
-    if (CAVE_TALK_ERROR_NONE != CavebotCaveTalk_Start())
+    if (BSP_ERROR_NONE != BspTick_Start())
+    {
+        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to start BSP Tick");
+    }
+    else if (CAVEBOT_ERROR_NONE != Cavebot_Initialize())
+    {
+        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize");
+    }
+    else if (CAVE_TALK_ERROR_NONE != CavebotCaveTalk_Start())
     {
         BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to start CAVeTalk");
     }
-
-    /* TODO SD-348 testing */
-#ifdef BOARD_CAVEBOARD
-    (void)Rover4ws_DisableSpeedControl();
-    (void)Rover4ws_DisableSteeringControl();
-#endif
-
-    BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Initialized");
-
-    while (true)
+    else
     {
-        Cavebot_Task();
-        CavebotCaveTalk_Task();
-        Cavebot_MeasureLoopRate();
+        BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Initialized");
+
+        Cavebot_Arm();
+        Cavebot_Drive(0, 3);
+
+        while (true)
+        {
+            Cavebot_Task();
+            CavebotCaveTalk_Task();
+            Cavebot_MeasureLoopRate();
+        }
     }
 
     return 0;
@@ -94,18 +96,18 @@ Cavebot_Error_t Cavebot_BspToCavebotError(const Bsp_Error_t bsp_error)
 
 Cavebot_Error_t Cavebot_Arm(void)
 {
-#ifdef BOARD_CAVEBOARD
-    Cavebot_Error_t error = Rover4ws_EnableSteering();
-#else
-    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
-#endif
+    Cavebot_Error_t error = CAVEBOT_ERROR_BOT;
 
-#ifdef BOARD_CAVEBOARD
-    if (CAVEBOT_ERROR_NONE == error)
+    switch (Cavebot_Bot)
     {
-        error = Rover4ws_StartMotors();
+    case CAVEBOT_BOT_4WD:
+#ifdef ROVER_4WD
+        error = Rover4wd_Arm();
+#endif /* ROVER_4WD */
+        break;
+    default:
+        break;
     }
-#endif
 
     if (CAVEBOT_ERROR_NONE == error)
     {
@@ -123,18 +125,18 @@ Cavebot_Error_t Cavebot_Arm(void)
 
 Cavebot_Error_t Cavebot_Disarm(void)
 {
-#ifdef BOARD_CAVEBOARD
-    Cavebot_Error_t error = Rover4ws_DisableSteering();
-#else
-    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
-#endif
+    Cavebot_Error_t error = CAVEBOT_ERROR_BOT;
 
-#ifdef BOARD_CAVEBOARD
-    if (CAVEBOT_ERROR_NONE == error)
+    switch (Cavebot_Bot)
     {
-        error = Rover4ws_StopMotors();
+    case CAVEBOT_BOT_4WD:
+#ifdef ROVER_4WD
+        error = Rover4wd_Disarm();
+#endif /* ROVER_4WD */
+        break;
+    default:
+        break;
     }
-#endif
 
     if (CAVEBOT_ERROR_NONE == error)
     {
@@ -155,53 +157,20 @@ bool Cavebot_IsArmed(void)
     return Cavebot_Armed;
 }
 
-Cavebot_Error_t Cavebot_EnableControl(void)
-{
-#ifdef BOARD_CAVEBOARD
-    Cavebot_Error_t error = Rover4ws_EnableSpeedControl();
-#else
-    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
-#endif
-
-    if (CAVEBOT_ERROR_NONE != error)
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to enable control with error %d", (int)error);
-    }
-    else
-    {
-        BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Control enabled");
-    }
-
-    return error;
-}
-
-Cavebot_Error_t Cavebot_DisableControl(void)
-{
-#ifdef BOARD_CAVEBOARD
-    Cavebot_Error_t error = Rover4ws_DisableSpeedControl();
-#else
-    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
-#endif
-
-    if (CAVEBOT_ERROR_NONE != error)
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to disable control with error %d", (int)error);
-    }
-    else
-    {
-        BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Control disabled");
-    }
-
-    return error;
-}
-
 Cavebot_Error_t Cavebot_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_RadiansPerSecond_t turn_rate)
 {
-#ifdef BOARD_CAVEBOARD
-    Cavebot_Error_t error = Rover4ws_Drive(speed, turn_rate);
-#else
-    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
-#endif
+    Cavebot_Error_t error = CAVEBOT_ERROR_BOT;
+
+    switch (Cavebot_Bot)
+    {
+    case CAVEBOT_BOT_4WD:
+#ifdef ROVER_4WD
+        error = Rover4wd_Drive(speed, turn_rate);
+#endif /* ROVER_4WD */
+        break;
+    default:
+        break;
+    }
 
     if (CAVEBOT_ERROR_NONE != error)
     {
@@ -215,21 +184,34 @@ Cavebot_Error_t Cavebot_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_Radia
     return error;
 }
 
-static void Cavebot_Initialize(void)
+static Cavebot_Error_t Cavebot_Initialize(void)
 {
-    /* TODO CVW-50 handle return codes */
-    (void)Cavebot_Disarm();
+    /* TODO move to CavebotUser_Initialize */
     (void)Accelerometer_Initialize(&CavebotUser_Accelerometer);
     (void)Gyroscope_Initialize(&CavebotUser_Gyroscope);
+
+    /* TODO CVW-21 read from config */
+    Cavebot_Bot = CAVEBOT_BOT_4WD;
+
+    Cavebot_Error_t error = Cavebot_Disarm();
+
+    return error;
 }
 
 static void Cavebot_Task(void)
 {
-#ifdef BOARD_CAVEBOARD
-    Cavebot_Error_t error = Rover4ws_Task();
-#else
-    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
-#endif
+    Cavebot_Error_t error = CAVEBOT_ERROR_BOT;
+
+    switch (Cavebot_Bot)
+    {
+    case CAVEBOT_BOT_4WD:
+#ifdef ROVER_4WD
+        error = Rover4wd_Task();
+#endif /* ROVER_4WD */
+        break;
+    default:
+        break;
+    }
 
     if (CAVEBOT_ERROR_NONE != error)
     {
