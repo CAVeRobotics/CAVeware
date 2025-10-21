@@ -93,6 +93,15 @@ set_source_files_properties(
     COMPILE_OPTIONS "-Werror"
 )
 
+get_target_property(BOTS_SRCS Bots INTERFACE_SOURCES)
+if(BOTS_SRCS)
+    set_source_files_properties(
+        ${BOTS_SRCS}
+        PROPERTIES
+        COMPILE_OPTIONS "-Werror"
+    )
+endif()
+
 add_executable(${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME}

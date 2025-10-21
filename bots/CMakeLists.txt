@@ -37,12 +37,6 @@ target_sources(${PROJECT_NAME}
         ${BOTS_SRCS}
 )
 
-set_source_files_properties(
-    ${BOTS_SRCS}
-    PROPERTIES
-    COMPILE_OPTIONS "-Werror"
-)
-
 if(COMMAND collect_sources)
     collect_sources(${PROJECT_NAME})
 endif()
