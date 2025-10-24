@@ -21,7 +21,7 @@ set(GYROSCOPE ON CACHE BOOL "Enable gyroscope")
 ################################################################################
 # Drivers
 ################################################################################
-set(LSM6DSV16X ON CACHE BOOL "Enable Lsm6dsv16x")
+set(DRIVER_LSM6DSV16X ON CACHE BOOL "Enable Lsm6dsv16x driver")
 
 ################################################################################
 # Bots
