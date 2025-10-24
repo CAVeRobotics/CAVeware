@@ -35,6 +35,7 @@ typedef struct Bsp_Adc       Bsp_Adc_t;
 typedef struct Bsp_Encoder   Bsp_Encoder_t;
 typedef struct Bsp_Gpio      Bsp_Gpio_t;
 typedef struct Bsp_PwmConfig Bsp_PwmConfig_t;
+typedef struct Bsp_Timer     Bsp_Timer_t;
 typedef struct Bsp_Uart      Bsp_Uart_t;
 
 typedef enum
@@ -126,6 +127,17 @@ struct Bsp_PwmConfig
 {
     Bsp_TimerHandle_t *timer_handle;
     Bsp_TimerChannel_t max_channel;
+};
+
+struct Bsp_Timer
+{
+    Bsp_TimerHandle_t *timer_handle;
+    volatile uint64_t counts_elapsed;
+    volatile uint64_t counts_elapsed_shadow;
+    volatile uint32_t counts_offset;
+    volatile bool sampling;
+    void (*period_elapsed_callback)(const Bsp_Timer_t *const timer);
+    uint64_t counts;
 };
 
 struct Bsp_Uart
