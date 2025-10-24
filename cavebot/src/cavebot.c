@@ -15,6 +15,9 @@
 #ifdef ROVER_4WD
 #include "rover_4wd.h"
 #endif
+#ifdef ROVER_4WS
+#include "rover_4ws.h"
+#endif
 
 #define CAVEBOT_LOOP_LOG_PERIOD (Bsp_Microsecond_t)((Bsp_Microsecond_t)5U * BSP_TICK_MICROSECONDS_PER_SECOND)
 
@@ -100,6 +103,11 @@ Cavebot_Error_t Cavebot_Arm(void)
 
     switch (Cavebot_Bot)
     {
+    case CAVEBOT_BOT_4WS:
+#ifdef ROVER_4WS
+        error = Rover4ws_Arm();
+#endif /* ROVER_4WS */
+        break;
     case CAVEBOT_BOT_4WD:
 #ifdef ROVER_4WD
         error = Rover4wd_Arm();
@@ -129,6 +137,11 @@ Cavebot_Error_t Cavebot_Disarm(void)
 
     switch (Cavebot_Bot)
     {
+    case CAVEBOT_BOT_4WS:
+#ifdef ROVER_4WS
+        error = Rover4ws_Disarm();
+#endif /* ROVER_4WS */
+        break;
     case CAVEBOT_BOT_4WD:
 #ifdef ROVER_4WD
         error = Rover4wd_Disarm();
@@ -163,6 +176,11 @@ Cavebot_Error_t Cavebot_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_Radia
 
     switch (Cavebot_Bot)
     {
+    case CAVEBOT_BOT_4WS:
+#ifdef ROVER_4WS
+        error = Rover4ws_Drive(speed, turn_rate);
+#endif /* ROVER_4WS */
+        break;
     case CAVEBOT_BOT_4WD:
 #ifdef ROVER_4WD
         error = Rover4wd_Drive(speed, turn_rate);
@@ -204,6 +222,11 @@ static void Cavebot_Task(void)
 
     switch (Cavebot_Bot)
     {
+    case CAVEBOT_BOT_4WS:
+#ifdef ROVER_4WS
+        error = Rover4ws_Task();
+#endif /* ROVER_4WS */
+        break;
     case CAVEBOT_BOT_4WD:
 #ifdef ROVER_4WD
         error = Rover4wd_Task();
