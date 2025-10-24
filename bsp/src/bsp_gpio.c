@@ -54,17 +54,17 @@ Bsp_Error_t BspGpio_Toggle(const BspGpioUser_Pin_t pin)
     return error;
 }
 
-Bsp_Error_t BspGpio_RegisterCallback(const BspGpioUser_Pin_t pin, void (*callback)(const Bsp_GpioPin_t pin))
+Bsp_Error_t BspGpio_RegisterCallback(const BspGpioUser_Pin_t pin, const Bsp_Callback_t *const callback)
 {
-    Bsp_Error_t error = BSP_ERROR_NONE;
+    Bsp_Error_t error = BSP_ERROR_NULL;
 
     if ((pin >= BSP_GPIO_USER_PIN_MAX) || (BSP_GPIO_MODE_INPUT != BspGpioUser_HandleTable[pin].mode))
     {
         error = BSP_ERROR_PERIPHERAL;
     }
-    else
+    else if (NULL != callback)
     {
-        BspGpioUser_HandleTable[pin].callback = callback;
+        BspGpioUser_HandleTable[pin].callback = *callback;
         BspGpioUser_HandleTable[pin].previous = 0U;
     }
 
@@ -76,9 +76,9 @@ void HAL_GPIO_EXTI_Callback(Bsp_GpioPin_t pin)
     Bsp_Gpio_t *      gpio = BspGpioUser_GetGpioHandle(pin);
     Bsp_Microsecond_t tick = BspTick_GetMicroseconds();
 
-    if ((NULL != gpio) && (NULL != gpio->callback) && ((tick - gpio->previous) >= gpio->debounce))
+    if ((NULL != gpio) && (NULL != gpio->callback.function) && ((tick - gpio->previous) >= gpio->debounce))
     {
-        gpio->callback(pin);
+        gpio->callback.function(gpio->callback.arg);
         gpio->previous = tick;
     }
 }

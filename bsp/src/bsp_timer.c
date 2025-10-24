@@ -75,13 +75,21 @@ Bsp_Error_t BspTimer_Sample(const BspTimerUser_Timer_t timer)
     return error;
 }
 
-Bsp_Error_t BspTimer_SetPeriodElapsedCallback(const BspTimerUser_Timer_t timer, void (*period_elapsed_callback)(const Bsp_Timer_t *const timer))
+Bsp_Error_t BspTimer_RegisterPeriodElapsedCallback(const BspTimerUser_Timer_t timer, const Bsp_Callback_t *const callback)
 {
-    Bsp_Error_t error = BSP_ERROR_PERIPHERAL;
+    Bsp_Error_t error = BSP_ERROR_NONE;
 
-    if (timer < BSP_TIMER_USER_TIMER_MAX)
+    if (timer >= BSP_TIMER_USER_TIMER_MAX)
     {
-        BspTimerUser_HandleTable[timer].period_elapsed_callback = period_elapsed_callback;
+        error = BSP_ERROR_PERIPHERAL;
+    }
+    else if (NULL == callback)
+    {
+        error = BSP_ERROR_NULL;
+    }
+    else
+    {
+        BspTimerUser_HandleTable[timer].period_elapsed = *callback;
     }
 
     return error;
@@ -101,9 +109,9 @@ static void BspTimer_PeriodElapsedCallback(Bsp_TimerHandle_t *timer_handle)
             timer->counts_offset         = timer->timer_handle->Instance->CNT;
         }
 
-        if (NULL != timer->period_elapsed_callback)
+        if (NULL != timer->period_elapsed.function)
         {
-            timer->period_elapsed_callback(timer);
+            timer->period_elapsed.function(timer->period_elapsed.arg);
         }
     }
 }

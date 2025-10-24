@@ -10,6 +10,6 @@ Bsp_Error_t BspTimer_Start(const BspTimerUser_Timer_t timer);
 Bsp_Error_t BspTimer_Stop(const BspTimerUser_Timer_t timer);
 Bsp_Error_t BspTimer_Reset(const BspTimerUser_Timer_t timer);
 Bsp_Error_t BspTimer_Sample(const BspTimerUser_Timer_t timer);
-Bsp_Error_t BspTimer_SetPeriodElapsedCallback(const BspTimerUser_Timer_t timer, void (*period_elapsed_callback)(const Bsp_Timer_t *const timer));
+Bsp_Error_t BspTimer_RegisterPeriodElapsedCallback(const BspTimerUser_Timer_t timer, const Bsp_Callback_t *const callback);
 
 #endif /* BSP_TIMER_H */

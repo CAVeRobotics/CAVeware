@@ -31,6 +31,8 @@ typedef GPIO_TypeDef       Bsp_GpioPort_t;
 typedef TIM_HandleTypeDef  Bsp_TimerHandle_t;
 typedef UART_HandleTypeDef Bsp_UartHandle_t;
 
+typedef struct Bsp_Callback Bsp_Callback_t;
+
 typedef struct Bsp_Adc       Bsp_Adc_t;
 typedef struct Bsp_Encoder   Bsp_Encoder_t;
 typedef struct Bsp_Gpio      Bsp_Gpio_t;
@@ -84,6 +86,12 @@ typedef enum
     BSP_UART_MODE_RXTX
 } Bsp_UartMode_t;
 
+struct Bsp_Callback
+{
+    void (*function)(void *arg);
+    void *arg;
+};
+
 struct Bsp_Adc
 {
     Bsp_AdcHandle_t *adc_handle;
@@ -120,7 +128,7 @@ struct Bsp_Gpio
     Bsp_GpioMode_t mode;
     Bsp_Microsecond_t debounce;
     Bsp_Microsecond_t previous;
-    void (*callback)(const Bsp_GpioPin_t pin);
+    Bsp_Callback_t callback;
 };
 
 struct Bsp_PwmConfig
@@ -136,7 +144,7 @@ struct Bsp_Timer
     volatile uint64_t counts_elapsed_shadow;
     volatile uint32_t counts_offset;
     volatile bool sampling;
-    void (*period_elapsed_callback)(const Bsp_Timer_t *const timer);
+    Bsp_Callback_t period_elapsed;
     uint64_t counts;
 };
 
