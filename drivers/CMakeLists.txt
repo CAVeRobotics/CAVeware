@@ -18,5 +18,6 @@ add_library(${PROJECT_NAME} INTERFACE)
 
 target_link_libraries(${PROJECT_NAME}
     INTERFACE
+        $<$<TARGET_EXISTS:A4988>:A4988>
         $<$<TARGET_EXISTS:Lsm6dsv16x>:Lsm6dsv16x>
 )

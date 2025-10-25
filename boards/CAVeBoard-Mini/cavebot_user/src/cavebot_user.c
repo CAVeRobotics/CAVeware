@@ -4,8 +4,10 @@
 
 #include "bsp.h"
 #include "bsp_encoder_user.h"
+#include "bsp_gpio_user.h"
 #include "bsp_motor.h"
 #include "bsp_pwm_user.h"
+#include "bsp_timer_user.h"
 #include "bsp_servo.h"
 
 #include "lsm6dsv16x.h"
@@ -154,7 +156,7 @@ CavebotPid_Handle_t CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
         .previous_tick = 0U,
         .enabled       = true,
         .minimum       = 0,
-        .maximum       = 18.75
+        .maximum       = 18.75,
     },
     [CAVEBOT_USER_MOTOR_2] = {
         .kp            = 2.0,
@@ -167,7 +169,7 @@ CavebotPid_Handle_t CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
         .previous_tick = 0U,
         .enabled       = true,
         .minimum       = 0,
-        .maximum       = 18.75
+        .maximum       = 18.75,
     },
     [CAVEBOT_USER_MOTOR_3] = {
         .kp            = 2.0,
@@ -180,7 +182,7 @@ CavebotPid_Handle_t CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
         .previous_tick = 0U,
         .enabled       = true,
         .minimum       = 0,
-        .maximum       = 18.75
+        .maximum       = 18.75,
     }
 };
 
@@ -189,6 +191,13 @@ BspEncoderUser_Timer_t CavebotUser_Encoders[CAVEBOT_USER_ENCODER_MAX] = {
     [CAVEBOT_USER_ENCODER_1] = BSP_ENCODER_USER_TIMER_1,
     [CAVEBOT_USER_ENCODER_2] = BSP_ENCODER_USER_TIMER_2,
     [CAVEBOT_USER_ENCODER_3] = BSP_ENCODER_USER_TIMER_3
+};
+
+A9488_Context_t CavebotUser_StepperMotor = {
+    .timer       = BSP_TIMER_USER_TIMER_0,
+    .step        = BSP_GPIO_USER_PIN_STEPPER_MOTOR_STEP,
+    .direction   = BSP_GPIO_USER_PIN_STEPPER_MOTOR_DIRECTION,
+    .half_pulses = 0U,
 };
 
 Accelerometer_Handle_t CavebotUser_Accelerometer = LSM6DSV16X_ACCELEROMETER_HANDLE(kCavebotUser_Lsm6dsv16x);
