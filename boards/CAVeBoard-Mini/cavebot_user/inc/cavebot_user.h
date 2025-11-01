@@ -7,6 +7,7 @@
 #include "bsp_servo.h"
 
 #include "a4988.h"
+#include "rgbw.h"
 
 #include "accelerometer.h"
 #include "gyroscope.h"
@@ -49,5 +50,6 @@ extern BspEncoderUser_Timer_t CavebotUser_Encoders[CAVEBOT_USER_MOTOR_MAX];
 extern A9488_Context_t        CavebotUser_StepperMotor;
 extern Accelerometer_Handle_t CavebotUser_Accelerometer;
 extern Gyroscope_Handle_t     CavebotUser_Gyroscope;
+extern Rgbw_Handle_t          CavebotUser_Rgbw;
 
 #endif /* CAVEBOT_USER_H */
