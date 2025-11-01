@@ -9,6 +9,7 @@ set(BSP_GPIO ON CACHE BOOL "Enable BSP GPIO")
 set(BSP_MOTOR ON CACHE BOOL "Enable BSP motors")
 set(BSP_PWM ON CACHE BOOL "Enable BSP PWM")
 set(BSP_SERVO ON CACHE BOOL "Enable BSP servos")
+set(BSP_TIMER ON CACHE BOOL "Enable BSP timers")
 set(BSP_UART ON CACHE BOOL "Enable BSP UART")
 
 ################################################################################
@@ -20,7 +21,8 @@ set(GYROSCOPE ON CACHE BOOL "Enable gyroscope")
 ################################################################################
 # Drivers
 ################################################################################
-set(LSM6DSV16X ON CACHE BOOL "Enable Lsm6dsv16x")
+set(DRIVER_A4988 ON CACHE BOOL "Enable A4988 driver")
+set(DRIVER_LSM6DSV16X ON CACHE BOOL "Enable Lsm6dsv16x driver")
 
 ################################################################################
 # Bots
