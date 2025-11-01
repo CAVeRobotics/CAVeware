@@ -11,6 +11,7 @@
 #include "bsp_servo.h"
 
 #include "lsm6dsv16x.h"
+#include "rgbw.h"
 
 #include "cavebot.h"
 
@@ -198,6 +199,15 @@ A9488_Context_t CavebotUser_StepperMotor = {
     .step        = BSP_GPIO_USER_PIN_STEPPER_MOTOR_STEP,
     .direction   = BSP_GPIO_USER_PIN_STEPPER_MOTOR_DIRECTION,
     .half_pulses = 0U,
+};
+
+Rgbw_Handle_t CavebotUser_Rgbw = {
+    .pins = {
+        [RGBW_CHANNEL_RED]   = BSP_GPIO_USER_PIN_STATUS_LED_RED,
+        [RGBW_CHANNEL_GREEN] = BSP_GPIO_USER_PIN_STATUS_LED_GREEN,
+        [RGBW_CHANNEL_BLUE]  = BSP_GPIO_USER_PIN_STATUS_LED_BLUE,
+        [RGBW_CHANNEL_WHITE] = BSP_GPIO_USER_PIN_STATUS_LED_WHITE,
+    },
 };
 
 Accelerometer_Handle_t CavebotUser_Accelerometer = LSM6DSV16X_ACCELEROMETER_HANDLE(kCavebotUser_Lsm6dsv16x);
