@@ -9,10 +9,6 @@
 #include "accelerometer.h"
 #include "gyroscope.h"
 
-#ifdef CAVEBOARD_MINI
-#include "a4988.h"
-#endif /* CAVEBOARD_MINI */
-
 #include "cavebot_cavetalk.h"
 #include "cavebot_user.h"
 #include "cavebot_version.h"
