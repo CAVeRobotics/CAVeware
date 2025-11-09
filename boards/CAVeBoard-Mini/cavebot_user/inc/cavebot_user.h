@@ -52,4 +52,8 @@ extern Accelerometer_Handle_t CavebotUser_Accelerometer;
 extern Gyroscope_Handle_t     CavebotUser_Gyroscope;
 extern Rgbw_Handle_t          CavebotUser_Rgbw;
 
+Cavebot_Error_t CavebotUser_Initialize(void);
+Cavebot_Error_t CavebotUser_SensorTask(void);
+Cavebot_Error_t CavebotUser_Task(void);
+
 #endif /* CAVEBOT_USER_H */

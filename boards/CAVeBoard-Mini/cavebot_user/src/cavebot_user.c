@@ -1,11 +1,15 @@
 #include "cavebot_user.h"
 
+#include <stdbool.h>
+
 #include "spi.h"
 
 #include "bsp.h"
+#include "bsp_encoder.h"
 #include "bsp_encoder_user.h"
 #include "bsp_gpio_user.h"
 #include "bsp_motor.h"
+#include "bsp_pwm.h"
 #include "bsp_pwm_user.h"
 #include "bsp_timer_user.h"
 #include "bsp_servo.h"
@@ -16,6 +20,7 @@
 #include "cavebot.h"
 
 static Lsm6dsv16x_Context_t kCavebotUser_Lsm6dsv16x = LSM6DSV16X_CONTEXT(&hspi2);
+static bool                 CavebotUser_Armed       = false;
 
 BspServo_Handle_t CavebotUser_Servos[CAVEBOT_USER_SERVO_MAX] = {
     [CAVEBOT_USER_SERVO_0] = {
@@ -212,3 +217,127 @@ Rgbw_Handle_t CavebotUser_Rgbw = {
 
 Accelerometer_Handle_t CavebotUser_Accelerometer = LSM6DSV16X_ACCELEROMETER_HANDLE(kCavebotUser_Lsm6dsv16x);
 Gyroscope_Handle_t     CavebotUser_Gyroscope     = LSM6DSV16X_GYROSCOPE_HANDLE(kCavebotUser_Lsm6dsv16x);
+
+Cavebot_Error_t CavebotUser_Initialize(void)
+{
+    Bsp_Error_t error = Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_YELLOW);
+
+    if (BSP_ERROR_NONE == error)
+    {
+        error = Accelerometer_Initialize(&CavebotUser_Accelerometer);
+    }
+
+    if (BSP_ERROR_NONE == error)
+    {
+        error = Gyroscope_Initialize(&CavebotUser_Gyroscope);
+    }
+
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_0);
+    }
+
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_1);
+    }
+
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_2);
+    }
+
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_3);
+    }
+
+    if (BSP_ERROR_NONE == error)
+    {
+        CavebotUser_Armed = Cavebot_IsArmed();
+
+        /* TODO make sound asynchronous, error handling? */
+        /* Initialization sound */
+        BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+        BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1, 0.5);
+        BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 31110);
+        Bsp_Delay(100);
+        BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 23333);
+        Bsp_Delay(100);
+        BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 15556);
+        Bsp_Delay(100);
+        BspPwm_Stop(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+    }
+
+    return Cavebot_BspToCavebotError(error);
+}
+
+Cavebot_Error_t CavebotUser_SensorTask(void)
+{
+    Bsp_Error_t error = BSP_ERROR_NONE;
+
+    /* TODO sample IMU*/
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_0);
+    }
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_1);
+    }
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_2);
+    }
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_3);
+    }
+
+    return Cavebot_BspToCavebotError(error);
+}
+
+Cavebot_Error_t CavebotUser_Task(void)
+{
+    /* TODO error handling? */
+
+    const bool armed = Cavebot_IsArmed();
+    if (armed != CavebotUser_Armed)
+    {
+        CavebotUser_Armed = armed;
+
+        if (armed)
+        {
+            /* Arm sound */
+            BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+            BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1, 0.5);
+            BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 15556);
+            Bsp_Delay(100);
+            BspPwm_Stop(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+            Bsp_Delay(100);
+            BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+            Bsp_Delay(100);
+            BspPwm_Stop(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+        }
+        else
+        {
+            /* Disarm sound */
+            BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+            BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1, 0.5);
+            BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 15556);
+            Bsp_Delay(300);
+            BspPwm_Stop(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+        }
+    }
+
+    if (armed)
+    {
+        Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_RED);
+    }
+    else
+    {
+        Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_GREEN);
+    }
+
+    return CAVEBOT_ERROR_NONE;
+}
