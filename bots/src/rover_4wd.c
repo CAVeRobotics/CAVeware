@@ -4,6 +4,8 @@
 #include <math.h>
 
 #include "bsp.h"
+#include "bsp_gpio.h"
+#include "bsp_gpio_user.h"
 #include "bsp_motor.h"
 
 #include "cavebot.h"
@@ -38,7 +40,13 @@ Cavebot_Error_t Rover4wd_Arm(void)
 
     /* TODO reset PID controller */
 
-    /* TODO enable motor sleep lines */
+    if (CAVEBOT_ERROR_NONE == error)
+    {
+        error = Rover4wd_BspErrorCheck(BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_0_SLEEP, BSP_GPIO_STATE_SET),
+                                       BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_1_SLEEP, BSP_GPIO_STATE_SET),
+                                       BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_2_SLEEP, BSP_GPIO_STATE_SET),
+                                       BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_3_SLEEP, BSP_GPIO_STATE_SET));
+    }
 
     if (CAVEBOT_ERROR_NONE == error)
     {
@@ -53,9 +61,10 @@ Cavebot_Error_t Rover4wd_Arm(void)
 
 Cavebot_Error_t Rover4wd_Disarm(void)
 {
-    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
-
-    /* TODO disable motor sleep lines */
+    Cavebot_Error_t error = Rover4wd_BspErrorCheck(BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_0_SLEEP, BSP_GPIO_STATE_SET),
+                                                   BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_1_SLEEP, BSP_GPIO_STATE_SET),
+                                                   BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_2_SLEEP, BSP_GPIO_STATE_SET),
+                                                   BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_3_SLEEP, BSP_GPIO_STATE_SET));
 
     if (CAVEBOT_ERROR_NONE == error)
     {
