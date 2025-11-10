@@ -70,12 +70,6 @@ Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const doubl
     else
     {
         double delta = (double)(tick - handle->previous_tick) / BSP_TICK_MICROSECONDS_PER_SECOND;
-
-        if (delta > 1)
-        {
-            delta = 1;
-        }
-
         double pid_error  = handle->command - actual;
         double derivative = (pid_error - handle->error) / delta;
 
