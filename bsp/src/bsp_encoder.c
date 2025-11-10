@@ -51,7 +51,7 @@ Bsp_Error_t BspEncoder_Start(const BspEncoderUser_Timer_t timer)
         handle->sampling                 = false;
         handle->pulse_offset             = 0U;
         handle->previous_periods_elapsed = 0;
-        handle->periods_elapsed          = -1; /* Offset first interrupt that occurs immediately after initializing */
+        handle->periods_elapsed          = 0;
         handle->time                     = BspTick_GetMicroseconds();
         handle->pulses                   = 0;
         handle->raw_angular_rate         = 0;
