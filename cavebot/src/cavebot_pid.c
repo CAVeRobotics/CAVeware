@@ -70,7 +70,7 @@ Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const doubl
         double derivative = (pid_error - handle->error) / delta;
 
         handle->integral     += pid_error * delta;
-        handle->output        = (handle->kp * pid_error) + (handle->ki * handle->integral) + (handle->kd * derivative);
+        handle->output        = (handle->kp * pid_error) + (handle->ki * handle->integral) + (handle->kd * derivative) + (handle->kff * handle->command);
         handle->error         = pid_error;
         handle->previous_tick = tick;
 

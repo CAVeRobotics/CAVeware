@@ -12,6 +12,7 @@ typedef struct
     double kp;
     double ki;
     double kd;
+    double kff;
     double integral;
     double command;
     double error;
