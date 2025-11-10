@@ -18,8 +18,7 @@
 #include "cavebot_pid.h"
 #include "cavebot_user.h"
 
-#define ROVER_4WS_WHEEL_OFFSET     (double)(3.14159265358979323846 / 2.0)
-#define ROVER_4WS_DOUBLE_SIGN_MASK 0x8000000000000000U
+#define ROVER_4WS_WHEEL_OFFSET (double)(3.14159265358979323846 / 2.0)
 
 /* TODO CVW-21 read from config */
 static const Bsp_Meter_t kRover4ws_Tread       = 0.493800;
@@ -50,7 +49,6 @@ static Cavebot_Error_t Rover4ws_BspErrorCheck(const Bsp_Error_t error_0,
                                               const Bsp_Error_t error_1,
                                               const Bsp_Error_t error_2,
                                               const Bsp_Error_t error_3);
-static inline bool Rover4ws_CompareDoubleSigns(const double *const value_1, const double *const value_2);
 
 Cavebot_Error_t Rover4ws_ConfigureSteering(const CavebotUser_Servo_t servo,
                                            const Bsp_Percent_t minimum_duty_cycle,
@@ -454,7 +452,7 @@ static Cavebot_Error_t Rover4ws_SetSteeringAngle(const Bsp_Radian_t steering_ang
     Bsp_Radian_t delta_left  = atan(scaled_wheelbase / (kRover4ws_HalfWheelbase - offset));
     Bsp_Radian_t delta_right = atan(scaled_wheelbase / (kRover4ws_HalfWheelbase + offset));
 
-    if (Rover4ws_CompareDoubleSigns(&delta_left, &delta_right))
+    if (Bsp_CompareDoubleSigns(&delta_left, &delta_right))
     {
         error = Rover4ws_BspErrorCheck(BspServo_SetAngle(&CavebotUser_Servos[CAVEBOT_USER_SERVO_0], (ROVER_4WS_WHEEL_OFFSET - delta_left)),
                                        BspServo_SetAngle(&CavebotUser_Servos[CAVEBOT_USER_SERVO_1], (ROVER_4WS_WHEEL_OFFSET - delta_right)),
@@ -476,10 +474,4 @@ static Cavebot_Error_t Rover4ws_BspErrorCheck(const Bsp_Error_t error_0,
     Cavebot_Error_t rover_error_3 = Cavebot_BspToCavebotError(error_3);
 
     return Rover4ws_ErrorCheck(rover_error_0, rover_error_1, rover_error_2, rover_error_3);
-}
-
-static inline bool Rover4ws_CompareDoubleSigns(const double *const value_1, const double *const value_2)
-{
-    /* TODO CVW-49 make portable */
-    return !(bool)((*(uint64_t *)(value_1) & ROVER_4WS_DOUBLE_SIGN_MASK) ^ (*(uint64_t *)(value_2) & ROVER_4WS_DOUBLE_SIGN_MASK));
 }
