@@ -39,7 +39,7 @@
     <!-- Suppress double sign comparison portability error -->
     <suppress>
         <id>invalidPointerCast</id>
-        <fileName>*/bots/src/rover_4ws.c</fileName>
+        <fileName>*/bsp/src/bsp.c</fileName>
     </suppress>
 
 </suppressions>
