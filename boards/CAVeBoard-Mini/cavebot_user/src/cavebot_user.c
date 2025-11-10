@@ -136,62 +136,6 @@ BspMotor_Handle_t CavebotUser_Motors[CAVEBOT_USER_MOTOR_MAX] = {
     }
 };
 
-/* TODO move to rover_4ws.c */
-CavebotPid_Handle_t CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
-    [CAVEBOT_USER_MOTOR_0] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75
-    },
-    [CAVEBOT_USER_MOTOR_1] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75,
-    },
-    [CAVEBOT_USER_MOTOR_2] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75,
-    },
-    [CAVEBOT_USER_MOTOR_3] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75,
-    }
-};
-
 BspEncoderUser_Timer_t CavebotUser_Encoders[CAVEBOT_USER_ENCODER_MAX] = {
     [CAVEBOT_USER_ENCODER_0] = BSP_ENCODER_USER_TIMER_0,
     [CAVEBOT_USER_ENCODER_1] = BSP_ENCODER_USER_TIMER_1,
