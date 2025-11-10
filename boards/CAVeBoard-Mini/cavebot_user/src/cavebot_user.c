@@ -77,11 +77,11 @@ BspMotor_Handle_t CavebotUser_Motors[CAVEBOT_USER_MOTOR_MAX] = {
     [CAVEBOT_USER_MOTOR_0] = {
         .forward_phase = {
             .timer   = BSP_PWM_USER_TIMER_0,
-            .channel = BSP_TIMER_CHANNEL_3,
+            .channel = BSP_TIMER_CHANNEL_2,
         },
         .reverse_phase = {
             .timer   = BSP_PWM_USER_TIMER_0,
-            .channel = BSP_TIMER_CHANNEL_4,
+            .channel = BSP_TIMER_CHANNEL_1,
         },
         .minimum_duty_cycle = 0.0,
         .maximum_duty_cycle = 1.0,
@@ -92,11 +92,11 @@ BspMotor_Handle_t CavebotUser_Motors[CAVEBOT_USER_MOTOR_MAX] = {
     [CAVEBOT_USER_MOTOR_1] = {
         .forward_phase = {
             .timer   = BSP_PWM_USER_TIMER_0,
-            .channel = BSP_TIMER_CHANNEL_2,
+            .channel = BSP_TIMER_CHANNEL_3,
         },
         .reverse_phase = {
             .timer   = BSP_PWM_USER_TIMER_0,
-            .channel = BSP_TIMER_CHANNEL_1,
+            .channel = BSP_TIMER_CHANNEL_4,
         },
         .minimum_duty_cycle = 0.0,
         .maximum_duty_cycle = 1.0,
