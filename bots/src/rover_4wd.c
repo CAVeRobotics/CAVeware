@@ -23,64 +23,71 @@ static const Bsp_Meter_t kRover4wd_DoubleWheelRadius = kRover4wd_WheelRadius * 2
 
 CavebotPid_Handle_t Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
     [CAVEBOT_USER_MOTOR_0] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .kff           = 0.0,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75
+        .kp               = 0.0241322,
+        .ki               = 0.24132,
+        .kd               = 0.0004826,
+        .kff              = 0.0,
+        .rate_limit       = 100.0,
+        .integral         = 0.0,
+        .command          = 0.0,
+        .error            = 0.0,
+        .output           = 0.0,
+        .previous_tick    = 0U,
+        .enabled          = true,
+        .integral_enabled = true,
+        .minimum          = -1.0,
+        .maximum          = 1.0
     },
     [CAVEBOT_USER_MOTOR_1] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .kff           = 0.0,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75,
+        .kp               = 0.0241,
+        .ki               = 0.24132,
+        .kd               = 0.000482,
+        .kff              = 0.0,
+        .rate_limit       = 100.0,
+        .integral         = 0.0,
+        .command          = 0.0,
+        .error            = 0.0,
+        .output           = 0.0,
+        .previous_tick    = 0U,
+        .enabled          = true,
+        .integral_enabled = true,
+        .minimum          = -1.0,
+        .maximum          = 1.0,
     },
     [CAVEBOT_USER_MOTOR_2] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .kff           = 0.0,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75,
+        .kp               = 0.020673,
+        .ki               = 0.20673,
+        .kd               = 0.000413,
+        .kff              = 0.0,
+        .rate_limit       = 100.0,
+        .integral         = 0.0,
+        .command          = 0.0,
+        .error            = 0.0,
+        .output           = 0.0,
+        .previous_tick    = 0U,
+        .enabled          = true,
+        .integral_enabled = true,
+        .minimum          = -1.0,
+        .maximum          = 1.0,
     },
     [CAVEBOT_USER_MOTOR_3] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .kff           = 0.0,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75,
+        .kp               = 0.020614,
+        .ki               = 0.20614,
+        .kd               = 0.000412,
+        .kff              = 0.0,
+        .rate_limit       = 100.0,
+        .integral         = 0.0,
+        .command          = 0.0,
+        .error            = 0.0,
+        .output           = 0.0,
+        .previous_tick    = 0U,
+        .enabled          = true,
+        .integral_enabled = true,
+        .minimum          = -1.0,
+        .maximum          = 1.0,
     }
 };
 
-static Cavebot_Error_t Rover4wd_SetMotorSpeed(const CavebotUser_Motor_t motor, const Bsp_RadiansPerSecond_t speed);
 static Cavebot_Error_t Rover4wd_MotorSpeedControl(const CavebotUser_Motor_t motor);
 static Cavebot_Error_t Rover4wd_ErrorCheck(const Cavebot_Error_t error_0,
                                            const Cavebot_Error_t error_1,
@@ -206,13 +213,20 @@ Cavebot_Error_t Rover4wd_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_Radi
     return error;
 }
 
-static Cavebot_Error_t Rover4wd_SetMotorSpeed(const CavebotUser_Motor_t motor, const Bsp_RadiansPerSecond_t speed)
+static Cavebot_Error_t Rover4wd_MotorSpeedControl(const CavebotUser_Motor_t motor)
 {
     Cavebot_Error_t error = CAVEBOT_ERROR_PERIPHERAL;
 
     if (motor < CAVEBOT_USER_MOTOR_MAX)
     {
-        if (speed < 0.0)
+        error = CavebotPid_Update(&Rover4wd_MotorsPid[motor], BspEncoderUser_HandleTable[CavebotUser_Encoders[motor]].angular_rate);
+
+        if (fabs(Rover4wd_MotorsPid[motor].command) <= DBL_MIN)
+        {
+            Rover4wd_MotorsPid[motor].output = 0.0;
+            /* TODO disable PID at command 0? */
+        }
+        else if (Rover4wd_MotorsPid[motor].output < 0.0)
         {
             error = Cavebot_BspToCavebotError(BspMotor_Reverse(&CavebotUser_Motors[motor]));
         }
@@ -223,24 +237,7 @@ static Cavebot_Error_t Rover4wd_SetMotorSpeed(const CavebotUser_Motor_t motor, c
 
         if (CAVEBOT_ERROR_NONE == error)
         {
-            error = Cavebot_BspToCavebotError(BspMotor_SetSpeed(&CavebotUser_Motors[motor], fabs(speed)));
-        }
-    }
-
-    return error;
-}
-
-static Cavebot_Error_t Rover4wd_MotorSpeedControl(const CavebotUser_Motor_t motor)
-{
-    Cavebot_Error_t error = CAVEBOT_ERROR_PERIPHERAL;
-
-    if (motor < CAVEBOT_USER_MOTOR_MAX)
-    {
-        error = CavebotPid_Update(&Rover4wd_MotorsPid[motor], BspEncoderUser_HandleTable[CavebotUser_Encoders[motor]].angular_rate, BspTick_GetMicroseconds());
-
-        if (CAVEBOT_ERROR_NONE == error)
-        {
-            error = Rover4wd_SetMotorSpeed(motor, Rover4wd_MotorsPid[motor].output);
+            error = Cavebot_BspToCavebotError(BspMotor_SetDutyCycle(&CavebotUser_Motors[motor], fabs(Rover4wd_MotorsPid[motor].output)));
         }
     }
 
