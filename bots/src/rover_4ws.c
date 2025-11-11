@@ -26,9 +26,9 @@ static const Bsp_Meter_t kRover4ws_Wheelbase   = 0.466028;
 static const Bsp_Meter_t kRover4ws_WheelRadius = 0.080000;
 
 /* TODO CVW-21 read from config */
-static const Bsp_Meter_t kRover4ws_HalfTread         = kRover4ws_Tread / 2;
-static const Bsp_Meter_t kRover4ws_HalfWheelbase     = kRover4ws_Wheelbase / 2;
-static const Bsp_Meter_t kRover4ws_DoubleWheelRadius = kRover4ws_WheelRadius * 2;
+static const Bsp_Meter_t kRover4ws_HalfTread     = kRover4ws_Tread / 2;
+static const Bsp_Meter_t kRover4ws_HalfWheelbase = kRover4ws_Wheelbase / 2;
+static const Bsp_Meter_t kRover4ws_WheelDiameter = kRover4ws_WheelRadius * 2;
 
 /* TODO CVW-21 read from config */
 static CavebotPid_Handle_t Rover4ws_SteeringPid = {
@@ -391,8 +391,8 @@ static Cavebot_Error_t Rover4ws_StopMotors(void)
 static void Rover4ws_SetSpeed(const Bsp_MetersPerSecond_t speed, const Bsp_Radian_t steering_angle)
 {
     double radius              = kRover4ws_HalfWheelbase / tan(steering_angle);
-    double left_angular_speed  = (speed * (2 - (kRover4ws_Tread / radius))) / kRover4ws_DoubleWheelRadius;
-    double right_angular_speed = (speed * (2 + (kRover4ws_Tread / radius))) / kRover4ws_DoubleWheelRadius;
+    double left_angular_speed  = (speed * (2 - (kRover4ws_Tread / radius))) / kRover4ws_WheelDiameter;
+    double right_angular_speed = (speed * (2 + (kRover4ws_Tread / radius))) / kRover4ws_WheelDiameter;
 
     CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_0].command = left_angular_speed;
     CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_2].command = left_angular_speed;

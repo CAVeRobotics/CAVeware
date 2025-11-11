@@ -18,8 +18,8 @@ static const Bsp_Meter_t kRover4wd_Tread       = 0.403225;
 static const Bsp_Meter_t kRover4wd_WheelRadius = 0.079375;
 
 /* TODO CVW-21 read from config */
-static const Bsp_Meter_t kRover4wd_HalfTread         = kRover4wd_Tread / 2;
-static const Bsp_Meter_t kRover4wd_DoubleWheelRadius = kRover4wd_WheelRadius * 2;
+static const Bsp_Meter_t kRover4wd_HalfTread     = kRover4wd_Tread / 2;
+static const Bsp_Meter_t kRover4wd_WheelDiameter = kRover4wd_WheelRadius * 2;
 
 CavebotPid_Handle_t Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
     [CAVEBOT_USER_MOTOR_0] = {
@@ -191,8 +191,8 @@ Cavebot_Error_t Rover4wd_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_Radi
     else if (0.0 != speed)
     {
         Bsp_Meter_t wheel_speed_scalar = (kRover4wd_Tread * turn_rate) / speed;
-        commanded_wheel_speed_left  = (speed * (2 - wheel_speed_scalar)) / kRover4wd_DoubleWheelRadius;
-        commanded_wheel_speed_right = (speed * (2 + wheel_speed_scalar)) / kRover4wd_DoubleWheelRadius;
+        commanded_wheel_speed_left  = (speed * (2 - wheel_speed_scalar)) / kRover4wd_WheelDiameter;
+        commanded_wheel_speed_right = (speed * (2 + wheel_speed_scalar)) / kRover4wd_WheelDiameter;
     }
     else if (0.0 != turn_rate)
     {
