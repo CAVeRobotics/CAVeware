@@ -17,7 +17,7 @@ Cavebot_Error_t CavebotPid_Reset(CavebotPid_Handle_t *const handle)
         handle->command          = 0.0;
         handle->error            = 0.0;
         handle->output           = 0.0;
-        handle->previous_tick    = 0U; /* TODO previous_tick should be set to current tick value, not zero */
+        handle->previous_tick    = BspTick_GetMicroseconds();
         handle->integral_enabled = true;
 
         error = CAVEBOT_ERROR_NONE;
@@ -55,7 +55,7 @@ Cavebot_Error_t CavebotPid_Disable(CavebotPid_Handle_t *const handle)
     return error;
 }
 
-Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const double actual, const Bsp_Microsecond_t tick)
+Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const double actual)
 {
     Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
 
@@ -69,9 +69,10 @@ Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const doubl
     }
     else
     {
-        double delta_tick = (double)(tick - handle->previous_tick) / BSP_TICK_MICROSECONDS_PER_SECOND;
-        double pid_error  = handle->command - actual;
-        double derivative = (pid_error - handle->error) / delta_tick;
+        const Bsp_Microsecond_t tick       = BspTick_GetMicroseconds();
+        double                  delta_tick = (double)(tick - handle->previous_tick) / BSP_TICK_MICROSECONDS_PER_SECOND;
+        double                  pid_error  = handle->command - actual;
+        double                  derivative = (pid_error - handle->error) / delta_tick;
 
         if (!handle->integral_enabled && !Bsp_CompareDoubleSigns(&handle->error, &pid_error))
         {

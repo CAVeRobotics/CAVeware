@@ -262,7 +262,7 @@ Cavebot_Error_t Rover4ws_Task(void)
         (void)Gyroscope_Read(&CavebotUser_Gyroscope, &reading);
 
         /* TODO SD-126 test with steering control coupled and decoupled from wheel speed control */
-        (void)CavebotPid_Update(&Rover4ws_SteeringPid, reading.z, BspTick_GetMicroseconds());
+        (void)CavebotPid_Update(&Rover4ws_SteeringPid, reading.z);
         error = Rover4ws_SetSteeringAngle(Rover4ws_SteeringPid.output);
 
         if (CAVEBOT_ERROR_NONE == error)
@@ -406,7 +406,7 @@ static Cavebot_Error_t Rover4ws_MotorSpeedControl(const CavebotUser_Motor_t moto
 
     if (motor < CAVEBOT_USER_MOTOR_MAX)
     {
-        error = CavebotPid_Update(&CavebotUser_MotorsPid[motor], BspEncoderUser_HandleTable[CavebotUser_Encoders[motor]].angular_rate, BspTick_GetMicroseconds());
+        error = CavebotPid_Update(&CavebotUser_MotorsPid[motor], BspEncoderUser_HandleTable[CavebotUser_Encoders[motor]].angular_rate);
 
         if (CAVEBOT_ERROR_NONE == error)
         {
