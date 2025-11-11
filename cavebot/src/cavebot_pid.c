@@ -69,9 +69,9 @@ Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const doubl
     }
     else
     {
-        double delta = (double)(tick - handle->previous_tick) / BSP_TICK_MICROSECONDS_PER_SECOND;
+        double delta_tick = (double)(tick - handle->previous_tick) / BSP_TICK_MICROSECONDS_PER_SECOND;
         double pid_error  = handle->command - actual;
-        double derivative = (pid_error - handle->error) / delta;
+        double derivative = (pid_error - handle->error) / delta_tick;
 
         if (!handle->integral_enabled && !Bsp_CompareDoubleSigns(&handle->error, &pid_error))
         {
@@ -80,12 +80,25 @@ Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const doubl
 
         if (handle->integral_enabled)
         {
-            handle->integral += pid_error * delta;
+            handle->integral += pid_error * delta_tick;
         }
 
-        handle->output        = (handle->kp * pid_error) + (handle->ki * handle->integral) + (handle->kd * derivative) + (handle->kff * handle->command);
-        handle->error         = pid_error;
-        handle->previous_tick = tick;
+        double output           = (handle->kp * pid_error) + (handle->ki * handle->integral) + (handle->kd * derivative) + (handle->kff * handle->command);
+        double delta_output     = output - handle->output;
+        double max_delta_output = handle->rate_limit * delta_tick;
+        if (delta_output > max_delta_output)
+        {
+            handle->output += max_delta_output;
+        }
+        /* TODO fix rate limiting */
+        // else if (delta_output < -max_delta_output)
+        // {
+        //     handle->output -= max_delta_output;
+        // }
+        else
+        {
+            handle->output = output;
+        }
 
         if (handle->output >= handle->maximum)
         {
@@ -97,6 +110,9 @@ Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const doubl
             handle->output           = handle->minimum;
             handle->integral_enabled = false;
         }
+
+        handle->error         = pid_error;
+        handle->previous_tick = tick;
     }
 
     return error;

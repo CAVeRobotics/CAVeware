@@ -13,6 +13,7 @@ typedef struct
     double ki;
     double kd;
     double kff;
+    double rate_limit;
     double integral;
     double command;
     double error;
