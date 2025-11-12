@@ -19,7 +19,7 @@ typedef struct
     double error;
     double output;
     Bsp_Microsecond_t previous_tick;
-    bool enabled; /* TODO SD-125 feedback enabled */
+    bool enabled;
     bool integral_enabled;
     double minimum;
     double maximum;
