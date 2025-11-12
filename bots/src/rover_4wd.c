@@ -224,8 +224,7 @@ static Cavebot_Error_t Rover4wd_MotorSpeedControl(const CavebotUser_Motor_t moto
 
         if (fabs(Rover4wd_MotorsPid[motor].command) <= DBL_MIN)
         {
-            Rover4wd_MotorsPid[motor].output = 0.0;
-            /* TODO disable PID at command 0? */
+            error = CavebotPid_Reset(&Rover4wd_MotorsPid[motor]);
         }
         else if (Rover4wd_MotorsPid[motor].output < 0.0)
         {
@@ -238,6 +237,7 @@ static Cavebot_Error_t Rover4wd_MotorSpeedControl(const CavebotUser_Motor_t moto
 
         if (CAVEBOT_ERROR_NONE == error)
         {
+            /* TODO test active braking if output is zero */
             error = Cavebot_BspToCavebotError(BspMotor_SetDutyCycle(&CavebotUser_Motors[motor], fabs(Rover4wd_MotorsPid[motor].output)));
         }
     }
