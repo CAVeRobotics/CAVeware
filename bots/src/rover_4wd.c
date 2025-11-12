@@ -21,6 +21,7 @@ static const Bsp_Meter_t kRover4wd_WheelRadius = 0.079375;
 static const Bsp_Meter_t kRover4wd_HalfTread     = kRover4wd_Tread / 2;
 static const Bsp_Meter_t kRover4wd_WheelDiameter = kRover4wd_WheelRadius * 2;
 
+/* TODO CVW-21 read gains, rate limit, enabled, minimum, maxmimum from config */
 CavebotPid_Handle_t Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
     [CAVEBOT_USER_MOTOR_0] = {
         .kp               = 0.0241322,
@@ -222,7 +223,10 @@ static Cavebot_Error_t Rover4wd_MotorSpeedControl(const CavebotUser_Motor_t moto
     {
         error = CavebotPid_Update(&Rover4wd_MotorsPid[motor], BspEncoderUser_HandleTable[CavebotUser_Encoders[motor]].angular_rate);
 
-        if (fabs(Rover4wd_MotorsPid[motor].command) <= DBL_MIN)
+        if (CAVEBOT_ERROR_NONE != error)
+        {
+        }
+        else if (fabs(Rover4wd_MotorsPid[motor].command) <= DBL_MIN)
         {
             error = CavebotPid_Reset(&Rover4wd_MotorsPid[motor]);
         }

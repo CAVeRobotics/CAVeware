@@ -35,6 +35,35 @@ static CavebotPid_Handle_t Rover4ws_SteeringPid = {
     0
 };
 
+/* TODO CVW-21 read gains, rate limit, enabled, minimum, maxmimum from config */
+CavebotPid_Handle_t CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
+    [CAVEBOT_USER_MOTOR_0] = {
+        .kp               = 2.0,
+        .ki               = 1.5,
+        .kd               = 0.000001,
+        .kff              = 0.0,
+        .rate_limit       = 100.0,
+        .integral         = 0.0,
+        .command          = 0.0,
+        .error            = 0.0,
+        .output           = 0.0,
+        .previous_tick    = 0U,
+        .enabled          = true,
+        .integral_enabled = true,
+        .minimum          = 0,
+        .maximum          = 18.75
+    },
+    [CAVEBOT_USER_MOTOR_1] = {
+        .kp = 2.0, .ki = 1.5, .kd = 0.000001, .kff = 0.0, .rate_limit = 100.0, .integral = 0.0, .command = 0.0, .error = 0.0, .output = 0.0, .previous_tick = 0U, .enabled = true, .integral_enabled = true, .minimum = 0, .maximum = 18.75
+    },
+    [CAVEBOT_USER_MOTOR_2] = {
+        .kp = 2.0, .ki = 1.5, .kd = 0.000001, .kff = 0.0, .rate_limit = 100.0, .integral = 0.0, .command = 0.0, .error = 0.0, .output = 0.0, .previous_tick = 0U, .enabled = true, .integral_enabled = true, .minimum = 0, .maximum = 18.75
+    },
+    [CAVEBOT_USER_MOTOR_3] = {
+        .kp = 2.0, .ki = 1.5, .kd = 0.000001, .kff = 0.0, .rate_limit = 100.0, .integral = 0.0, .command = 0.0, .error = 0.0, .output = 0.0, .previous_tick = 0U, .enabled = true, .integral_enabled = true, .minimum = 0, .maximum = 18.75
+    }
+};
+
 static Bsp_MetersPerSecond_t Rover4ws_CommandedSpeed = 0.0;
 
 static Cavebot_Error_t Rover4ws_EnableSteering(void);
@@ -359,7 +388,10 @@ static Cavebot_Error_t Rover4ws_StartMotors(void)
 
     if (CAVEBOT_ERROR_NONE == error)
     {
-        error = Cavebot_BspToCavebotError(BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_SLEEP, BSP_GPIO_STATE_SET));
+        error = Rover4ws_BspErrorCheck(BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_0_SLEEP, BSP_GPIO_STATE_SET),
+                                       BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_1_SLEEP, BSP_GPIO_STATE_SET),
+                                       BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_2_SLEEP, BSP_GPIO_STATE_SET),
+                                       BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_3_SLEEP, BSP_GPIO_STATE_SET));
     }
 
     if (CAVEBOT_ERROR_NONE == error)
@@ -375,7 +407,10 @@ static Cavebot_Error_t Rover4ws_StartMotors(void)
 
 static Cavebot_Error_t Rover4ws_StopMotors(void)
 {
-    Cavebot_Error_t error = Cavebot_BspToCavebotError(BspGpio_Write(BSP_GPIO_USER_PIN_MOTOR_SLEEP, BSP_GPIO_STATE_RESET));
+    Cavebot_Error_t error = Rover4ws_BspErrorCheck(BspMotor_Stop(&CavebotUser_Motors[CAVEBOT_USER_MOTOR_0]),
+                                                   BspMotor_Stop(&CavebotUser_Motors[CAVEBOT_USER_MOTOR_1]),
+                                                   BspMotor_Stop(&CavebotUser_Motors[CAVEBOT_USER_MOTOR_2]),
+                                                   BspMotor_Stop(&CavebotUser_Motors[CAVEBOT_USER_MOTOR_3]));
 
     if (CAVEBOT_ERROR_NONE == error)
     {

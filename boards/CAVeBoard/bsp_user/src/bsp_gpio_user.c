@@ -104,7 +104,40 @@ Bsp_Gpio_t BspGpioUser_HandleTable[BSP_GPIO_USER_PIN_MAX] = {
         .debounce = 50000U,
         .previous = 0U,
     },
-    [BSP_GPIO_USER_PIN_MOTOR_SLEEP] = {
+    [BSP_GPIO_USER_PIN_MOTOR_0_SLEEP] = {
+        .gpio_port = MOTOR_SLEEP_GPIO_Port,
+        .gpio_pin  = MOTOR_SLEEP_Pin,
+        .mode      = BSP_GPIO_MODE_OUTPUT,
+        .callback  = {
+            .function = NULL,
+            .arg      = NULL,
+        },
+        .debounce = 0U,
+        .previous = 0U,
+    },
+    [BSP_GPIO_USER_PIN_MOTOR_1_SLEEP] = {
+        .gpio_port = MOTOR_SLEEP_GPIO_Port,
+        .gpio_pin  = MOTOR_SLEEP_Pin,
+        .mode      = BSP_GPIO_MODE_OUTPUT,
+        .callback  = {
+            .function = NULL,
+            .arg      = NULL,
+        },
+        .debounce = 0U,
+        .previous = 0U,
+    },
+    [BSP_GPIO_USER_PIN_MOTOR_2_SLEEP] = {
+        .gpio_port = MOTOR_SLEEP_GPIO_Port,
+        .gpio_pin  = MOTOR_SLEEP_Pin,
+        .mode      = BSP_GPIO_MODE_OUTPUT,
+        .callback  = {
+            .function = NULL,
+            .arg      = NULL,
+        },
+        .debounce = 0U,
+        .previous = 0U,
+    },
+    [BSP_GPIO_USER_PIN_MOTOR_3_SLEEP] = {
         .gpio_port = MOTOR_SLEEP_GPIO_Port,
         .gpio_pin  = MOTOR_SLEEP_Pin,
         .mode      = BSP_GPIO_MODE_OUTPUT,

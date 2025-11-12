@@ -14,6 +14,7 @@
 #include "bsp_timer_user.h"
 #include "bsp_servo.h"
 
+#include "a4988.h"
 #include "lsm6dsv16x.h"
 #include "rgbw.h"
 
