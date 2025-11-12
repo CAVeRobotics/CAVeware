@@ -190,9 +190,10 @@ Cavebot_Error_t Rover4wd_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_Radi
     }
     else if (0.0 != speed)
     {
-        Bsp_Meter_t wheel_speed_scalar = (kRover4wd_Tread * turn_rate) / speed;
-        commanded_wheel_speed_left  = (speed * (2 - wheel_speed_scalar)) / kRover4wd_WheelDiameter;
-        commanded_wheel_speed_right = (speed * (2 + wheel_speed_scalar)) / kRover4wd_WheelDiameter;
+        const Bsp_Meter_t           wheel_speed_scalar = kRover4wd_Tread * turn_rate;
+        const Bsp_MetersPerSecond_t double_speed       = speed * 2.0;
+        commanded_wheel_speed_left  = (double_speed - wheel_speed_scalar) / kRover4wd_WheelDiameter;
+        commanded_wheel_speed_right = (double_speed + wheel_speed_scalar) / kRover4wd_WheelDiameter;
     }
     else if (0.0 != turn_rate)
     {
