@@ -201,7 +201,7 @@ Cavebot_Error_t CavebotUser_Initialize(void)
     {
         CavebotUser_Armed = Cavebot_IsArmed();
 
-        /* TODO make sound asynchronous, error handling? */
+        /* TODO CVW-67 make all sounds non-block and add error handling */
         /* Initialization sound */
         BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
         BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1, 0.5);
@@ -244,15 +244,16 @@ Cavebot_Error_t CavebotUser_SensorTask(void)
 
 Cavebot_Error_t CavebotUser_Task(void)
 {
-    /* TODO error handling? */
+    Bsp_Error_t error = BSP_ERROR_NONE;
+    const bool  armed = Cavebot_IsArmed();
 
-    const bool armed = Cavebot_IsArmed();
     if (armed != CavebotUser_Armed)
     {
         CavebotUser_Armed = armed;
 
         if (armed)
         {
+            /* TODO CVW-67 make all sounds non-block and add error handling */
             /* Arm sound */
             BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
             BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1, 0.5);
@@ -266,6 +267,7 @@ Cavebot_Error_t CavebotUser_Task(void)
         }
         else
         {
+            /* TODO CVW-67 make all sounds non-block and add error handling */
             /* Disarm sound */
             BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
             BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1, 0.5);
@@ -277,12 +279,12 @@ Cavebot_Error_t CavebotUser_Task(void)
 
     if (armed)
     {
-        Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_RED);
+        error = Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_RED);
     }
     else
     {
-        Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_GREEN);
+        error = Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_GREEN);
     }
 
-    return CAVEBOT_ERROR_NONE;
+    return Cavebot_BspToCavebotError(error);
 }

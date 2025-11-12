@@ -241,7 +241,7 @@ static Cavebot_Error_t Rover4wd_MotorSpeedControl(const CavebotUser_Motor_t moto
 
         if (CAVEBOT_ERROR_NONE == error)
         {
-            /* TODO test active braking if output is zero */
+            /* TODO CVW-70 test active braking if output is zero */
             error = Cavebot_BspToCavebotError(BspMotor_SetDutyCycle(&CavebotUser_Motors[motor], fabs(Rover4wd_MotorsPid[motor].output)));
         }
     }
