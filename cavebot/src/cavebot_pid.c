@@ -87,15 +87,14 @@ Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const doubl
         double output           = (handle->kp * pid_error) + (handle->ki * handle->integral) + (handle->kd * derivative) + (handle->kff * handle->command);
         double delta_output     = output - handle->output;
         double max_delta_output = handle->rate_limit * delta_tick;
-        if (delta_output > max_delta_output)
+        if ((delta_output > max_delta_output) && (handle->command > 0.0))
         {
             handle->output += max_delta_output;
         }
-        /* TODO fix rate limiting */
-        // else if (delta_output < -max_delta_output)
-        // {
-        //     handle->output -= max_delta_output;
-        // }
+        else if ((delta_output < -max_delta_output) && (handle->command < 0.0))
+        {
+            handle->output -= max_delta_output;
+        }
         else
         {
             handle->output = output;
