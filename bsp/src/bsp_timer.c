@@ -7,7 +7,7 @@
 
 extern void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *tim_baseHandle);
 
-static void BspTimer_PeriodElapsedCallback(Bsp_TimerHandle_t *timer_handle);
+static void BspTimer_PeriodElapsedCallback(const Bsp_TimerHandle_t *const timer_handle);
 static Bsp_Timer_t *BspTimer_GetTimer(const Bsp_TimerHandle_t *const timer_handle);
 
 Bsp_Error_t BspTimer_Start(const BspTimerUser_Timer_t timer)
@@ -16,7 +16,7 @@ Bsp_Error_t BspTimer_Start(const BspTimerUser_Timer_t timer)
 
     if (timer < BSP_TIMER_USER_TIMER_MAX)
     {
-        BspTimerUser_HandleTable[timer].timer_handle->PeriodElapsedCallback = BspTimer_PeriodElapsedCallback;
+        BspTimerUser_HandleTable[timer].timer_handle->PeriodElapsedCallback = (void (*)(Bsp_TimerHandle_t *)) BspTimer_PeriodElapsedCallback;
 
         HAL_TIM_Base_MspInit(BspTimerUser_HandleTable[timer].timer_handle);
 
@@ -96,7 +96,7 @@ Bsp_Error_t BspTimer_RegisterPeriodElapsedCallback(const BspTimerUser_Timer_t ti
     return error;
 }
 
-static void BspTimer_PeriodElapsedCallback(Bsp_TimerHandle_t *timer_handle)
+static void BspTimer_PeriodElapsedCallback(const Bsp_TimerHandle_t *const timer_handle)
 {
     Bsp_Timer_t *timer = BspTimer_GetTimer(timer_handle);
 

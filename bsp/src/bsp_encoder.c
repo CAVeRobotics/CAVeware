@@ -14,7 +14,7 @@
 extern void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef *tim_encoderHandle);
 
 static void BspEncoder_SamplePulses(Bsp_Encoder_t *const handle);
-static void BspEncoder_TimerCallback(Bsp_TimerHandle_t *handle);
+static void BspEncoder_TimerCallback(const Bsp_TimerHandle_t *const handle);
 static inline void BspEncoder_TimerCallbackHandler(Bsp_Encoder_t *const handle);
 static Bsp_Encoder_t *BspEncoder_GetEncoderHandle(const Bsp_TimerHandle_t *const timer_handle);
 
@@ -46,7 +46,7 @@ Bsp_Error_t BspEncoder_Start(const BspEncoderUser_Timer_t timer)
         }
 
         Bsp_TimerHandle_t *timer_handle = handle->timer_handle;
-        timer_handle->PeriodElapsedCallback = BspEncoder_TimerCallback;
+        timer_handle->PeriodElapsedCallback = (void (*)(Bsp_TimerHandle_t *)) BspEncoder_TimerCallback;
 
         handle->pulses_per_period        = (Bsp_EncoderPulse_t)((Bsp_EncoderPulse_t)__HAL_TIM_GET_AUTORELOAD(timer_handle) + (Bsp_EncoderPulse_t)1);
         handle->sampling                 = false;
@@ -131,7 +131,7 @@ static void BspEncoder_SamplePulses(Bsp_Encoder_t *const handle)
     }
 }
 
-static void BspEncoder_TimerCallback(Bsp_TimerHandle_t *handle)
+static void BspEncoder_TimerCallback(const Bsp_TimerHandle_t *const handle)
 {
     BspEncoder_TimerCallbackHandler(BspEncoder_GetEncoderHandle(handle));
 }
