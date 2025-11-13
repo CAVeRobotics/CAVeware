@@ -8,6 +8,7 @@
 extern void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *tim_baseHandle);
 
 static void BspTimer_PeriodElapsedCallback(Bsp_TimerHandle_t *timer_handle);
+static Bsp_Timer_t *BspTimer_GetTimer(const Bsp_TimerHandle_t *const timer_handle);
 
 Bsp_Error_t BspTimer_Start(const BspTimerUser_Timer_t timer)
 {
@@ -97,7 +98,7 @@ Bsp_Error_t BspTimer_RegisterPeriodElapsedCallback(const BspTimerUser_Timer_t ti
 
 static void BspTimer_PeriodElapsedCallback(Bsp_TimerHandle_t *timer_handle)
 {
-    Bsp_Timer_t *timer = BspTimerUser_GetTimer(timer_handle);
+    Bsp_Timer_t *timer = BspTimer_GetTimer(timer_handle);
 
     if (NULL != timer)
     {
@@ -114,4 +115,20 @@ static void BspTimer_PeriodElapsedCallback(Bsp_TimerHandle_t *timer_handle)
             timer->period_elapsed.function(timer->period_elapsed.arg);
         }
     }
+}
+
+static Bsp_Timer_t *BspTimer_GetTimer(const Bsp_TimerHandle_t *const timer_handle)
+{
+    Bsp_Timer_t *timer = NULL;
+
+    for (BspTimerUser_Timer_t user_timer = BSP_TIMER_USER_TIMER_0; user_timer < BSP_TIMER_USER_TIMER_MAX; user_timer++)
+    {
+        if (timer_handle == BspTimerUser_HandleTable[user_timer].timer_handle)
+        {
+            timer = &BspTimerUser_HandleTable[user_timer];
+            break;
+        }
+    }
+
+    return timer;
 }
