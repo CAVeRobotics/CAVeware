@@ -10,6 +10,7 @@ set(BSP_GPIO ON CACHE BOOL "Enable BSP GPIO")
 set(BSP_MOTOR ON CACHE BOOL "Enable BSP motors")
 set(BSP_PWM ON CACHE BOOL "Enable BSP PWM")
 set(BSP_SERVO ON CACHE BOOL "Enable BSP servos")
+set(BSP_SPI ON CACHE BOOL "Enable BSP SPI")
 set(BSP_UART ON CACHE BOOL "Enable BSP UART")
 
 ################################################################################
