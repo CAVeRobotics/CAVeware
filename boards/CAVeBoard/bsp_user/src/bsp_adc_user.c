@@ -19,15 +19,3 @@ Bsp_Adc_t BspAdcUser_HandleTable[BSP_ADC_USER_ADC_MAX] = {
         .channels      = BSP_ADC_USER_ADC_1_CHANNELS,
     },
 };
-
-Bsp_Adc_t *BspAdcUser_GetAdc(const Bsp_AdcHandle_t *const adc_handle)
-{
-    Bsp_Adc_t *adc = NULL;
-
-    if (adc_handle == BspAdcUser_HandleTable[BSP_ADC_USER_ADC_1].adc_handle)
-    {
-        adc = &BspAdcUser_HandleTable[BSP_ADC_USER_ADC_1];
-    }
-
-    return adc;
-}

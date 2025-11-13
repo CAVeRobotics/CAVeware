@@ -32,6 +32,4 @@ typedef enum
 
 extern Bsp_Adc_t BspAdcUser_HandleTable[BSP_ADC_USER_ADC_MAX];
 
-Bsp_Adc_t *BspAdcUser_GetAdc(const Bsp_AdcHandle_t *const adc_handle);
-
 #endif /* BSP_ADC_USER_H */

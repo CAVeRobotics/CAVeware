@@ -66,27 +66,3 @@ Bsp_Encoder_t BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_MAX] = {
         .angular_rate             = 0,
     },
 };
-
-Bsp_Encoder_t *BspEncoderUser_GetEncoderHandle(const Bsp_TimerHandle_t *const timer_handle)
-{
-    Bsp_Encoder_t *encoder_handle = NULL;
-
-    if (timer_handle == BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].timer_handle)
-    {
-        encoder_handle = &BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0];
-    }
-    else if (timer_handle == BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].timer_handle)
-    {
-        encoder_handle = &BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1];
-    }
-    else if (timer_handle == BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].timer_handle)
-    {
-        encoder_handle = &BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2];
-    }
-    else if (timer_handle == BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].timer_handle)
-    {
-        encoder_handle = &BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3];
-    }
-
-    return encoder_handle;
-}

@@ -13,9 +13,10 @@ static const char *kBspUart_LogTag = "BSP UART";
 
 extern void HAL_UART_MspInit(UART_HandleTypeDef *uartHandle);
 
-static void BspUart_TxCallback(Bsp_UartHandle_t *uart_handle);
 static Bsp_Error_t BspUart_StartTransmit(Bsp_Uart_t *const uart);
-static void BspUart_ErrorCallback(Bsp_UartHandle_t *uart_handle);
+static void BspUart_TransmitCallback(const Bsp_UartHandle_t *const uart_handle);
+static void BspUart_ErrorCallback(const Bsp_UartHandle_t *const uart_handle);
+static Bsp_Uart_t *BspUart_GetUart(const Bsp_UartHandle_t *const uart_handle);
 
 Bsp_Error_t BspUart_Start(const BspUartUser_Uart_t uart)
 {
@@ -31,8 +32,8 @@ Bsp_Error_t BspUart_Start(const BspUartUser_Uart_t uart)
         BspUartUser_HandleTable[uart].read_pointer = 0U;
 
         /* TODO SD-234 receive, error, and abort callbacks */
-        BspUartUser_HandleTable[uart].uart_handle->TxCpltCallback = BspUart_TxCallback;
-        BspUartUser_HandleTable[uart].uart_handle->ErrorCallback  = BspUart_ErrorCallback;
+        BspUartUser_HandleTable[uart].uart_handle->TxCpltCallback = (void (*)(Bsp_UartHandle_t *)) BspUart_TransmitCallback;
+        BspUartUser_HandleTable[uart].uart_handle->ErrorCallback  = (void (*)(Bsp_UartHandle_t *)) BspUart_ErrorCallback;
 
         HAL_UART_MspInit(BspUartUser_HandleTable[uart].uart_handle);
 
@@ -152,21 +153,6 @@ Bsp_Error_t BspUart_Receive(const BspUartUser_Uart_t uart, uint8_t *const data, 
     return error;
 }
 
-static void BspUart_TxCallback(Bsp_UartHandle_t *uart_handle)
-{
-    Bsp_Uart_t *uart = BspUartUser_GetUart(uart_handle);
-
-    if (NULL != uart)
-    {
-        uart->tx_read_pointer += uart->tx_reading;
-        uart->tx_read_pointer %= uart->tx_buffer_size;
-        uart->tx_reading       = 0U;
-        uart->txing            = false;
-
-        (void)BspUart_StartTransmit(uart);
-    }
-}
-
 static Bsp_Error_t BspUart_StartTransmit(Bsp_Uart_t *const uart)
 {
     Bsp_Error_t error = BSP_ERROR_NONE;
@@ -209,12 +195,43 @@ static Bsp_Error_t BspUart_StartTransmit(Bsp_Uart_t *const uart)
     return error;
 }
 
-static void BspUart_ErrorCallback(Bsp_UartHandle_t *uart_handle)
+static void BspUart_TransmitCallback(const Bsp_UartHandle_t *const uart_handle)
 {
-    const Bsp_Uart_t *const uart = BspUartUser_GetUart(uart_handle);
+    Bsp_Uart_t *uart = BspUart_GetUart(uart_handle);
+
+    if (NULL != uart)
+    {
+        uart->tx_read_pointer += uart->tx_reading;
+        uart->tx_read_pointer %= uart->tx_buffer_size;
+        uart->tx_reading       = 0U;
+        uart->txing            = false;
+
+        (void)BspUart_StartTransmit(uart);
+    }
+}
+
+static void BspUart_ErrorCallback(const Bsp_UartHandle_t *const uart_handle)
+{
+    const Bsp_Uart_t *const uart = BspUart_GetUart(uart_handle);
 
     if (NULL != uart)
     {
         BSP_LOGGER_LOG_ERROR(kBspUart_LogTag, "Error detected");
     }
+}
+
+static Bsp_Uart_t *BspUart_GetUart(const Bsp_UartHandle_t *const uart_handle)
+{
+    Bsp_Uart_t *uart = NULL;
+
+    for (BspUartUser_Uart_t user_uart = BSP_UART_USER_0; user_uart < BSP_UART_USER_MAX; user_uart++)
+    {
+        if (uart_handle == BspUartUser_HandleTable[user_uart].uart_handle)
+        {
+            uart = &BspUartUser_HandleTable[user_uart];
+            break;
+        }
+    }
+
+    return uart;
 }

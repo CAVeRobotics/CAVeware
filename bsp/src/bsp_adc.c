@@ -12,7 +12,8 @@
 #define BSP_ADC_RESOLUTION_BITS   12U
 #define BSP_ADC_MAX               (uint16_t)(1U << BSP_ADC_RESOLUTION_BITS)
 
-static void BspAdc_ConversionCompleteCallback(Bsp_AdcHandle_t *adc_handle);
+static void BspAdc_ConversionCompleteCallback(const Bsp_AdcHandle_t *const adc_handle);
+static Bsp_Adc_t *BspAdc_GetAdc(const Bsp_AdcHandle_t *const adc_handle);
 
 Bsp_Error_t BspAdc_Start(const BspAdcUser_Adc_t adc)
 {
@@ -20,7 +21,7 @@ Bsp_Error_t BspAdc_Start(const BspAdcUser_Adc_t adc)
 
     if (adc < BSP_ADC_USER_ADC_MAX)
     {
-        BspAdcUser_HandleTable[adc].adc_handle->ConvCpltCallback = BspAdc_ConversionCompleteCallback;
+        BspAdcUser_HandleTable[adc].adc_handle->ConvCpltCallback = (void (*)(Bsp_AdcHandle_t *)) BspAdc_ConversionCompleteCallback;
 
         /* DMA data width is set to half word (uint16_t), but cast buffer to uint32_t to match prototype */
         /* TODO SD-349 set large buffer to reduce interrupt frequency */
@@ -70,9 +71,9 @@ Bsp_Error_t BspAdc_Read(const BspAdcUser_Adc_t adc, const BspAdcUser_ChannelRank
     return error;
 }
 
-static void BspAdc_ConversionCompleteCallback(Bsp_AdcHandle_t *adc_handle)
+static void BspAdc_ConversionCompleteCallback(const Bsp_AdcHandle_t *const adc_handle)
 {
-    Bsp_Adc_t *adc = BspAdcUser_GetAdc(adc_handle);
+    Bsp_Adc_t *adc = BspAdc_GetAdc(adc_handle);
 
     if (NULL != adc)
     {
@@ -81,4 +82,20 @@ static void BspAdc_ConversionCompleteCallback(Bsp_AdcHandle_t *adc_handle)
             *(adc->shadow_buffer + i) = *(adc->buffer + i); /* TODO SD-349 memcpy and average? */
         }
     }
+}
+
+static Bsp_Adc_t *BspAdc_GetAdc(const Bsp_AdcHandle_t *const adc_handle)
+{
+    Bsp_Adc_t *adc = NULL;
+
+    for (BspAdcUser_Adc_t user_adc = BSP_ADC_USER_ADC_1; user_adc < BSP_ADC_USER_ADC_MAX; user_adc++)
+    {
+        if (adc_handle == BspAdcUser_HandleTable[user_adc].adc_handle)
+        {
+            adc = &BspAdcUser_HandleTable[user_adc];
+            break;
+        }
+    }
+
+    return adc;
 }
