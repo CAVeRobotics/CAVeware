@@ -42,18 +42,3 @@ Bsp_Uart_t BspUartUser_HandleTable[BSP_UART_USER_MAX] = {
         .read_pointer     = 0U,
     },
 };
-
-Bsp_Uart_t *BspUartUser_GetUart(const Bsp_UartHandle_t *const uart_handle)
-{
-    Bsp_Uart_t *uart = NULL;
-
-    for (BspUartUser_Uart_t user_uart = BSP_UART_USER_0; user_uart < BSP_UART_USER_MAX; user_uart++)
-    {
-        if (uart_handle == BspUartUser_HandleTable[user_uart].uart_handle)
-        {
-            uart = &BspUartUser_HandleTable[user_uart];
-        }
-    }
-
-    return uart;
-}

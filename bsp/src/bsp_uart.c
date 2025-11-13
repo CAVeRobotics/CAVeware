@@ -16,6 +16,7 @@ extern void HAL_UART_MspInit(UART_HandleTypeDef *uartHandle);
 static void BspUart_TxCallback(Bsp_UartHandle_t *uart_handle);
 static Bsp_Error_t BspUart_StartTransmit(Bsp_Uart_t *const uart);
 static void BspUart_ErrorCallback(Bsp_UartHandle_t *uart_handle);
+static Bsp_Uart_t *BspUart_GetUart(const Bsp_UartHandle_t *const uart_handle);
 
 Bsp_Error_t BspUart_Start(const BspUartUser_Uart_t uart)
 {
@@ -154,7 +155,7 @@ Bsp_Error_t BspUart_Receive(const BspUartUser_Uart_t uart, uint8_t *const data, 
 
 static void BspUart_TxCallback(Bsp_UartHandle_t *uart_handle)
 {
-    Bsp_Uart_t *uart = BspUartUser_GetUart(uart_handle);
+    Bsp_Uart_t *uart = BspUart_GetUart(uart_handle);
 
     if (NULL != uart)
     {
@@ -211,10 +212,26 @@ static Bsp_Error_t BspUart_StartTransmit(Bsp_Uart_t *const uart)
 
 static void BspUart_ErrorCallback(Bsp_UartHandle_t *uart_handle)
 {
-    const Bsp_Uart_t *const uart = BspUartUser_GetUart(uart_handle);
+    const Bsp_Uart_t *const uart = BspUart_GetUart(uart_handle);
 
     if (NULL != uart)
     {
         BSP_LOGGER_LOG_ERROR(kBspUart_LogTag, "Error detected");
     }
+}
+
+static Bsp_Uart_t *BspUart_GetUart(const Bsp_UartHandle_t *const uart_handle)
+{
+    Bsp_Uart_t *uart = NULL;
+
+    for (BspUartUser_Uart_t user_uart = BSP_UART_USER_0; user_uart < BSP_UART_USER_MAX; user_uart++)
+    {
+        if (uart_handle == BspUartUser_HandleTable[user_uart].uart_handle)
+        {
+            uart = &BspUartUser_HandleTable[user_uart];
+            break;
+        }
+    }
+
+    return uart;
 }
