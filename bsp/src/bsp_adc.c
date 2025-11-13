@@ -13,6 +13,7 @@
 #define BSP_ADC_MAX               (uint16_t)(1U << BSP_ADC_RESOLUTION_BITS)
 
 static void BspAdc_ConversionCompleteCallback(Bsp_AdcHandle_t *adc_handle);
+static Bsp_Adc_t *BspAdc_GetAdc(const Bsp_AdcHandle_t *const adc_handle);
 
 Bsp_Error_t BspAdc_Start(const BspAdcUser_Adc_t adc)
 {
@@ -72,7 +73,7 @@ Bsp_Error_t BspAdc_Read(const BspAdcUser_Adc_t adc, const BspAdcUser_ChannelRank
 
 static void BspAdc_ConversionCompleteCallback(Bsp_AdcHandle_t *adc_handle)
 {
-    Bsp_Adc_t *adc = BspAdcUser_GetAdc(adc_handle);
+    Bsp_Adc_t *adc = BspAdc_GetAdc(adc_handle);
 
     if (NULL != adc)
     {
@@ -81,4 +82,19 @@ static void BspAdc_ConversionCompleteCallback(Bsp_AdcHandle_t *adc_handle)
             *(adc->shadow_buffer + i) = *(adc->buffer + i); /* TODO SD-349 memcpy and average? */
         }
     }
+}
+
+static Bsp_Adc_t *BspAdc_GetAdc(const Bsp_AdcHandle_t *const adc_handle)
+{
+    Bsp_Adc_t *adc = NULL;
+
+    for (BspAdcUser_Adc_t user_adc = BSP_ADC_USER_ADC_1; user_adc < BSP_ADC_USER_ADC_MAX; user_adc++)
+    {
+        if (adc_handle == BspAdcUser_HandleTable[user_adc].adc_handle)
+        {
+            adc = &BspAdcUser_HandleTable[user_adc];
+        }
+    }
+
+    return adc;
 }
