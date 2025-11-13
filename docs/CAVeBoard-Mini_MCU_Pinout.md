@@ -1,6 +1,6 @@
 # CAVeBoard-Mini MCU Pinout
 
-Revision 5
+Revision 6
 
 Based on STM32F407ZGTx
 
@@ -59,10 +59,8 @@ Based on STM32F407ZGTx
 | Motor 3 current         | ADC               | PB0      | B22    |
 | Interface UART TX       | UART TX           | PA9      | T8     |
 | Interface UART RX       | UART RX           | PA10     | T37    |
-| Sensor UART TX          | UART TX           | PG14     | T50    |
-| Sensor UART RX          | UART RX           | PG9      | T15    |
-| Logging UART TX         | UART TX           | PD8      | B34    |
-| Logging UART RX         | UART RX           | PB11     | B39    |
+| Logging UART TX         | UART TX           | PG14     | T50    |
+| Logging UART RX         | UART RX           | PG9      | T15    |
 | HSE IN                  | HSE               | PH0      | N/A    |
 | HSE OUT                 | HSE               | PH1      | N/A    |
 

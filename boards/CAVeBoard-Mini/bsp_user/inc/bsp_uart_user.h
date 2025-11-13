@@ -7,7 +7,6 @@ typedef enum
 {
     BSP_UART_USER_0,
     BSP_UART_USER_1,
-    BSP_UART_USER_2,
     BSP_UART_USER_MAX
 } BspUartUser_Uart_t;
 

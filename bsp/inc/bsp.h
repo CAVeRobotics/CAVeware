@@ -28,6 +28,7 @@ typedef double   Bsp_MetersPerSecondSquared_t;
 
 typedef ADC_HandleTypeDef  Bsp_AdcHandle_t;
 typedef GPIO_TypeDef       Bsp_GpioPort_t;
+typedef SPI_HandleTypeDef  Bsp_SpiHandle_t;
 typedef TIM_HandleTypeDef  Bsp_TimerHandle_t;
 typedef UART_HandleTypeDef Bsp_UartHandle_t;
 
@@ -37,6 +38,7 @@ typedef struct Bsp_Adc       Bsp_Adc_t;
 typedef struct Bsp_Encoder   Bsp_Encoder_t;
 typedef struct Bsp_Gpio      Bsp_Gpio_t;
 typedef struct Bsp_PwmConfig Bsp_PwmConfig_t;
+typedef struct Bsp_Spi       Bsp_Spi_t;
 typedef struct Bsp_Timer     Bsp_Timer_t;
 typedef struct Bsp_Uart      Bsp_Uart_t;
 
@@ -54,18 +56,15 @@ typedef enum
 
 typedef enum
 {
-    BSP_TIMER_CHANNEL_1 = TIM_CHANNEL_1,
-    BSP_TIMER_CHANNEL_2 = TIM_CHANNEL_2,
-    BSP_TIMER_CHANNEL_3 = TIM_CHANNEL_3,
-    BSP_TIMER_CHANNEL_4 = TIM_CHANNEL_4,
-    BSP_TIMER_CHANNEL_ALL = TIM_CHANNEL_ALL
-} Bsp_TimerChannel_t;
-
-typedef enum
-{
     BSP_ENCODER_USER_MODE_PULSES_PER_ROTATON,
     BSP_ENCODER_USER_MODE_RADIANS_PER_PULSE
 } Bsp_EncoderMode_t;
+
+typedef enum
+{
+    BSP_GPIO_MODE_OUTPUT,
+    BSP_GPIO_MODE_INPUT
+} Bsp_GpioMode_t;
 
 typedef enum
 {
@@ -75,9 +74,12 @@ typedef enum
 
 typedef enum
 {
-    BSP_GPIO_MODE_OUTPUT,
-    BSP_GPIO_MODE_INPUT
-} Bsp_GpioMode_t;
+    BSP_TIMER_CHANNEL_1 = TIM_CHANNEL_1,
+    BSP_TIMER_CHANNEL_2 = TIM_CHANNEL_2,
+    BSP_TIMER_CHANNEL_3 = TIM_CHANNEL_3,
+    BSP_TIMER_CHANNEL_4 = TIM_CHANNEL_4,
+    BSP_TIMER_CHANNEL_ALL = TIM_CHANNEL_ALL
+} Bsp_TimerChannel_t;
 
 typedef enum
 {
@@ -135,6 +137,13 @@ struct Bsp_PwmConfig
 {
     Bsp_TimerHandle_t *timer_handle;
     Bsp_TimerChannel_t max_channel;
+};
+
+struct Bsp_Spi
+{
+    Bsp_SpiHandle_t *spi_handle;
+    volatile bool busy;
+    Bsp_Callback_t callback;
 };
 
 struct Bsp_Timer

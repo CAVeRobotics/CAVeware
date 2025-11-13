@@ -13,6 +13,7 @@
 #include "bsp_pwm_user.h"
 #include "bsp_timer_user.h"
 #include "bsp_servo.h"
+#include "bsp_spi_user.h"
 
 #include "a4988.h"
 #include "lsm6dsv16x.h"
@@ -20,7 +21,7 @@
 
 #include "cavebot.h"
 
-static Lsm6dsv16x_Context_t kCavebotUser_Lsm6dsv16x = LSM6DSV16X_CONTEXT(&hspi2);
+static Lsm6dsv16x_Context_t kCavebotUser_Lsm6dsv16x = LSM6DSV16X_CONTEXT(BSP_SPI_USER_0, BSP_GPIO_USER_PIN_IMU_CS);
 static bool                 CavebotUser_Armed       = false;
 
 BspServo_Handle_t CavebotUser_Servos[CAVEBOT_USER_SERVO_MAX] = {
@@ -215,15 +216,17 @@ Cavebot_Error_t CavebotUser_Initialize(void)
 
 Cavebot_Error_t CavebotUser_SensorTask(void)
 {
-    Bsp_Error_t error = Accelerometer_Read(&CavebotUser_Accelerometer);
-    if (BSP_ERROR_NONE == error)
-    {
-        error = Gyroscope_Read(&CavebotUser_Gyroscope);
-    }
-    if (BSP_ERROR_NONE == error)
-    {
-        error = Gyroscope_ReadQuaternion(&CavebotUser_Gyroscope);
-    }
+    /* TODO CVW-75 non-blocking accelerometer, gyroscope, and quaternion */
+    Bsp_Error_t error = BSP_ERROR_NONE;
+    // Bsp_Error_t error = Accelerometer_Read(&CavebotUser_Accelerometer);
+    // if (BSP_ERROR_NONE == error)
+    // {
+    //     error = Gyroscope_Read(&CavebotUser_Gyroscope);
+    // }
+    // if (BSP_ERROR_NONE == error)
+    // {
+    //     error = Gyroscope_ReadQuaternion(&CavebotUser_Gyroscope);
+    // }
 
     if (BSP_ERROR_NONE == error)
     {
