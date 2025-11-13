@@ -124,6 +124,7 @@ static Bsp_Spi_t *BspSpi_GetSpi(const Bsp_SpiHandle_t *const spi_handle)
         if (spi_handle == BspSpiUser_HandleTable[user_spi].spi_handle)
         {
             spi = &BspSpiUser_HandleTable[user_spi];
+            break;
         }
     }
 

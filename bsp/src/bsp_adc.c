@@ -93,6 +93,7 @@ static Bsp_Adc_t *BspAdc_GetAdc(const Bsp_AdcHandle_t *const adc_handle)
         if (adc_handle == BspAdcUser_HandleTable[user_adc].adc_handle)
         {
             adc = &BspAdcUser_HandleTable[user_adc];
+            break;
         }
     }
 

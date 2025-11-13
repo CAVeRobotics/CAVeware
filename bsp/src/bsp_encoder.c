@@ -16,6 +16,7 @@ extern void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef *tim_encoderHandle);
 static void BspEncoder_SamplePulses(Bsp_Encoder_t *const handle);
 static void BspEncoder_TimerCallback(Bsp_TimerHandle_t *handle);
 static inline void BspEncoder_TimerCallbackHandler(Bsp_Encoder_t *const handle);
+static Bsp_Encoder_t *BspEncoder_GetEncoderHandle(const Bsp_TimerHandle_t *const timer_handle);
 
 Bsp_Error_t BspEncoder_Start(const BspEncoderUser_Timer_t timer)
 {
@@ -132,7 +133,7 @@ static void BspEncoder_SamplePulses(Bsp_Encoder_t *const handle)
 
 static void BspEncoder_TimerCallback(Bsp_TimerHandle_t *handle)
 {
-    BspEncoder_TimerCallbackHandler(BspEncoderUser_GetEncoderHandle(handle));
+    BspEncoder_TimerCallbackHandler(BspEncoder_GetEncoderHandle(handle));
 }
 
 static inline void BspEncoder_TimerCallbackHandler(Bsp_Encoder_t *const handle)
@@ -154,4 +155,20 @@ static inline void BspEncoder_TimerCallbackHandler(Bsp_Encoder_t *const handle)
             handle->previous_periods_elapsed = handle->periods_elapsed;
         }
     }
+}
+
+static Bsp_Encoder_t *BspEncoder_GetEncoderHandle(const Bsp_TimerHandle_t *const timer_handle)
+{
+    Bsp_Encoder_t *encoder_handle = NULL;
+
+    for (BspEncoderUser_Timer_t user_timer = BSP_ENCODER_USER_TIMER_0; user_timer < BSP_ENCODER_USER_TIMER_MAX; user_timer++)
+    {
+        if (timer_handle == BspEncoderUser_HandleTable[user_timer].timer_handle)
+        {
+            encoder_handle = &BspEncoderUser_HandleTable[user_timer];
+            break;
+        }
+    }
+
+    return encoder_handle;
 }
