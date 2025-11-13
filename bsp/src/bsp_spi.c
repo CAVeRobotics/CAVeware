@@ -12,6 +12,7 @@
 extern void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle);
 
 static void BspSpi_Callback(Bsp_SpiHandle_t *spi_handle);
+static Bsp_Spi_t *BspSpi_GetSpi(const Bsp_SpiHandle_t *const spi_handle);
 
 Bsp_Error_t BspSpi_Start(const BspSpiUser_Spi_t spi)
 {
@@ -101,7 +102,7 @@ Bsp_Error_t BspSpi_Receive(const BspSpiUser_Spi_t spi, uint8_t *const data, cons
 
 static void BspSpi_Callback(Bsp_SpiHandle_t *spi_handle)
 {
-    Bsp_Spi_t *spi = BspSpiUser_GetSpi(spi_handle);
+    Bsp_Spi_t *spi = BspSpi_GetSpi(spi_handle);
 
     if (NULL != spi)
     {
@@ -112,4 +113,19 @@ static void BspSpi_Callback(Bsp_SpiHandle_t *spi_handle)
             spi->callback.function(spi->callback.arg);
         }
     }
+}
+
+static Bsp_Spi_t *BspSpi_GetSpi(const Bsp_SpiHandle_t *const spi_handle)
+{
+    Bsp_Spi_t *spi = NULL;
+
+    for (BspSpiUser_Spi_t user_spi = BSP_SPI_USER_0; user_spi < BSP_SPI_USER_MAX; user_spi++)
+    {
+        if (spi_handle == BspSpiUser_HandleTable[user_spi].spi_handle)
+        {
+            spi = &BspSpiUser_HandleTable[user_spi];
+        }
+    }
+
+    return spi;
 }

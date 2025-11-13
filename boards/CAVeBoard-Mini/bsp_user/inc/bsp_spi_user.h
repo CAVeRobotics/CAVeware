@@ -11,6 +11,4 @@ typedef enum
 
 extern Bsp_Spi_t BspSpiUser_HandleTable[BSP_SPI_USER_MAX];
 
-Bsp_Spi_t *BspSpiUser_GetSpi(const Bsp_SpiHandle_t *const spi_handle);
-
 #endif /* BSP_SPI_USER_H */
