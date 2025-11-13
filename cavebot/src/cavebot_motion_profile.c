@@ -4,7 +4,7 @@
 
 #include "bsp.h"
 
-/* TODO only works in the positive direction, current and goal must be positive relative values or potentially errors */
+/* TODO CVW-72 only works in the positive direction, current and goal must be positive relative values or potentially errors */
 Bsp_MetersPerSecond_t CavebotMotionProfile_TrapezoidVelocity(const Bsp_Meter_t current,
                                                              const Bsp_Meter_t goal,
                                                              const Bsp_MetersPerSecond_t inital_velocity,
