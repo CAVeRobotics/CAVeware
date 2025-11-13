@@ -1,15 +1,17 @@
 #include "lsm6dsv16x.h"
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "lsm6dsv16x_reg.h"
-#include "stm32f4xx_hal.h"
 
 #include "bsp.h"
 #include "bsp_gpio.h"
 #include "bsp_gpio_user.h"
 #include "bsp_logger.h"
+#include "bsp_spi.h"
+#include "bsp_spi_user.h"
 
 #include "accelerometer.h"
 #include "gyroscope.h"
@@ -37,6 +39,8 @@ static const char *kLsm6dsv16x_LogTag = "LSM6DSV16X";
 
 int32_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu_register, const uint8_t *const data, const uint16_t size);
 int32_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size);
+static Bsp_Error_t Lsm6dsv16x_BlockingTransmit(const BspSpiUser_Spi_t spi, const uint8_t *const data, const size_t size, const Bsp_Callback_t *const callback);
+static Bsp_Error_t Lsm6dsv16x_BlockingReceive(const BspSpiUser_Spi_t spi, uint8_t *const data, const size_t size, const Bsp_Callback_t *const callback);
 static Bsp_Error_t Lsm6dsv16x_ReadAll(Lsm6dsv16x_Context_t *const context);
 static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context);
 static inline Bsp_Error_t Lsm6dsv16x_ImuToBspError(const Lsm6dsv16x_Error_t error);
@@ -51,7 +55,7 @@ static inline Bsp_MetersPerSecondSquared_t Lsm6dsv16x_125dpsToRadiansPerSecond(c
 static float_t npy_half_to_float(uint16_t h);
 static void sflp2q(float_t quat[4], const uint16_t sflp[3]);
 
-Bsp_Error_t Lsm6dsv16x_Initialize(Lsm6dsv16x_Context_t *const context)
+Bsp_Error_t Lsm6dsv16x_Initialize(Lsm6dsv16x_Context_t *context)
 {
     Lsm6dsv16x_Error_t error = LSM6DSV16X_ERROR_NONE;
 
@@ -70,75 +74,84 @@ Bsp_Error_t Lsm6dsv16x_Initialize(Lsm6dsv16x_Context_t *const context)
     {
         /* Do nothing */
     }
-    else if ((0 != lsm6dsv16x_device_id_get(&context->interface, &whoami)) || (LSM6DSV16X_ID != whoami))
+    else if (BSP_ERROR_NONE != BspSpi_Start(context->spi))
     {
         error = 1;
-
-        BSP_LOGGER_LOG_ERROR(kLsm6dsv16x_LogTag, "Failed to detect IMU");
     }
     else
     {
-        BSP_LOGGER_LOG_DEBUG(kLsm6dsv16x_LogTag, "IMU detected");
+        context->interface.handle = context;
 
-        /* Restore default configuration */
-        BSP_LOGGER_LOG_DEBUG(kLsm6dsv16x_LogTag, "Resetting IMU");
-        lsm6dsv16x_reset_t imu_reset;
-        error |= lsm6dsv16x_reset_set(&context->interface, LSM6DSV16X_RESTORE_CTRL_REGS);
-        error |= lsm6dsv16x_reset_get(&context->interface, &imu_reset);
-        while (LSM6DSV16X_READY != imu_reset)
-        {
-            error |= lsm6dsv16x_reset_get(&context->interface, &imu_reset);
-        }
-        BSP_LOGGER_LOG_DEBUG(kLsm6dsv16x_LogTag, "IMU reset");
-
-        /* Enable Block Data Update */
-        error |= lsm6dsv16x_block_data_update_set(&context->interface, PROPERTY_ENABLE);
-
-        /* Set Output Data Rate.
-         * Selected data rate have to be equal or greater with respect
-         * with MLC data rate.
-         */
-        error |= lsm6dsv16x_xl_data_rate_set(&context->interface, LSM6DSV16X_ODR_AT_7680Hz);
-        error |= lsm6dsv16x_gy_data_rate_set(&context->interface, LSM6DSV16X_ODR_AT_7680Hz);
-
-        /* Set full scale */
-        error |= lsm6dsv16x_xl_full_scale_set(&context->interface, LSM6DSV16X_2g);
-        error |= lsm6dsv16x_gy_full_scale_set(&context->interface, LSM6DSV16X_125dps);
-
-        /* Configure filtering chain */
-        lsm6dsv16x_filt_settling_mask_t filter_settling_mask;
-        filter_settling_mask.drdy   = PROPERTY_ENABLE;
-        filter_settling_mask.irq_xl = PROPERTY_ENABLE;
-        filter_settling_mask.irq_g  = PROPERTY_ENABLE;
-        error                      |= lsm6dsv16x_filt_settling_mask_set(&context->interface, filter_settling_mask);
-        error                      |= lsm6dsv16x_filt_gy_lp1_set(&context->interface, PROPERTY_ENABLE);
-        error                      |= lsm6dsv16x_filt_gy_lp1_bandwidth_set(&context->interface, LSM6DSV16X_GY_ULTRA_LIGHT);
-        error                      |= lsm6dsv16x_filt_xl_lp2_set(&context->interface, PROPERTY_ENABLE);
-        error                      |= lsm6dsv16x_filt_xl_lp2_bandwidth_set(&context->interface, LSM6DSV16X_XL_STRONG);
-
-        /* Enable game rotation vector */
-        lsm6dsv16x_fifo_sflp_raw_t fifo_sflp;
-        fifo_sflp.game_rotation = 1;
-        fifo_sflp.gravity       = 0;
-        fifo_sflp.gbias         = 0;
-        error                  |= lsm6dsv16x_fifo_sflp_batch_set(&context->interface, fifo_sflp);
-
-        /* Set FIFO mode to Continuous mode */
-        error |= lsm6dsv16x_fifo_mode_set(&context->interface, LSM6DSV16X_STREAM_MODE);
-
-        /* Set Game Vector Output Data Rate */
-        error |= lsm6dsv16x_sflp_data_rate_set(&context->interface, LSM6DSV16X_SFLP_480Hz);
-        error |= lsm6dsv16x_sflp_game_rotation_set(&context->interface, PROPERTY_ENABLE);
-
-        if (BSP_ERROR_NONE != Lsm6dsv16x_Calibrate(context))
+        if ((0 != lsm6dsv16x_device_id_get(&context->interface, &whoami)) || (LSM6DSV16X_ID != whoami))
         {
             error = 1;
+
+            BSP_LOGGER_LOG_ERROR(kLsm6dsv16x_LogTag, "Failed to detect IMU");
         }
         else
         {
-            context->initialized = true;
+            BSP_LOGGER_LOG_DEBUG(kLsm6dsv16x_LogTag, "IMU detected");
 
-            BSP_LOGGER_LOG_DEBUG(kLsm6dsv16x_LogTag, "Initialized");
+            /* Restore default configuration */
+            BSP_LOGGER_LOG_DEBUG(kLsm6dsv16x_LogTag, "Resetting IMU");
+            lsm6dsv16x_reset_t imu_reset;
+            error |= lsm6dsv16x_reset_set(&context->interface, LSM6DSV16X_RESTORE_CTRL_REGS);
+            error |= lsm6dsv16x_reset_get(&context->interface, &imu_reset);
+            while (LSM6DSV16X_READY != imu_reset)
+            {
+                error |= lsm6dsv16x_reset_get(&context->interface, &imu_reset);
+            }
+            BSP_LOGGER_LOG_DEBUG(kLsm6dsv16x_LogTag, "IMU reset");
+
+            /* Enable Block Data Update */
+            error |= lsm6dsv16x_block_data_update_set(&context->interface, PROPERTY_ENABLE);
+
+            /* Set Output Data Rate.
+             * Selected data rate have to be equal or greater with respect
+             * with MLC data rate.
+             */
+            error |= lsm6dsv16x_xl_data_rate_set(&context->interface, LSM6DSV16X_ODR_AT_7680Hz);
+            error |= lsm6dsv16x_gy_data_rate_set(&context->interface, LSM6DSV16X_ODR_AT_7680Hz);
+
+            /* Set full scale */
+            error |= lsm6dsv16x_xl_full_scale_set(&context->interface, LSM6DSV16X_2g);
+            error |= lsm6dsv16x_gy_full_scale_set(&context->interface, LSM6DSV16X_125dps);
+
+            /* Configure filtering chain */
+            lsm6dsv16x_filt_settling_mask_t filter_settling_mask;
+            filter_settling_mask.drdy   = PROPERTY_ENABLE;
+            filter_settling_mask.irq_xl = PROPERTY_ENABLE;
+            filter_settling_mask.irq_g  = PROPERTY_ENABLE;
+            error                      |= lsm6dsv16x_filt_settling_mask_set(&context->interface, filter_settling_mask);
+            error                      |= lsm6dsv16x_filt_gy_lp1_set(&context->interface, PROPERTY_ENABLE);
+            error                      |= lsm6dsv16x_filt_gy_lp1_bandwidth_set(&context->interface, LSM6DSV16X_GY_ULTRA_LIGHT);
+            error                      |= lsm6dsv16x_filt_xl_lp2_set(&context->interface, PROPERTY_ENABLE);
+            error                      |= lsm6dsv16x_filt_xl_lp2_bandwidth_set(&context->interface, LSM6DSV16X_XL_STRONG);
+
+            /* Enable game rotation vector */
+            lsm6dsv16x_fifo_sflp_raw_t fifo_sflp;
+            fifo_sflp.game_rotation = 1;
+            fifo_sflp.gravity       = 0;
+            fifo_sflp.gbias         = 0;
+            error                  |= lsm6dsv16x_fifo_sflp_batch_set(&context->interface, fifo_sflp);
+
+            /* Set FIFO mode to Continuous mode */
+            error |= lsm6dsv16x_fifo_mode_set(&context->interface, LSM6DSV16X_STREAM_MODE);
+
+            /* Set Game Vector Output Data Rate */
+            error |= lsm6dsv16x_sflp_data_rate_set(&context->interface, LSM6DSV16X_SFLP_480Hz);
+            error |= lsm6dsv16x_sflp_game_rotation_set(&context->interface, PROPERTY_ENABLE);
+
+            if (BSP_ERROR_NONE != Lsm6dsv16x_Calibrate(context))
+            {
+                error = 1;
+            }
+            else
+            {
+                context->initialized = true;
+
+                BSP_LOGGER_LOG_DEBUG(kLsm6dsv16x_LogTag, "Initialized");
+            }
         }
     }
 
@@ -363,12 +376,22 @@ Lsm6dsv16x_Error_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu_regist
 {
     Lsm6dsv16x_Error_t error = LSM6DSV16X_ERROR_NONE;
 
-    if ((BSP_ERROR_NONE != BspGpio_Write(BSP_GPIO_USER_PIN_IMU_CS, BSP_GPIO_STATE_RESET)) ||
-        (BSP_ERROR_NONE != (Bsp_Error_t)HAL_SPI_Transmit(handle, &imu_register, 1U, LSM6DSV16X_TIMEOUT)) ||
-        (BSP_ERROR_NONE != (Bsp_Error_t)HAL_SPI_Transmit(handle, data, size, LSM6DSV16X_TIMEOUT)) ||
-        (BSP_ERROR_NONE != BspGpio_Write(BSP_GPIO_USER_PIN_IMU_CS, BSP_GPIO_STATE_SET)))
+    if (NULL == handle)
     {
         error = 1;
+    }
+    else
+    {
+        BspSpiUser_Spi_t  spi         = ((Lsm6dsv16x_Context_t *)handle)->spi;
+        BspGpioUser_Pin_t chip_select = ((Lsm6dsv16x_Context_t *)handle)->chip_select;
+
+        if ((BSP_ERROR_NONE != BspGpio_Write(chip_select, BSP_GPIO_STATE_RESET)) ||
+            (BSP_ERROR_NONE != Lsm6dsv16x_BlockingTransmit(spi, &imu_register, 1U, NULL)) ||
+            (BSP_ERROR_NONE != Lsm6dsv16x_BlockingTransmit(spi, data, (size_t)size, NULL)) ||
+            (BSP_ERROR_NONE != BspGpio_Write(chip_select, BSP_GPIO_STATE_SET)))
+        {
+            error = 1;
+        }
     }
 
     return error;
@@ -379,12 +402,50 @@ Lsm6dsv16x_Error_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_registe
     Lsm6dsv16x_Error_t error         = LSM6DSV16X_ERROR_NONE;
     uint8_t            register_read = imu_register | LSM6DSV16X_REGISTER_READ;
 
-    if ((BSP_ERROR_NONE != BspGpio_Write(BSP_GPIO_USER_PIN_IMU_CS, BSP_GPIO_STATE_RESET)) ||
-        (BSP_ERROR_NONE != (Bsp_Error_t)HAL_SPI_Transmit(handle, &register_read, 1U, LSM6DSV16X_TIMEOUT)) ||
-        (BSP_ERROR_NONE != (Bsp_Error_t)HAL_SPI_Receive(handle, data, size, LSM6DSV16X_TIMEOUT)) ||
-        (BSP_ERROR_NONE != BspGpio_Write(BSP_GPIO_USER_PIN_IMU_CS, BSP_GPIO_STATE_SET)))
+    if (NULL == handle)
     {
         error = 1;
+    }
+    else
+    {
+        BspSpiUser_Spi_t  spi         = ((Lsm6dsv16x_Context_t *)handle)->spi;
+        BspGpioUser_Pin_t chip_select = ((Lsm6dsv16x_Context_t *)handle)->chip_select;
+
+        if ((BSP_ERROR_NONE != BspGpio_Write(chip_select, BSP_GPIO_STATE_RESET)) ||
+            (BSP_ERROR_NONE != Lsm6dsv16x_BlockingTransmit(spi, &register_read, 1U, NULL)) ||
+            (BSP_ERROR_NONE != Lsm6dsv16x_BlockingReceive(spi, data, (size_t)size, NULL)) ||
+            (BSP_ERROR_NONE != BspGpio_Write(chip_select, BSP_GPIO_STATE_SET)))
+        {
+            error = 1;
+        }
+    }
+
+    return error;
+}
+
+static Bsp_Error_t Lsm6dsv16x_BlockingTransmit(const BspSpiUser_Spi_t spi, const uint8_t *const data, const size_t size, const Bsp_Callback_t *const callback)
+{
+    Bsp_Error_t error = BspSpi_Transmit(spi, data, size, callback);
+
+    if (BSP_ERROR_NONE == error)
+    {
+        while (BspSpiUser_HandleTable[spi].busy)
+        {
+        }
+    }
+
+    return error;
+}
+
+static Bsp_Error_t Lsm6dsv16x_BlockingReceive(const BspSpiUser_Spi_t spi, uint8_t *const data, const size_t size, const Bsp_Callback_t *const callback)
+{
+    Bsp_Error_t error = BspSpi_Receive(spi, data, size, callback);
+
+    if (BSP_ERROR_NONE == error)
+    {
+        while (BspSpiUser_HandleTable[spi].busy)
+        {
+        }
     }
 
     return error;

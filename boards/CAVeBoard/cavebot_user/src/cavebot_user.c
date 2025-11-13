@@ -5,15 +5,17 @@
 #include "bsp.h"
 #include "bsp_encoder.h"
 #include "bsp_encoder_user.h"
+#include "bsp_gpio_user.h"
 #include "bsp_motor.h"
 #include "bsp_pwm_user.h"
 #include "bsp_servo.h"
+#include "bsp_spi_user.h"
 
 #include "lsm6dsv16x.h"
 
 #include "cavebot.h"
 
-static const Lsm6dsv16x_Context_t kCavebotUser_Lsm6dsv16x = LSM6DSV16X_CONTEXT(&hspi2);
+static const Lsm6dsv16x_Context_t kCavebotUser_Lsm6dsv16x = LSM6DSV16X_CONTEXT(BSP_SPI_USER_0, BSP_GPIO_USER_PIN_IMU_CS);
 
 BspServo_Handle_t CavebotUser_Servos[CAVEBOT_USER_SERVO_MAX] = {
     [CAVEBOT_USER_SERVO_0] = {

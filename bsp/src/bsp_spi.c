@@ -26,6 +26,8 @@ Bsp_Error_t BspSpi_Start(const BspSpiUser_Spi_t spi)
         BspSpiUser_HandleTable[spi].callback.arg               = NULL;
 
         HAL_SPI_MspInit(BspSpiUser_HandleTable[spi].spi_handle);
+
+        error = BSP_ERROR_NONE;
     }
 
     return error;
