@@ -45,11 +45,14 @@ typedef enum
 
 extern BspServo_Handle_t      CavebotUser_Servos[CAVEBOT_USER_SERVO_MAX];
 extern BspMotor_Handle_t      CavebotUser_Motors[CAVEBOT_USER_MOTOR_MAX];
-extern CavebotPid_Handle_t    CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_MAX];
 extern BspEncoderUser_Timer_t CavebotUser_Encoders[CAVEBOT_USER_MOTOR_MAX];
 extern A9488_Context_t        CavebotUser_StepperMotor;
 extern Accelerometer_Handle_t CavebotUser_Accelerometer;
 extern Gyroscope_Handle_t     CavebotUser_Gyroscope;
 extern Rgbw_Handle_t          CavebotUser_Rgbw;
+
+Cavebot_Error_t CavebotUser_Initialize(void);
+Cavebot_Error_t CavebotUser_SensorTask(void);
+Cavebot_Error_t CavebotUser_Task(void);
 
 #endif /* CAVEBOT_USER_H */

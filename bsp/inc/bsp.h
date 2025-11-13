@@ -166,5 +166,6 @@ struct Bsp_Uart
 void Bsp_Initialize(void);
 void Bsp_Delay(const Bsp_Millisecond_t delay);
 double Bsp_Map(const double value, const double in_min, const double in_max, const double out_min, const double out_max);
+bool Bsp_CompareDoubleSigns(const double *const value_1, const double *const value_2);
 
 #endif /* BSP_H */

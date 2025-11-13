@@ -502,42 +502,20 @@ static void CavebotCaveTalk_SendOdometry(void)
     cave_talk_Encoder encoder_message_2 = cave_talk_Encoder_init_zero;
     cave_talk_Encoder encoder_message_3 = cave_talk_Encoder_init_zero;
 
-    Accelerometer_Reading_t accelerometer_reading = {
-        .x = 0.0,
-        .y = 0.0,
-        .z = 0.0,
-    };
-    (void)Accelerometer_Read(&CavebotUser_Accelerometer, &accelerometer_reading);
-
-    imu_message.accel.x_meters_per_second_squared = accelerometer_reading.x;
-    imu_message.accel.y_meters_per_second_squared = accelerometer_reading.y;
-    imu_message.accel.z_meters_per_second_squared = accelerometer_reading.z;
+    imu_message.accel.x_meters_per_second_squared = CavebotUser_Accelerometer.reading.x;
+    imu_message.accel.y_meters_per_second_squared = CavebotUser_Accelerometer.reading.y;
+    imu_message.accel.z_meters_per_second_squared = CavebotUser_Accelerometer.reading.z;
     imu_message.has_accel                         = true;
 
-    Gyroscope_Reading_t gyroscope_reading = {
-        .x = 0.0,
-        .y = 0.0,
-        .z = 0.0,
-    };
-    (void)Gyroscope_Read(&CavebotUser_Gyroscope, &gyroscope_reading);
-
-    imu_message.gyro.roll_radians_per_second  = gyroscope_reading.x;
-    imu_message.gyro.pitch_radians_per_second = gyroscope_reading.y;
-    imu_message.gyro.yaw_radians_per_second   = gyroscope_reading.z;
+    imu_message.gyro.roll_radians_per_second  = CavebotUser_Gyroscope.reading.x;
+    imu_message.gyro.pitch_radians_per_second = CavebotUser_Gyroscope.reading.y;
+    imu_message.gyro.yaw_radians_per_second   = CavebotUser_Gyroscope.reading.z;
     imu_message.has_gyro                      = true;
 
-    Gyroscope_Quaternion_t quaternion = {
-        .w = 0.0,
-        .x = 0.0,
-        .y = 0.0,
-        .z = 0.0
-    };
-    (void)Gyroscope_ReadQuaternion(&CavebotUser_Gyroscope, &quaternion);
-
-    imu_message.quat.w   = quaternion.w;
-    imu_message.quat.x   = quaternion.x;
-    imu_message.quat.y   = quaternion.y;
-    imu_message.quat.z   = quaternion.z;
+    imu_message.quat.w   = CavebotUser_Gyroscope.quaternion.w;
+    imu_message.quat.x   = CavebotUser_Gyroscope.quaternion.x;
+    imu_message.quat.y   = CavebotUser_Gyroscope.quaternion.y;
+    imu_message.quat.z   = CavebotUser_Gyroscope.quaternion.z;
     imu_message.has_quat = true;
 
     encoder_message_0.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].pulses;

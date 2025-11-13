@@ -83,6 +83,7 @@ configure_file(
 set(CAVEBOT_SRCS
     ${CAVEBOT_SRC_DIR}/cavebot.c
     ${CAVEBOT_SRC_DIR}/cavebot_cavetalk.c
+    ${CAVEBOT_SRC_DIR}/cavebot_motion_profile.c
     ${CAVEBOT_SRC_DIR}/cavebot_pid.c
     ${CMAKE_SOURCE_DIR}/boards/${BOARD}/cavebot_user/src/cavebot_user.c
 )

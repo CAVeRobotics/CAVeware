@@ -14,8 +14,7 @@ if(${CPPCHECK_NAME}_BIN)
 
     message(STATUS "Adding files to Cppcheck")
 
-    add_custom_target(
-        cppcheck
+    set(CPPCHECK_ARGS
         ${${CPPCHECK_NAME}_BIN}
         --enable=all
         --check-level=exhaustive
@@ -25,6 +24,14 @@ if(${CPPCHECK_NAME}_BIN)
         --output-file=cppcheck_report.xml
         ${CPPCHECK_SOURCES}
     )
+
+    set(BOARD_SUPPRESSION_FILE ${CMAKE_SOURCE_DIR}/boards/${BOARD}/suppressions.xml)
+    if(EXISTS ${BOARD_SUPPRESSION_FILE})
+        list(APPEND CPPCHECK_ARGS --suppress-xml=${BOARD_SUPPRESSION_FILE})
+        message(STATUS "Found board suppression file at: ${BOARD_SUPPRESSION_FILE}")
+    endif()
+
+    add_custom_target(cppcheck ${CPPCHECK_ARGS})
 else()
     message(WARNING "${CPPCHECK_NAME} not found.")
 endif()

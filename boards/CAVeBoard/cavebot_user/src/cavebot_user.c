@@ -3,6 +3,7 @@
 #include "spi.h"
 
 #include "bsp.h"
+#include "bsp_encoder.h"
 #include "bsp_encoder_user.h"
 #include "bsp_motor.h"
 #include "bsp_pwm_user.h"
@@ -128,62 +129,6 @@ BspMotor_Handle_t CavebotUser_Motors[CAVEBOT_USER_MOTOR_MAX] = {
     }
 };
 
-/* TODO move to rover_4ws.c */
-CavebotPid_Handle_t CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
-    [CAVEBOT_USER_MOTOR_0] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75
-    },
-    [CAVEBOT_USER_MOTOR_1] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75
-    },
-    [CAVEBOT_USER_MOTOR_2] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75
-    },
-    [CAVEBOT_USER_MOTOR_3] = {
-        .kp            = 2.0,
-        .ki            = 1.5,
-        .kd            = 0.000001,
-        .integral      = 0.0,
-        .command       = 0.0,
-        .error         = 0.0,
-        .output        = 0.0,
-        .previous_tick = 0U,
-        .enabled       = true,
-        .minimum       = 0,
-        .maximum       = 18.75
-    }
-};
-
 BspEncoderUser_Timer_t CavebotUser_Encoders[CAVEBOT_USER_ENCODER_MAX] = {
     [CAVEBOT_USER_ENCODER_0] = BSP_ENCODER_USER_TIMER_0,
     [CAVEBOT_USER_ENCODER_1] = BSP_ENCODER_USER_TIMER_1,
@@ -193,3 +138,68 @@ BspEncoderUser_Timer_t CavebotUser_Encoders[CAVEBOT_USER_ENCODER_MAX] = {
 
 Accelerometer_Handle_t CavebotUser_Accelerometer = LSM6DSV16X_ACCELEROMETER_HANDLE(kCavebotUser_Lsm6dsv16x);
 Gyroscope_Handle_t     CavebotUser_Gyroscope     = LSM6DSV16X_GYROSCOPE_HANDLE(kCavebotUser_Lsm6dsv16x);
+
+Cavebot_Error_t CavebotUser_Initialize(void)
+{
+    Bsp_Error_t error = Accelerometer_Initialize(&CavebotUser_Accelerometer);
+    if (BSP_ERROR_NONE == error)
+    {
+        error = Gyroscope_Initialize(&CavebotUser_Gyroscope);
+    }
+
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_0);
+    }
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_1);
+    }
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_2);
+    }
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_3);
+    }
+
+    return Cavebot_BspToCavebotError(error);
+}
+
+Cavebot_Error_t CavebotUser_SensorTask(void)
+{
+    Bsp_Error_t error = Accelerometer_Read(&CavebotUser_Accelerometer);
+    if (BSP_ERROR_NONE == error)
+    {
+        error = Gyroscope_Read(&CavebotUser_Gyroscope);
+    }
+    if (BSP_ERROR_NONE == error)
+    {
+        error = Gyroscope_ReadQuaternion(&CavebotUser_Gyroscope);
+    }
+
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_0);
+    }
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_1);
+    }
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_2);
+    }
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_3);
+    }
+
+    return Cavebot_BspToCavebotError(error);
+}
+
+Cavebot_Error_t CavebotUser_Task(void)
+{
+    return CAVEBOT_ERROR_NONE;
+}
