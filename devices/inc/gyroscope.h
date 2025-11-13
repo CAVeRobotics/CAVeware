@@ -28,10 +28,12 @@ typedef struct
     Gyroscope_Initialize_t initialize;
     Gyroscope_Read_t read;
     Gyroscope_ReadQuaternion_t read_quaternion;
+    Gyroscope_Reading_t reading;
+    Gyroscope_Quaternion_t quaternion;
 } Gyroscope_Handle_t;
 
 Bsp_Error_t Gyroscope_Initialize(Gyroscope_Handle_t *const handle);
-Bsp_Error_t Gyroscope_Read(Gyroscope_Handle_t *const handle, Gyroscope_Reading_t *const reading);
-Bsp_Error_t Gyroscope_ReadQuaternion(Gyroscope_Handle_t *const handle, Gyroscope_Quaternion_t *const quaternion);
+Bsp_Error_t Gyroscope_Read(Gyroscope_Handle_t *const handle);
+Bsp_Error_t Gyroscope_ReadQuaternion(Gyroscope_Handle_t *const handle);
 
 #endif /* GYROSCOPE_H */

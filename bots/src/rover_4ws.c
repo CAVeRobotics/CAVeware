@@ -281,17 +281,10 @@ Cavebot_Error_t Rover4ws_Task(void)
 
     if (Cavebot_IsArmed())
     {
-        Gyroscope_Reading_t reading = {
-            .x = 0.0,
-            .y = 0.0,
-            .z = 0.0
-        };
-
         (void)Rover4ws_SampleEncoders();
-        (void)Gyroscope_Read(&CavebotUser_Gyroscope, &reading);
 
         /* TODO SD-126 test with steering control coupled and decoupled from wheel speed control */
-        (void)CavebotPid_Update(&Rover4ws_SteeringPid, reading.z);
+        (void)CavebotPid_Update(&Rover4ws_SteeringPid, CavebotUser_Gyroscope.reading.z);
         error = Rover4ws_SetSteeringAngle(Rover4ws_SteeringPid.output);
 
         if (CAVEBOT_ERROR_NONE == error)

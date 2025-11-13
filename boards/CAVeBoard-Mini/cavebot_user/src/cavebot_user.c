@@ -171,7 +171,6 @@ Cavebot_Error_t CavebotUser_Initialize(void)
     {
         error = Accelerometer_Initialize(&CavebotUser_Accelerometer);
     }
-
     if (BSP_ERROR_NONE == error)
     {
         error = Gyroscope_Initialize(&CavebotUser_Gyroscope);
@@ -181,17 +180,14 @@ Cavebot_Error_t CavebotUser_Initialize(void)
     {
         error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_0);
     }
-
     if (BSP_ERROR_NONE == error)
     {
         error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_1);
     }
-
     if (BSP_ERROR_NONE == error)
     {
         error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_2);
     }
-
     if (BSP_ERROR_NONE == error)
     {
         error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_3);
@@ -219,9 +215,16 @@ Cavebot_Error_t CavebotUser_Initialize(void)
 
 Cavebot_Error_t CavebotUser_SensorTask(void)
 {
-    Bsp_Error_t error = BSP_ERROR_NONE;
+    Bsp_Error_t error = Accelerometer_Read(&CavebotUser_Accelerometer);
+    if (BSP_ERROR_NONE == error)
+    {
+        error = Gyroscope_Read(&CavebotUser_Gyroscope);
+    }
+    if (BSP_ERROR_NONE == error)
+    {
+        error = Gyroscope_ReadQuaternion(&CavebotUser_Gyroscope);
+    }
 
-    /* TODO sample IMU*/
     if (BSP_ERROR_NONE == error)
     {
         error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_0);
