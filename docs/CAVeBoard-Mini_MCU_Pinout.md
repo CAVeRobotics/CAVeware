@@ -1,6 +1,6 @@
 # CAVeBoard-Mini MCU Pinout
 
-Revision 5
+Revision 6
 
 Based on STM32F407ZGTx
 

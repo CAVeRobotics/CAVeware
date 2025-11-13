@@ -1,6 +1,6 @@
 # Rover Controller MCU Pinout
 
-Revision 9
+Revision 10
 
 Based on STM32F407ZGTx
 
@@ -76,10 +76,8 @@ Based on STM32F407ZGTx
 | I2C 2 SDA                | I2C SDA           | PF0                        |
 | Jetson UART TX           | UART TX           | PA9                        |
 | Jetson UART RX           | UART RX           | PA10                       |
-| Dust Sensor UART TX      | UART TX           | PG14                       |
-| Dust Sensor UART RX      | UART RX           | PG9                        |
-| Logging UART TX          | UART TX           | PD8                        |
-| Logging UART RX          | UART RX           | PB11                       |
+| Logging UART TX          | UART TX           | PG14                       |
+| Logging UART RX          | UART RX           | PG9                        |
 | HSE IN                   | HSE               | PH0                        |
 | HSE OUT                  | HSE               | PH1                        |
 
