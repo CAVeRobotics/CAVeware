@@ -10,6 +10,7 @@
 #include "log.pb.h"
 #include "ooga_booga.pb.h"
 #include "odometry.pb.h"
+#include "relative_move.pb.h"
 
 #include "bsp.h"
 #include "bsp_gpio.h"
@@ -29,10 +30,11 @@
 #include "rover_4ws.h"
 #endif
 
-#define CAVEBOT_CAVE_TALK_BUFFER_SIZE     1024U
-#define CAVEBOT_CAVE_TALK_HEADER_SIZE     3U
-#define CAVEBOT_CAVE_TALK_RETRY_PERIOD    (Bsp_Millisecond_t)1000U
-#define CAVEBOT_CAVE_TALK_ODOMETRY_PERIOD (Bsp_Millisecond_t)20U
+#define CAVEBOT_CAVE_TALK_BUFFER_SIZE          1024U
+#define CAVEBOT_CAVE_TALK_HEADER_SIZE          3U
+#define CAVEBOT_CAVE_TALK_RETRY_PERIOD         (Bsp_Millisecond_t)1000U
+#define CAVEBOT_CAVE_TALK_ODOMETRY_PERIOD      (Bsp_Millisecond_t)20U
+#define CAVEBOT_CAVE_TALK_RELATIVE_MOVE_PERIOD (Bsp_Millisecond_t)1000U
 
 typedef enum
 {
@@ -41,11 +43,13 @@ typedef enum
 } CavebotCaveTalk_Receive_t;
 
 static uint8_t           CavebotCaveTalk_Buffer[CAVEBOT_CAVE_TALK_BUFFER_SIZE];
-static const char *      kCavebotCaveTalk_LogTag          = "CAVE TALK";
-static bool              CavebotCaveTalk_Connected        = false;
-static bool              CavebotCaveTalk_WasArmed         = false;
-static Bsp_Millisecond_t CavebotCaveTalk_PreviousMessage  = 0U;
-static Bsp_Millisecond_t CavebotCaveTalk_PreviousOdometry = 0U;
+static const char *      kCavebotCaveTalk_LogTag              = "CAVE TALK";
+static bool              CavebotCaveTalk_Connected            = false;
+static bool              CavebotCaveTalk_WasArmed             = false;
+static bool              CavebotCaveTalk_IsRelativeMoving     = false;
+static Bsp_Millisecond_t CavebotCaveTalk_PreviousMessage      = 0U;
+static Bsp_Millisecond_t CavebotCaveTalk_PreviousOdometry     = 0U;
+static Bsp_Millisecond_t CavebotCaveTalk_PreviousRelativeMove = 0U;
 
 static CaveTalk_Error_t CavebotCaveTalk_Send(const void *const data, const size_t size);
 static CaveTalk_Error_t CavebotCaveTalk_Receive(void *const data, const size_t size, size_t *const bytes_received);
@@ -74,6 +78,7 @@ static void CavebotCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *con
                                                         const cave_talk_PID *const wheel_3_params,
                                                         const bool enabled);
 static void CavebotCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const turn_rate_params, const bool enabled);
+static void CavebotCaveTalk_HearRelativeMove(const cave_talk_RelativeMoveType type, const CaveTalk_Meter_t position, const CaveTalk_Radian_t pose);
 static void CavebotCaveTalk_SendOdometry(void);
 
 static CaveTalk_Handle_t CavebotCaveTalk_Handle = {
@@ -99,6 +104,7 @@ static CaveTalk_Handle_t CavebotCaveTalk_Handle = {
         .hear_config_wheel_speed_control = CavebotCaveTalk_HearConfigWheelSpeedControl,
         .hear_config_steering_control    = CavebotCaveTalk_HearConfigSteeringControl,
         .hear_air_quality                = NULL,
+        .hear_relative_move              = CavebotCaveTalk_HearRelativeMove,
     },
 };
 
@@ -145,6 +151,17 @@ void CavebotCaveTalk_Task(void)
             CavebotCaveTalk_SendOdometry();
 
             CavebotCaveTalk_PreviousOdometry = tick;
+        }
+
+        if ((tick - CavebotCaveTalk_PreviousRelativeMove) > CAVEBOT_CAVE_TALK_RELATIVE_MOVE_PERIOD)
+        {
+            if (CavebotCaveTalk_IsRelativeMoving && !Cavebot_IsRelativeMoving())
+            {
+                (void)CaveTalk_SpeakRelativeMove(&CavebotCaveTalk_Handle, cave_talk_RelativeMoveType_RELATIVE_MOVE_TYPE_ACK, 0.0, 0.0);
+                CavebotCaveTalk_IsRelativeMoving = false;
+            }
+
+            CavebotCaveTalk_PreviousRelativeMove = tick;
         }
     }
 }
@@ -491,6 +508,27 @@ static void CavebotCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const
     else
     {
         BSP_LOGGER_LOG_INFO(kCavebotCaveTalk_LogTag, "Steering control disabled");
+    }
+}
+
+static void CavebotCaveTalk_HearRelativeMove(const cave_talk_RelativeMoveType type, const CaveTalk_Meter_t position, const CaveTalk_Radian_t pose)
+{
+    CavebotCaveTalk_HeardMessage("relative move");
+
+    if (cave_talk_RelativeMoveType_RELATIVE_MOVE_TYPE_CMD != type)
+    {
+    }
+    else if (CAVEBOT_ERROR_NONE != Cavebot_RelativeMove(position, pose))
+    {
+        CaveTalk_Error_t error = CaveTalk_SpeakRelativeMove(&CavebotCaveTalk_Handle, cave_talk_RelativeMoveType_RELATIVE_MOVE_TYPE_NACK, position, pose);
+        if (CAVE_TALK_ERROR_NONE != error)
+        {
+            BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Speak relative move error: %d", (int)error);
+        }
+        else
+        {
+            CavebotCaveTalk_IsRelativeMoving = true;
+        }
     }
 }
 
