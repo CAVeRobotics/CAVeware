@@ -20,7 +20,14 @@ Bsp_Error_t BspTimer_Start(const BspTimerUser_Timer_t timer)
 
         HAL_TIM_Base_MspInit(BspTimerUser_HandleTable[timer].timer_handle);
 
-        error = (Bsp_Error_t)HAL_TIM_Base_Start_IT(BspTimerUser_HandleTable[timer].timer_handle);
+        if (BspTimerUser_HandleTable[timer].has_interrupt)
+        {
+            error = (Bsp_Error_t)HAL_TIM_Base_Start_IT(BspTimerUser_HandleTable[timer].timer_handle);
+        }
+        else
+        {
+            error = (Bsp_Error_t)HAL_TIM_Base_Start(BspTimerUser_HandleTable[timer].timer_handle);
+        }
     }
 
     return error;
@@ -32,7 +39,14 @@ Bsp_Error_t BspTimer_Stop(const BspTimerUser_Timer_t timer)
 
     if (timer < BSP_TIMER_USER_TIMER_MAX)
     {
-        error = (Bsp_Error_t)HAL_TIM_Base_Stop_IT(BspTimerUser_HandleTable[timer].timer_handle);
+        if (BspTimerUser_HandleTable[timer].has_interrupt)
+        {
+            error = (Bsp_Error_t)HAL_TIM_Base_Stop_IT(BspTimerUser_HandleTable[timer].timer_handle);
+        }
+        else
+        {
+            error = (Bsp_Error_t)HAL_TIM_Base_Stop(BspTimerUser_HandleTable[timer].timer_handle);
+        }
 
         HAL_TIM_Base_MspDeInit(BspTimerUser_HandleTable[timer].timer_handle);
     }
