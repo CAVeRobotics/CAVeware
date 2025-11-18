@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "lsm6dsv16x_reg.h"
 
@@ -25,8 +26,6 @@
 #define LSM6DSV16X_ERROR_NONE                       (int32_t)0
 #define LSM6DSV16X_MILLIG_TO_G                      1e3
 
-typedef int32_t Lsm6dsv16x_Error_t;
-
 typedef enum
 {
     LSM6DSV16X_FIFO_DATA_X = 0U,
@@ -37,11 +36,17 @@ typedef enum
 
 static const char *kLsm6dsv16x_LogTag = "LSM6DSV16X";
 
-int32_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu_register, const uint8_t *const data, const uint16_t size);
-int32_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size);
-static Bsp_Error_t Lsm6dsv16x_BlockingTransmit(const BspSpiUser_Spi_t spi, const uint8_t *const data, const size_t size, const Bsp_Callback_t *const callback);
-static Bsp_Error_t Lsm6dsv16x_BlockingReceive(const BspSpiUser_Spi_t spi, uint8_t *const data, const size_t size, const Bsp_Callback_t *const callback);
-static Bsp_Error_t Lsm6dsv16x_ReadAll(Lsm6dsv16x_Context_t *const context);
+int32_t Lsm6dsv16x_WriteBlocking(void *const handle, const uint8_t imu_register, const uint8_t *const data, const uint16_t size);
+int32_t Lsm6dsv16x_ReadBlocking(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size);
+static Bsp_Error_t Lsm6dsv16x_Write(void *const handle);
+static void Lsm6dsv16x_CallbackWrite(void *arg);
+static Bsp_Error_t Lsm6dsv16x_Read(void *const handle);
+static void Lsm6dsv16x_CallbackRead(void *arg);
+static void Lsm6dsv16x_CallbackChipSelect(void *arg);
+static Bsp_Error_t Lsm6dsv16x_TransmitBlocking(const BspSpiUser_Spi_t spi, const uint8_t *const data, const size_t size, const Bsp_Callback_t *const callback);
+static Bsp_Error_t Lsm6dsv16x_ReceiveBlocking(const BspSpiUser_Spi_t spi, uint8_t *const data, const size_t size, const Bsp_Callback_t *const callback);
+static Bsp_Error_t Lsm6dsv16x_ReadAllBlocking(Lsm6dsv16x_Context_t *const context);
+static Bsp_Error_t Lsm6dsv16x_ReadFifoBlocking(Lsm6dsv16x_Context_t *const context);
 static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context);
 static inline Bsp_Error_t Lsm6dsv16x_ImuToBspError(const Lsm6dsv16x_Error_t error);
 static inline float Lsm6dsv16x_FsToMilliG(const Lsm6dsv16x_Context_t *const context, const Lsm6dsv16x_RawData_t fs);
@@ -329,7 +334,7 @@ Bsp_Error_t Lsm6dsv16x_ReadAccelerometer(Lsm6dsv16x_Context_t *const context, Ac
 
     if ((NULL != context) && (NULL != reading))
     {
-        error = Lsm6dsv16x_ReadAll(context);
+        error = Lsm6dsv16x_ReadAllBlocking(context);
 
         reading->x = Lsm6dsv16x_Fs2ToMetersPerSecondSquared(context->raw_accelerometer[LSM6DSV16X_AXIS_X]);
         reading->y = Lsm6dsv16x_Fs2ToMetersPerSecondSquared(context->raw_accelerometer[LSM6DSV16X_AXIS_Y]);
@@ -345,7 +350,7 @@ Bsp_Error_t Lsm6dsv16x_ReadGyroscope(Lsm6dsv16x_Context_t *const context, Gyrosc
 
     if ((NULL != context) && (NULL != reading))
     {
-        error = Lsm6dsv16x_ReadAll(context);
+        error = Lsm6dsv16x_ReadAllBlocking(context);
 
         reading->x = Lsm6dsv16x_125dpsToRadiansPerSecond(context->raw_gyroscope[LSM6DSV16X_AXIS_X]);
         reading->y = Lsm6dsv16x_125dpsToRadiansPerSecond(context->raw_gyroscope[LSM6DSV16X_AXIS_Y]);
@@ -361,7 +366,7 @@ Bsp_Error_t Lsm6dsv16x_ReadQuaterion(Lsm6dsv16x_Context_t *const context, Gyrosc
 
     if ((context != NULL) && (NULL != quaternion))
     {
-        error = Lsm6dsv16x_ReadFifo(context);
+        error = Lsm6dsv16x_ReadFifoBlocking(context);
 
         quaternion->w = context->quaternion[LSM6DSV16X_QUATERION_AXIS_W];
         quaternion->x = context->quaternion[LSM6DSV16X_QUATERION_AXIS_X];
@@ -372,7 +377,7 @@ Bsp_Error_t Lsm6dsv16x_ReadQuaterion(Lsm6dsv16x_Context_t *const context, Gyrosc
     return error;
 }
 
-Lsm6dsv16x_Error_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu_register, const uint8_t *const data, const uint16_t size)
+Lsm6dsv16x_Error_t Lsm6dsv16x_WriteBlocking(void *const handle, const uint8_t imu_register, const uint8_t *const data, const uint16_t size)
 {
     Lsm6dsv16x_Error_t error = LSM6DSV16X_ERROR_NONE;
 
@@ -386,8 +391,8 @@ Lsm6dsv16x_Error_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu_regist
         BspGpioUser_Pin_t chip_select = ((Lsm6dsv16x_Context_t *)handle)->chip_select;
 
         if ((BSP_ERROR_NONE != BspGpio_Write(chip_select, BSP_GPIO_STATE_RESET)) ||
-            (BSP_ERROR_NONE != Lsm6dsv16x_BlockingTransmit(spi, &imu_register, 1U, NULL)) ||
-            (BSP_ERROR_NONE != Lsm6dsv16x_BlockingTransmit(spi, data, (size_t)size, NULL)) ||
+            (BSP_ERROR_NONE != Lsm6dsv16x_TransmitBlocking(spi, &imu_register, 1U, NULL)) ||
+            (BSP_ERROR_NONE != Lsm6dsv16x_TransmitBlocking(spi, data, (size_t)size, NULL)) ||
             (BSP_ERROR_NONE != BspGpio_Write(chip_select, BSP_GPIO_STATE_SET)))
         {
             error = 1;
@@ -397,7 +402,7 @@ Lsm6dsv16x_Error_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu_regist
     return error;
 }
 
-Lsm6dsv16x_Error_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size)
+Lsm6dsv16x_Error_t Lsm6dsv16x_ReadBlocking(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size)
 {
     Lsm6dsv16x_Error_t error         = LSM6DSV16X_ERROR_NONE;
     uint8_t            register_read = imu_register | LSM6DSV16X_REGISTER_READ;
@@ -412,8 +417,8 @@ Lsm6dsv16x_Error_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_registe
         BspGpioUser_Pin_t chip_select = ((Lsm6dsv16x_Context_t *)handle)->chip_select;
 
         if ((BSP_ERROR_NONE != BspGpio_Write(chip_select, BSP_GPIO_STATE_RESET)) ||
-            (BSP_ERROR_NONE != Lsm6dsv16x_BlockingTransmit(spi, &register_read, 1U, NULL)) ||
-            (BSP_ERROR_NONE != Lsm6dsv16x_BlockingReceive(spi, data, (size_t)size, NULL)) ||
+            (BSP_ERROR_NONE != Lsm6dsv16x_TransmitBlocking(spi, &register_read, 1U, NULL)) ||
+            (BSP_ERROR_NONE != Lsm6dsv16x_ReceiveBlocking(spi, data, (size_t)size, NULL)) ||
             (BSP_ERROR_NONE != BspGpio_Write(chip_select, BSP_GPIO_STATE_SET)))
         {
             error = 1;
@@ -423,7 +428,74 @@ Lsm6dsv16x_Error_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_registe
     return error;
 }
 
-static Bsp_Error_t Lsm6dsv16x_BlockingTransmit(const BspSpiUser_Spi_t spi, const uint8_t *const data, const size_t size, const Bsp_Callback_t *const callback)
+static Bsp_Error_t Lsm6dsv16x_Write(void *const handle)
+{
+    Lsm6dsv16x_Context_t *context  = (Lsm6dsv16x_Context_t *)handle;
+    Bsp_Callback_t        callback = {
+        .function = Lsm6dsv16x_CallbackWrite,
+        .arg      = context,
+    };
+
+    context->callback_context.error = LSM6DSV16X_ERROR_NONE;
+
+    Bsp_Error_t error = BspGpio_Write(context->chip_select, BSP_GPIO_STATE_RESET);
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspSpi_Transmit(context->spi, &context->callback_context.imu_register, sizeof(context->callback_context.imu_register), &callback);
+    }
+
+    return error;
+}
+
+static void Lsm6dsv16x_CallbackWrite(void *arg)
+{
+    Lsm6dsv16x_Context_t *context  = (Lsm6dsv16x_Context_t *)arg;
+    Bsp_Callback_t        callback = {
+        .function = Lsm6dsv16x_CallbackChipSelect,
+        .arg      = context,
+    };
+
+    context->callback_context.error = BspSpi_Transmit(context->spi, context->callback_context.data, (size_t)context->callback_context.size, &callback);
+}
+
+static Bsp_Error_t Lsm6dsv16x_Read(void *const handle)
+{
+    Lsm6dsv16x_Context_t *context  = (Lsm6dsv16x_Context_t *)handle;
+    Bsp_Callback_t        callback = {
+        .function = Lsm6dsv16x_CallbackRead,
+        .arg      = context,
+    };
+
+    context->callback_context.error = LSM6DSV16X_ERROR_NONE;
+
+    Bsp_Error_t error = BspGpio_Write(context->chip_select, BSP_GPIO_STATE_RESET);
+    if (BSP_ERROR_NONE == error)
+    {
+        error = BspSpi_Transmit(context->spi, &context->callback_context.imu_register, sizeof(context->callback_context.imu_register), &callback);
+    }
+
+    return error;
+}
+
+static void Lsm6dsv16x_CallbackRead(void *arg)
+{
+    Lsm6dsv16x_Context_t *context  = (Lsm6dsv16x_Context_t *)arg;
+    Bsp_Callback_t        callback = {
+        .function = Lsm6dsv16x_CallbackChipSelect,
+        .arg      = context,
+    };
+
+    context->callback_context.error = BspSpi_Receive(context->spi, context->callback_context.data, (size_t)context->callback_context.size, &callback);
+}
+
+static void Lsm6dsv16x_CallbackChipSelect(void *arg)
+{
+    Lsm6dsv16x_Context_t *context = (Lsm6dsv16x_Context_t *)arg;
+
+    context->callback_context.error = BspGpio_Write(context->chip_select, BSP_GPIO_STATE_SET);
+}
+
+static Bsp_Error_t Lsm6dsv16x_TransmitBlocking(const BspSpiUser_Spi_t spi, const uint8_t *const data, const size_t size, const Bsp_Callback_t *const callback)
 {
     Bsp_Error_t error = BspSpi_Transmit(spi, data, size, callback);
 
@@ -437,7 +509,7 @@ static Bsp_Error_t Lsm6dsv16x_BlockingTransmit(const BspSpiUser_Spi_t spi, const
     return error;
 }
 
-static Bsp_Error_t Lsm6dsv16x_BlockingReceive(const BspSpiUser_Spi_t spi, uint8_t *const data, const size_t size, const Bsp_Callback_t *const callback)
+static Bsp_Error_t Lsm6dsv16x_ReceiveBlocking(const BspSpiUser_Spi_t spi, uint8_t *const data, const size_t size, const Bsp_Callback_t *const callback)
 {
     Bsp_Error_t error = BspSpi_Receive(spi, data, size, callback);
 
@@ -451,7 +523,7 @@ static Bsp_Error_t Lsm6dsv16x_BlockingReceive(const BspSpiUser_Spi_t spi, uint8_
     return error;
 }
 
-static Bsp_Error_t Lsm6dsv16x_ReadAll(Lsm6dsv16x_Context_t *const context)
+static Bsp_Error_t Lsm6dsv16x_ReadAllBlocking(Lsm6dsv16x_Context_t *const context)
 {
     Lsm6dsv16x_Error_t      error = LSM6DSV16X_ERROR_NONE;
     lsm6dsv16x_data_ready_t data_ready;
@@ -487,7 +559,7 @@ static Bsp_Error_t Lsm6dsv16x_ReadAll(Lsm6dsv16x_Context_t *const context)
     return Lsm6dsv16x_ImuToBspError(error);
 }
 
-static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context)
+static Bsp_Error_t Lsm6dsv16x_ReadFifoBlocking(Lsm6dsv16x_Context_t *const context)
 {
     lsm6dsv16x_fifo_status_t fifo_status;
     float_t                  quaternion[LSM6DSV16X_QUATERION_AXIS_MAX] = {
@@ -524,6 +596,46 @@ static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context)
     context->quaternion[LSM6DSV16X_QUATERION_AXIS_Z] = (double)quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Z] / game_rotation_vector_samples;
 
     return Lsm6dsv16x_ImuToBspError(error);
+}
+
+static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context)
+{
+    Bsp_Error_t error = BSP_ERROR_NONE;
+
+    switch (context->fifo_read_context.state)
+    {
+    case LSM6DSV16X_FIFO_READ_STATE_READY:
+        /* See lsm6dsv16x_fifo_status_get */
+        context->callback_context.imu_register = LSM6DSV16X_FIFO_STATUS1;
+        context->callback_context.size         = 2U;
+        error                                  = Lsm6dsv16x_Read(context->interface.handle);
+        if (BSP_ERROR_NONE == error)
+        {
+            context->fifo_read_context.state = LSM6DSV16X_FIFO_READ_STATE_GET_STATUS;
+        }
+        break;
+    case LSM6DSV16X_FIFO_READ_STATE_GET_STATUS:
+        if (BspSpiUser_HandleTable[context->spi].busy)
+        {
+        }
+        else if (BSP_ERROR_NONE == context->callback_context.error)
+        {
+            /* TODO start fifo read */
+        }
+        else
+        {
+            error = context->callback_context.error;
+        }
+        break;
+    case LSM6DSV16X_FIFO_READ_STATE_GET_RAW_OUT:
+        /* TODO continue reading if read index < fifo level else update quaternion and set state to ready */
+        break;
+    default:
+        error = BSP_ERROR_PERIPHERAL;
+        break;
+    }
+
+    return error;
 }
 
 static inline Bsp_Error_t Lsm6dsv16x_ImuToBspError(const Lsm6dsv16x_Error_t error)
