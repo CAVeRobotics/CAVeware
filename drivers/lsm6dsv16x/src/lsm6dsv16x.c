@@ -38,8 +38,9 @@ static const char *kLsm6dsv16x_LogTag = "LSM6DSV16X";
 
 int32_t Lsm6dsv16x_WriteBlocking(void *const handle, const uint8_t imu_register, const uint8_t *const data, const uint16_t size);
 int32_t Lsm6dsv16x_ReadBlocking(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size);
-static Bsp_Error_t Lsm6dsv16x_Write(void *const handle);
-static void Lsm6dsv16x_CallbackWrite(void *arg);
+/* Currently not used, uncomment if needed, otherwise remain commented out to keep compiler happy */
+/* static Bsp_Error_t Lsm6dsv16x_Write(void *const handle);
+   static void Lsm6dsv16x_CallbackWrite(void *arg); */
 static Bsp_Error_t Lsm6dsv16x_Read(void *const handle);
 static void Lsm6dsv16x_CallbackRead(void *arg);
 static void Lsm6dsv16x_CallbackChipSelect(void *arg);
@@ -48,6 +49,8 @@ static Bsp_Error_t Lsm6dsv16x_ReceiveBlocking(const BspSpiUser_Spi_t spi, uint8_
 static Bsp_Error_t Lsm6dsv16x_ReadAllBlocking(Lsm6dsv16x_Context_t *const context);
 static Bsp_Error_t Lsm6dsv16x_ReadFifoBlocking(Lsm6dsv16x_Context_t *const context);
 static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context);
+static void Lsm6dsv16x_ParseFifoStatus(Lsm6dsv16x_Context_t *const context);
+static void Lsm6dsv16x_ParseFifoData(Lsm6dsv16x_Context_t *const context);
 static inline Bsp_Error_t Lsm6dsv16x_ImuToBspError(const Lsm6dsv16x_Error_t error);
 static inline float Lsm6dsv16x_FsToMilliG(const Lsm6dsv16x_Context_t *const context, const Lsm6dsv16x_RawData_t fs);
 static inline Bsp_MetersPerSecondSquared_t Lsm6dsv16x_Fs2ToMetersPerSecondSquared(const Lsm6dsv16x_RawData_t fs2);
@@ -85,7 +88,15 @@ Bsp_Error_t Lsm6dsv16x_Initialize(Lsm6dsv16x_Context_t *context)
     }
     else
     {
-        context->interface.handle = context;
+        context->interface.handle              = context;
+        context->callback_context.imu_register = 0U;
+        memset(context->callback_context.data, 0U, sizeof(context->callback_context.data));
+        context->callback_context.size        = 0U;
+        context->callback_context.error       = BSP_ERROR_NONE;
+        context->fifo_read_context.state      = LSM6DSV16X_FIFO_READ_STATE_READY;
+        context->fifo_read_context.read_index = 0U;
+        memset(context->fifo_read_context.quaternion_averaged, 0U, sizeof(context->fifo_read_context.quaternion_averaged));
+        context->fifo_read_context.quaternion_count = 0U;
 
         if ((0 != lsm6dsv16x_device_id_get(&context->interface, &whoami)) || (LSM6DSV16X_ID != whoami))
         {
@@ -360,13 +371,30 @@ Bsp_Error_t Lsm6dsv16x_ReadGyroscope(Lsm6dsv16x_Context_t *const context, Gyrosc
     return error;
 }
 
-Bsp_Error_t Lsm6dsv16x_ReadQuaterion(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion)
+Bsp_Error_t Lsm6dsv16x_ReadQuaterionBlocking(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion)
 {
     Bsp_Error_t error = BSP_ERROR_NULL;
 
     if ((context != NULL) && (NULL != quaternion))
     {
         error = Lsm6dsv16x_ReadFifoBlocking(context);
+
+        quaternion->w = context->quaternion[LSM6DSV16X_QUATERION_AXIS_W];
+        quaternion->x = context->quaternion[LSM6DSV16X_QUATERION_AXIS_X];
+        quaternion->y = context->quaternion[LSM6DSV16X_QUATERION_AXIS_Y];
+        quaternion->z = context->quaternion[LSM6DSV16X_QUATERION_AXIS_Z];
+    }
+
+    return error;
+}
+
+Bsp_Error_t Lsm6dsv16x_ReadQuaterion(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion)
+{
+    Bsp_Error_t error = BSP_ERROR_NULL;
+
+    if ((context != NULL) && (NULL != quaternion))
+    {
+        error = Lsm6dsv16x_ReadFifo(context);
 
         quaternion->w = context->quaternion[LSM6DSV16X_QUATERION_AXIS_W];
         quaternion->x = context->quaternion[LSM6DSV16X_QUATERION_AXIS_X];
@@ -428,8 +456,9 @@ Lsm6dsv16x_Error_t Lsm6dsv16x_ReadBlocking(void *const handle, const uint8_t imu
     return error;
 }
 
-static Bsp_Error_t Lsm6dsv16x_Write(void *const handle)
-{
+/* Currently not used, uncomment if needed, otherwise remain commented out to keep compiler happy */
+/* static Bsp_Error_t Lsm6dsv16x_Write(void *const handle)
+   {
     Lsm6dsv16x_Context_t *context  = (Lsm6dsv16x_Context_t *)handle;
     Bsp_Callback_t        callback = {
         .function = Lsm6dsv16x_CallbackWrite,
@@ -445,10 +474,10 @@ static Bsp_Error_t Lsm6dsv16x_Write(void *const handle)
     }
 
     return error;
-}
+   }
 
-static void Lsm6dsv16x_CallbackWrite(void *arg)
-{
+   static void Lsm6dsv16x_CallbackWrite(void *arg)
+   {
     Lsm6dsv16x_Context_t *context  = (Lsm6dsv16x_Context_t *)arg;
     Bsp_Callback_t        callback = {
         .function = Lsm6dsv16x_CallbackChipSelect,
@@ -456,7 +485,7 @@ static void Lsm6dsv16x_CallbackWrite(void *arg)
     };
 
     context->callback_context.error = BspSpi_Transmit(context->spi, context->callback_context.data, (size_t)context->callback_context.size, &callback);
-}
+   } */
 
 static Bsp_Error_t Lsm6dsv16x_Read(void *const handle)
 {
@@ -466,7 +495,8 @@ static Bsp_Error_t Lsm6dsv16x_Read(void *const handle)
         .arg      = context,
     };
 
-    context->callback_context.error = LSM6DSV16X_ERROR_NONE;
+    context->callback_context.imu_register |= LSM6DSV16X_REGISTER_READ;
+    context->callback_context.error         = LSM6DSV16X_ERROR_NONE;
 
     Bsp_Error_t error = BspGpio_Write(context->chip_select, BSP_GPIO_STATE_RESET);
     if (BSP_ERROR_NONE == error)
@@ -605,6 +635,9 @@ static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context)
     switch (context->fifo_read_context.state)
     {
     case LSM6DSV16X_FIFO_READ_STATE_READY:
+        memset(context->fifo_read_context.quaternion_averaged, 0U, sizeof(context->fifo_read_context.quaternion_averaged));
+        context->fifo_read_context.read_index       = 0U;
+        context->fifo_read_context.quaternion_count = 0U;
         /* See lsm6dsv16x_fifo_status_get */
         context->callback_context.imu_register = LSM6DSV16X_FIFO_STATUS1;
         context->callback_context.size         = 2U;
@@ -618,17 +651,67 @@ static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context)
         if (BspSpiUser_HandleTable[context->spi].busy)
         {
         }
-        else if (BSP_ERROR_NONE == context->callback_context.error)
+        else if (BSP_ERROR_NONE != context->callback_context.error)
         {
-            /* TODO start fifo read */
+            context->fifo_read_context.state = LSM6DSV16X_FIFO_READ_STATE_READY;
+            error                            = context->callback_context.error;
         }
         else
         {
-            error = context->callback_context.error;
+            Lsm6dsv16x_ParseFifoStatus(context);
+            context->fifo_read_context.state = LSM6DSV16X_FIFO_READ_STATE_READY;
+
+            if (context->fifo_read_context.status.fifo_level > 0U)
+            {
+                /* See lsm6dsv16x_fifo_out_raw_get */
+                context->callback_context.imu_register = LSM6DSV16X_FIFO_DATA_OUT_TAG;
+                context->callback_context.size         = 7U;
+                error                                  = Lsm6dsv16x_Read(context->interface.handle);
+                if (BSP_ERROR_NONE == error)
+                {
+                    context->fifo_read_context.state = LSM6DSV16X_FIFO_READ_STATE_GET_RAW_OUT;
+                }
+            }
         }
         break;
     case LSM6DSV16X_FIFO_READ_STATE_GET_RAW_OUT:
-        /* TODO continue reading if read index < fifo level else update quaternion and set state to ready */
+        if (BspSpiUser_HandleTable[context->spi].busy)
+        {
+        }
+        else if (BSP_ERROR_NONE != context->callback_context.error)
+        {
+            context->fifo_read_context.state = LSM6DSV16X_FIFO_READ_STATE_READY;
+            error                            = context->callback_context.error;
+        }
+        else
+        {
+            Lsm6dsv16x_ParseFifoData(context);
+            context->fifo_read_context.read_index++;
+            context->fifo_read_context.state = LSM6DSV16X_FIFO_READ_STATE_READY;
+
+            if (context->fifo_read_context.read_index < context->fifo_read_context.status.fifo_level)
+            {
+                /* See lsm6dsv16x_fifo_out_raw_get */
+                context->callback_context.imu_register = LSM6DSV16X_FIFO_DATA_OUT_TAG;
+                context->callback_context.size         = 7U;
+                error                                  = Lsm6dsv16x_Read(context->interface.handle);
+                if (BSP_ERROR_NONE == error)
+                {
+                    context->fifo_read_context.state = LSM6DSV16X_FIFO_READ_STATE_GET_RAW_OUT;
+                }
+            }
+            else
+            {
+                context->quaternion[LSM6DSV16X_QUATERION_AXIS_W] =
+                    (double)context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_W] / context->fifo_read_context.quaternion_count;
+                context->quaternion[LSM6DSV16X_QUATERION_AXIS_X] =
+                    (double)context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_X] / context->fifo_read_context.quaternion_count;
+                context->quaternion[LSM6DSV16X_QUATERION_AXIS_Y] =
+                    (double)context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Y] / context->fifo_read_context.quaternion_count;
+                context->quaternion[LSM6DSV16X_QUATERION_AXIS_Z] =
+                    (double)context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Z] / context->fifo_read_context.quaternion_count;
+            }
+        }
         break;
     default:
         error = BSP_ERROR_PERIPHERAL;
@@ -636,6 +719,143 @@ static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context)
     }
 
     return error;
+}
+
+static void Lsm6dsv16x_ParseFifoStatus(Lsm6dsv16x_Context_t *const context)
+{
+    /* See lsm6dsv16x_fifo_status_get */
+    lsm6dsv16x_fifo_status2_t status;
+    *(uint8_t *)&status = context->callback_context.data[1U];
+
+    context->fifo_read_context.status.fifo_bdr   = status.counter_bdr_ia;
+    context->fifo_read_context.status.fifo_ovr   = status.fifo_ovr_ia;
+    context->fifo_read_context.status.fifo_full  = status.fifo_full_ia;
+    context->fifo_read_context.status.fifo_th    = status.fifo_wtm_ia;
+    context->fifo_read_context.status.fifo_level = (uint16_t)context->callback_context.data[1U] & 0x01U;
+    context->fifo_read_context.status.fifo_level = (context->fifo_read_context.status.fifo_level << 8U) + context->callback_context.data[0U];
+}
+
+static void Lsm6dsv16x_ParseFifoData(Lsm6dsv16x_Context_t *const context)
+{
+    /* See lsm6dsv16x_fifo_out_raw_get */
+    float_t                        quaternion[LSM6DSV16X_QUATERION_AXIS_MAX] = {
+        0U
+    };
+    lsm6dsv16x_fifo_data_out_tag_t fifo_data_out_tag;
+    *(uint8_t *)&fifo_data_out_tag = context->callback_context.data[0U];
+
+    switch (fifo_data_out_tag.tag_sensor)
+    {
+    case LSM6DSV16X_FIFO_EMPTY:
+        context->fifo_read_context.data.tag = LSM6DSV16X_FIFO_EMPTY;
+        break;
+    case LSM6DSV16X_GY_NC_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_GY_NC_TAG;
+        break;
+    case LSM6DSV16X_XL_NC_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_XL_NC_TAG;
+        break;
+    case LSM6DSV16X_TIMESTAMP_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_TIMESTAMP_TAG;
+        break;
+    case LSM6DSV16X_TEMPERATURE_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_TEMPERATURE_TAG;
+        break;
+    case LSM6DSV16X_CFG_CHANGE_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_CFG_CHANGE_TAG;
+        break;
+    case LSM6DSV16X_XL_NC_T_2_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_XL_NC_T_2_TAG;
+        break;
+    case LSM6DSV16X_XL_NC_T_1_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_XL_NC_T_1_TAG;
+        break;
+    case LSM6DSV16X_XL_2XC_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_XL_2XC_TAG;
+        break;
+    case LSM6DSV16X_XL_3XC_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_XL_3XC_TAG;
+        break;
+    case LSM6DSV16X_GY_NC_T_2_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_GY_NC_T_2_TAG;
+        break;
+    case LSM6DSV16X_GY_NC_T_1_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_GY_NC_T_1_TAG;
+        break;
+    case LSM6DSV16X_GY_2XC_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_GY_2XC_TAG;
+        break;
+    case LSM6DSV16X_GY_3XC_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_GY_3XC_TAG;
+        break;
+    case LSM6DSV16X_SENSORHUB_SLAVE0_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_SENSORHUB_SLAVE0_TAG;
+        break;
+    case LSM6DSV16X_SENSORHUB_SLAVE1_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_SENSORHUB_SLAVE1_TAG;
+        break;
+    case LSM6DSV16X_SENSORHUB_SLAVE2_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_SENSORHUB_SLAVE2_TAG;
+        break;
+    case LSM6DSV16X_SENSORHUB_SLAVE3_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_SENSORHUB_SLAVE3_TAG;
+        break;
+    case LSM6DSV16X_STEP_COUNTER_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_STEP_COUNTER_TAG;
+        break;
+    case LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG;
+        break;
+    case LSM6DSV16X_SFLP_GYROSCOPE_BIAS_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_SFLP_GYROSCOPE_BIAS_TAG;
+        break;
+    case LSM6DSV16X_SFLP_GRAVITY_VECTOR_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_SFLP_GRAVITY_VECTOR_TAG;
+        break;
+    case LSM6DSV16X_SENSORHUB_NACK_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_SENSORHUB_NACK_TAG;
+        break;
+    case LSM6DSV16X_MLC_RESULT_TAG:
+        context->fifo_read_context.data.tag = LSM6DSV16X_MLC_RESULT_TAG;
+        break;
+    case LSM6DSV16X_MLC_FILTER:
+        context->fifo_read_context.data.tag = LSM6DSV16X_MLC_FILTER;
+        break;
+    case LSM6DSV16X_MLC_FEATURE:
+        context->fifo_read_context.data.tag = LSM6DSV16X_MLC_FEATURE;
+        break;
+    case LSM6DSV16X_XL_DUAL_CORE:
+        context->fifo_read_context.data.tag = LSM6DSV16X_XL_DUAL_CORE;
+        break;
+    case LSM6DSV16X_GY_ENHANCED_EIS:
+        context->fifo_read_context.data.tag = LSM6DSV16X_GY_ENHANCED_EIS;
+        break;
+    default:
+        context->fifo_read_context.data.tag = LSM6DSV16X_FIFO_EMPTY;
+        break;
+    }
+
+    context->fifo_read_context.data.cnt = fifo_data_out_tag.tag_cnt;
+
+    context->fifo_read_context.data.data[0U] = context->callback_context.data[1U];
+    context->fifo_read_context.data.data[1U] = context->callback_context.data[2U];
+    context->fifo_read_context.data.data[2U] = context->callback_context.data[3U];
+    context->fifo_read_context.data.data[3U] = context->callback_context.data[4U];
+    context->fifo_read_context.data.data[4U] = context->callback_context.data[5U];
+    context->fifo_read_context.data.data[5U] = context->callback_context.data[6U];
+
+    switch (context->fifo_read_context.data.tag)
+    {
+    case LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG:
+        sflp2q(quaternion, (uint16_t *)&context->fifo_read_context.data.data[0]);
+        context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_W] += quaternion[LSM6DSV16X_QUATERION_AXIS_W];
+        context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_X] += quaternion[LSM6DSV16X_QUATERION_AXIS_X];
+        context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Y] += quaternion[LSM6DSV16X_QUATERION_AXIS_Y];
+        context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Z] += quaternion[LSM6DSV16X_QUATERION_AXIS_Z];
+        context->fifo_read_context.quaternion_count++;
+    default:
+        break;
+    }
 }
 
 static inline Bsp_Error_t Lsm6dsv16x_ImuToBspError(const Lsm6dsv16x_Error_t error)

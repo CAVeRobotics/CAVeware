@@ -223,10 +223,10 @@ Cavebot_Error_t CavebotUser_SensorTask(void)
     // {
     //     error = Gyroscope_Read(&CavebotUser_Gyroscope);
     // }
-    // if (BSP_ERROR_NONE == error)
-    // {
-    //     error = Gyroscope_ReadQuaternion(&CavebotUser_Gyroscope);
-    // }
+    if (BSP_ERROR_NONE == error)
+    {
+        error = Gyroscope_ReadQuaternion(&CavebotUser_Gyroscope);
+    }
 
     if (BSP_ERROR_NONE == error)
     {
