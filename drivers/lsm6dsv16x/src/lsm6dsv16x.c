@@ -56,7 +56,7 @@ static inline float Lsm6dsv16x_FsToMilliG(const Lsm6dsv16x_Context_t *const cont
 static inline Bsp_MetersPerSecondSquared_t Lsm6dsv16x_Fs2ToMetersPerSecondSquared(const Lsm6dsv16x_RawData_t fs2);
 static inline Bsp_MetersPerSecondSquared_t Lsm6dsv16x_125dpsToRadiansPerSecond(const Lsm6dsv16x_RawData_t dps);
 
-/* Third-party code to handle SFLP quaterion conversion
+/* Third-party code to handle SFLP quaternion conversion
    Non-compliant, DO NOT MODIFY
    Source: https://github.com/STMicroelectronics/STMems_Standard_C_drivers/blob/master/lsm6dsv16x_STdC/examples/lsm6dsv16x_sensor_fusion.c
  */
@@ -371,7 +371,7 @@ Bsp_Error_t Lsm6dsv16x_ReadGyroscope(Lsm6dsv16x_Context_t *const context, Gyrosc
     return error;
 }
 
-Bsp_Error_t Lsm6dsv16x_ReadQuaterionBlocking(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion)
+Bsp_Error_t Lsm6dsv16x_ReadQuaternionBlocking(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion)
 {
     Bsp_Error_t error = BSP_ERROR_NULL;
 
@@ -379,16 +379,16 @@ Bsp_Error_t Lsm6dsv16x_ReadQuaterionBlocking(Lsm6dsv16x_Context_t *const context
     {
         error = Lsm6dsv16x_ReadFifoBlocking(context);
 
-        quaternion->w = context->quaternion[LSM6DSV16X_QUATERION_AXIS_W];
-        quaternion->x = context->quaternion[LSM6DSV16X_QUATERION_AXIS_X];
-        quaternion->y = context->quaternion[LSM6DSV16X_QUATERION_AXIS_Y];
-        quaternion->z = context->quaternion[LSM6DSV16X_QUATERION_AXIS_Z];
+        quaternion->w = context->quaternion[LSM6DSV16X_QUATERNION_AXIS_W];
+        quaternion->x = context->quaternion[LSM6DSV16X_QUATERNION_AXIS_X];
+        quaternion->y = context->quaternion[LSM6DSV16X_QUATERNION_AXIS_Y];
+        quaternion->z = context->quaternion[LSM6DSV16X_QUATERNION_AXIS_Z];
     }
 
     return error;
 }
 
-Bsp_Error_t Lsm6dsv16x_ReadQuaterion(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion)
+Bsp_Error_t Lsm6dsv16x_ReadQuaternion(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion)
 {
     Bsp_Error_t error = BSP_ERROR_NULL;
 
@@ -396,10 +396,10 @@ Bsp_Error_t Lsm6dsv16x_ReadQuaterion(Lsm6dsv16x_Context_t *const context, Gyrosc
     {
         error = Lsm6dsv16x_ReadFifo(context);
 
-        quaternion->w = context->quaternion[LSM6DSV16X_QUATERION_AXIS_W];
-        quaternion->x = context->quaternion[LSM6DSV16X_QUATERION_AXIS_X];
-        quaternion->y = context->quaternion[LSM6DSV16X_QUATERION_AXIS_Y];
-        quaternion->z = context->quaternion[LSM6DSV16X_QUATERION_AXIS_Z];
+        quaternion->w = context->quaternion[LSM6DSV16X_QUATERNION_AXIS_W];
+        quaternion->x = context->quaternion[LSM6DSV16X_QUATERNION_AXIS_X];
+        quaternion->y = context->quaternion[LSM6DSV16X_QUATERNION_AXIS_Y];
+        quaternion->z = context->quaternion[LSM6DSV16X_QUATERNION_AXIS_Z];
     }
 
     return error;
@@ -592,10 +592,10 @@ static Bsp_Error_t Lsm6dsv16x_ReadAllBlocking(Lsm6dsv16x_Context_t *const contex
 static Bsp_Error_t Lsm6dsv16x_ReadFifoBlocking(Lsm6dsv16x_Context_t *const context)
 {
     lsm6dsv16x_fifo_status_t fifo_status;
-    float_t                  quaternion[LSM6DSV16X_QUATERION_AXIS_MAX] = {
+    float_t                  quaternion[LSM6DSV16X_QUATERNION_AXIS_MAX] = {
         0U
     };
-    float_t                  quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_MAX] = {
+    float_t                  quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_MAX] = {
         0U
     };
     uint16_t                 game_rotation_vector_samples = 0U;
@@ -610,20 +610,20 @@ static Bsp_Error_t Lsm6dsv16x_ReadFifoBlocking(Lsm6dsv16x_Context_t *const conte
         {
         case LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG:
             sflp2q(quaternion, (uint16_t *)&fifo_data.data[0]);
-            quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_W] += quaternion[LSM6DSV16X_QUATERION_AXIS_W];
-            quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_X] += quaternion[LSM6DSV16X_QUATERION_AXIS_X];
-            quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Y] += quaternion[LSM6DSV16X_QUATERION_AXIS_Y];
-            quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Z] += quaternion[LSM6DSV16X_QUATERION_AXIS_Z];
+            quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_W] += quaternion[LSM6DSV16X_QUATERNION_AXIS_W];
+            quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_X] += quaternion[LSM6DSV16X_QUATERNION_AXIS_X];
+            quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_Y] += quaternion[LSM6DSV16X_QUATERNION_AXIS_Y];
+            quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_Z] += quaternion[LSM6DSV16X_QUATERNION_AXIS_Z];
             game_rotation_vector_samples++;
         default:
             break;
         }
     }
 
-    context->quaternion[LSM6DSV16X_QUATERION_AXIS_W] = (double)quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_W] / game_rotation_vector_samples;
-    context->quaternion[LSM6DSV16X_QUATERION_AXIS_X] = (double)quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_X] / game_rotation_vector_samples;
-    context->quaternion[LSM6DSV16X_QUATERION_AXIS_Y] = (double)quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Y] / game_rotation_vector_samples;
-    context->quaternion[LSM6DSV16X_QUATERION_AXIS_Z] = (double)quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Z] / game_rotation_vector_samples;
+    context->quaternion[LSM6DSV16X_QUATERNION_AXIS_W] = (double)quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_W] / game_rotation_vector_samples;
+    context->quaternion[LSM6DSV16X_QUATERNION_AXIS_X] = (double)quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_X] / game_rotation_vector_samples;
+    context->quaternion[LSM6DSV16X_QUATERNION_AXIS_Y] = (double)quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_Y] / game_rotation_vector_samples;
+    context->quaternion[LSM6DSV16X_QUATERNION_AXIS_Z] = (double)quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_Z] / game_rotation_vector_samples;
 
     return Lsm6dsv16x_ImuToBspError(error);
 }
@@ -702,14 +702,14 @@ static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context)
             }
             else
             {
-                context->quaternion[LSM6DSV16X_QUATERION_AXIS_W] =
-                    (double)context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_W] / context->fifo_read_context.quaternion_count;
-                context->quaternion[LSM6DSV16X_QUATERION_AXIS_X] =
-                    (double)context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_X] / context->fifo_read_context.quaternion_count;
-                context->quaternion[LSM6DSV16X_QUATERION_AXIS_Y] =
-                    (double)context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Y] / context->fifo_read_context.quaternion_count;
-                context->quaternion[LSM6DSV16X_QUATERION_AXIS_Z] =
-                    (double)context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Z] / context->fifo_read_context.quaternion_count;
+                context->quaternion[LSM6DSV16X_QUATERNION_AXIS_W] =
+                    (double)context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_W] / context->fifo_read_context.quaternion_count;
+                context->quaternion[LSM6DSV16X_QUATERNION_AXIS_X] =
+                    (double)context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_X] / context->fifo_read_context.quaternion_count;
+                context->quaternion[LSM6DSV16X_QUATERNION_AXIS_Y] =
+                    (double)context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_Y] / context->fifo_read_context.quaternion_count;
+                context->quaternion[LSM6DSV16X_QUATERNION_AXIS_Z] =
+                    (double)context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_Z] / context->fifo_read_context.quaternion_count;
             }
         }
         break;
@@ -738,7 +738,7 @@ static void Lsm6dsv16x_ParseFifoStatus(Lsm6dsv16x_Context_t *const context)
 static void Lsm6dsv16x_ParseFifoData(Lsm6dsv16x_Context_t *const context)
 {
     /* See lsm6dsv16x_fifo_out_raw_get */
-    float_t                        quaternion[LSM6DSV16X_QUATERION_AXIS_MAX] = {
+    float_t                        quaternion[LSM6DSV16X_QUATERNION_AXIS_MAX] = {
         0U
     };
     lsm6dsv16x_fifo_data_out_tag_t fifo_data_out_tag;
@@ -848,10 +848,10 @@ static void Lsm6dsv16x_ParseFifoData(Lsm6dsv16x_Context_t *const context)
     {
     case LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG:
         sflp2q(quaternion, (uint16_t *)&context->fifo_read_context.data.data[0]);
-        context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_W] += quaternion[LSM6DSV16X_QUATERION_AXIS_W];
-        context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_X] += quaternion[LSM6DSV16X_QUATERION_AXIS_X];
-        context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Y] += quaternion[LSM6DSV16X_QUATERION_AXIS_Y];
-        context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERION_AXIS_Z] += quaternion[LSM6DSV16X_QUATERION_AXIS_Z];
+        context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_W] += quaternion[LSM6DSV16X_QUATERNION_AXIS_W];
+        context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_X] += quaternion[LSM6DSV16X_QUATERNION_AXIS_X];
+        context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_Y] += quaternion[LSM6DSV16X_QUATERNION_AXIS_Y];
+        context->fifo_read_context.quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_Z] += quaternion[LSM6DSV16X_QUATERNION_AXIS_Z];
         context->fifo_read_context.quaternion_count++;
     default:
         break;
@@ -908,7 +908,7 @@ static inline Bsp_MetersPerSecondSquared_t Lsm6dsv16x_125dpsToRadiansPerSecond(c
     return dps * LSM6DSV16X_125DPS_TO_RADIANS_PER_SECOND;
 }
 
-/* Third-party code to handle SFLP quaterion conversion
+/* Third-party code to handle SFLP quaternion conversion
    Non-compliant, DO NOT MODIFY
    Source: https://github.com/STMicroelectronics/STMems_Standard_C_drivers/blob/master/lsm6dsv16x_STdC/examples/lsm6dsv16x_sensor_fusion.c
  */
@@ -924,7 +924,7 @@ static float_t npy_half_to_float(uint16_t h)
     return conv.ret;
 }
 
-/* Third-party code to handle SFLP quaterion conversion
+/* Third-party code to handle SFLP quaternion conversion
    Non-compliant, DO NOT MODIFY
    Source: https://github.com/STMicroelectronics/STMems_Standard_C_drivers/blob/master/lsm6dsv16x_STdC/examples/lsm6dsv16x_sensor_fusion.c
  */
