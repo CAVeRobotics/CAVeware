@@ -81,7 +81,7 @@ BspMotor_Handle_t CavebotUser_Motors[CAVEBOT_USER_MOTOR_MAX] = {
         .minimum_duty_cycle = 0.0,
         .maximum_duty_cycle = 1.0,
         .minimum_speed      = 0.0,
-        .maximum_speed      = 18.75,
+        .maximum_speed      = 26.0,
         .direction          = BSP_MOTOR_DIRECTION_FORWARD,
     },
     [CAVEBOT_USER_MOTOR_1] = {
@@ -96,7 +96,7 @@ BspMotor_Handle_t CavebotUser_Motors[CAVEBOT_USER_MOTOR_MAX] = {
         .minimum_duty_cycle = 0.0,
         .maximum_duty_cycle = 1.0,
         .minimum_speed      = 0.0,
-        .maximum_speed      = 18.75,
+        .maximum_speed      = 26.0,
         .direction          = BSP_MOTOR_DIRECTION_FORWARD,
     },
     [CAVEBOT_USER_MOTOR_2] = {
@@ -111,7 +111,7 @@ BspMotor_Handle_t CavebotUser_Motors[CAVEBOT_USER_MOTOR_MAX] = {
         .minimum_duty_cycle = 0.0,
         .maximum_duty_cycle = 1.0,
         .minimum_speed      = 0.0,
-        .maximum_speed      = 18.75,
+        .maximum_speed      = 26.0,
         .direction          = BSP_MOTOR_DIRECTION_FORWARD,
     },
     [CAVEBOT_USER_MOTOR_3] = {
@@ -126,7 +126,7 @@ BspMotor_Handle_t CavebotUser_Motors[CAVEBOT_USER_MOTOR_MAX] = {
         .minimum_duty_cycle = 0.0,
         .maximum_duty_cycle = 1.0,
         .minimum_speed      = 0.0,
-        .maximum_speed      = 18.75,
+        .maximum_speed      = 26.0,
         .direction          = BSP_MOTOR_DIRECTION_FORWARD,
     }
 };
