@@ -29,6 +29,9 @@
 #ifdef BOARD_CAVEBOARD
 #include "rover_4ws.h"
 #endif
+#ifdef BOARD_CAVEBOARD_MINI
+#include "rover_4wd.h"
+#endif
 
 #define CAVEBOT_CAVE_TALK_BUFFER_SIZE          1024U
 #define CAVEBOT_CAVE_TALK_HEADER_SIZE          3U
@@ -447,6 +450,15 @@ static void CavebotCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *con
     else
     {
         error = Rover4ws_DisableSpeedControl();
+    }
+#elif defined(BOARD_CAVEBOARD_MINI)
+    if (enabled)
+    {
+        error = Rover4wd_EnableSpeedControl();
+    }
+    else
+    {
+        error = Rover4wd_DisableSpeedControl();
     }
 #endif
 
