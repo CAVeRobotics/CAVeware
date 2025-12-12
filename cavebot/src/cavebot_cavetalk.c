@@ -122,6 +122,7 @@ void CavebotCaveTalk_Task(void)
     if (CAVE_TALK_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Hear error: %d", (int)error);
+        (void)CaveTalk_Reset(&CavebotCaveTalk_Handle);
     }
 
     Bsp_Millisecond_t tick = BspTick_GetTick();
