@@ -70,9 +70,13 @@ Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const doubl
     else
     {
         const Bsp_Microsecond_t tick       = BspTick_GetMicroseconds();
-        double                  delta_tick = (double)(tick - handle->previous_tick) / BSP_TICK_MICROSECONDS_PER_SECOND;
-        double                  pid_error  = handle->command - actual;
-        double                  derivative = (pid_error - handle->error) / delta_tick;
+        const double            delta_tick = (double)(tick - handle->previous_tick) / BSP_TICK_MICROSECONDS_PER_SECOND;
+        const double            pid_error  = handle->command - actual;
+        double                  derivative = 0.0;
+        if (delta_tick > 0.0)
+        {
+            derivative = (pid_error - handle->error) / delta_tick;
+        }
 
         if (!handle->integral_enabled && !Bsp_CompareDoubleSigns(&handle->error, &pid_error))
         {
@@ -84,9 +88,9 @@ Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const doubl
             handle->integral += pid_error * delta_tick;
         }
 
-        double output           = (handle->kp * pid_error) + (handle->ki * handle->integral) + (handle->kd * derivative) + (handle->kff * handle->command);
-        double delta_output     = output - handle->output;
-        double max_delta_output = handle->rate_limit * delta_tick;
+        const double output           = (handle->kp * pid_error) + (handle->ki * handle->integral) + (handle->kd * derivative) + (handle->kff * handle->command);
+        const double delta_output     = output - handle->output;
+        const double max_delta_output = handle->rate_limit * delta_tick;
         if ((delta_output > max_delta_output) && (handle->command > 0.0))
         {
             handle->output += max_delta_output;
