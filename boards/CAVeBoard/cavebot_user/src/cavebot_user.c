@@ -171,17 +171,7 @@ Cavebot_Error_t CavebotUser_Initialize(void)
 
 Cavebot_Error_t CavebotUser_SensorTask(void)
 {
-    /* TODO CVW-75 non-blocking accelerometer, gyroscope, and quaternion */
-    Bsp_Error_t error = BSP_ERROR_NONE;
-    // Bsp_Error_t error = Accelerometer_Read(&CavebotUser_Accelerometer);
-    // if (BSP_ERROR_NONE == error)
-    // {
-    //     error = Gyroscope_Read(&CavebotUser_Gyroscope);
-    // }
-    // if (BSP_ERROR_NONE == error)
-    // {
-    //     error = Gyroscope_ReadQuaternion(&CavebotUser_Gyroscope);
-    // }
+    Bsp_Error_t error = Gyroscope_Read(&CavebotUser_Gyroscope);;
 
     if (BSP_ERROR_NONE == error)
     {

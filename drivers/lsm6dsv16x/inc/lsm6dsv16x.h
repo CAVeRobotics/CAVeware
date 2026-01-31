@@ -35,6 +35,14 @@ typedef enum
 
 typedef enum
 {
+    LSM6DSV16X_DATA_READ_STATE_READY,
+    LSM6DSV16X_DATA_READ_STATE_GET_STATUS,
+    LSM6DSV16X_DATA_READ_STATE_GET_ACCELEROMETER,
+    LSM6DSV16X_DATA_READ_STATE_GET_GYROSCOPE
+}Lsm6dsv16x_DataReadState_t;
+
+typedef enum
+{
     LSM6DSV16X_FIFO_READ_STATE_READY,
     LSM6DSV16X_FIFO_READ_STATE_GET_STATUS,
     LSM6DSV16X_FIFO_READ_STATE_GET_RAW_OUT
@@ -47,6 +55,12 @@ typedef struct
     uint16_t size;
     volatile Bsp_Error_t error;
 } Lsm6dsv16x_CallbackContext_t;
+
+typedef struct
+{
+    Lsm6dsv16x_DataReadState_t state;
+    lsm6dsv16x_data_ready_t data_ready;
+} Lsm6dsv16x_DataReadContext_t;
 
 typedef struct
 {
@@ -65,6 +79,7 @@ typedef struct
     BspGpioUser_Pin_t chip_select;
     bool initialized;
     Lsm6dsv16x_CallbackContext_t callback_context;
+    Lsm6dsv16x_DataReadContext_t data_read_context;
     Lsm6dsv16x_RawData_t raw_accelerometer[LSM6DSV16X_AXIS_MAX];
     Lsm6dsv16x_RawData_t raw_gyroscope[LSM6DSV16X_AXIS_MAX];
     Lsm6dsv16x_FifoReadContext_t fifo_read_context;
@@ -79,7 +94,9 @@ extern int32_t Lsm6dsv16x_ReadBlocking(void *const handle, const uint8_t imu_reg
 Bsp_Error_t Lsm6dsv16x_Initialize(Lsm6dsv16x_Context_t *context);
 bool Lsm6dsv16x_IsInitialized(const Lsm6dsv16x_Context_t *const context);
 Bsp_Error_t Lsm6dsv16x_Calibrate(Lsm6dsv16x_Context_t *const context);
+Bsp_Error_t Lsm6dsv16x_ReadAccelerometerBlocking(Lsm6dsv16x_Context_t *const context, Accelerometer_Reading_t *const reading);
 Bsp_Error_t Lsm6dsv16x_ReadAccelerometer(Lsm6dsv16x_Context_t *const context, Accelerometer_Reading_t *const reading);
+Bsp_Error_t Lsm6dsv16x_ReadGyroscopeBlocking(Lsm6dsv16x_Context_t *const context, Gyroscope_Reading_t *const reading);
 Bsp_Error_t Lsm6dsv16x_ReadGyroscope(Lsm6dsv16x_Context_t *const context, Gyroscope_Reading_t *const reading);
 Bsp_Error_t Lsm6dsv16x_ReadQuaternionBlocking(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion);
 Bsp_Error_t Lsm6dsv16x_ReadQuaternion(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion);

@@ -47,8 +47,14 @@ static void Lsm6dsv16x_CallbackChipSelect(void *arg);
 static Bsp_Error_t Lsm6dsv16x_TransmitBlocking(const BspSpiUser_Spi_t spi, const uint8_t *const data, const size_t size, const Bsp_Callback_t *const callback);
 static Bsp_Error_t Lsm6dsv16x_ReceiveBlocking(const BspSpiUser_Spi_t spi, uint8_t *const data, const size_t size, const Bsp_Callback_t *const callback);
 static Bsp_Error_t Lsm6dsv16x_ReadAllBlocking(Lsm6dsv16x_Context_t *const context);
+static Bsp_Error_t Lsm6dsv16x_ReadAll(Lsm6dsv16x_Context_t *const context);
 static Bsp_Error_t Lsm6dsv16x_ReadFifoBlocking(Lsm6dsv16x_Context_t *const context);
 static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context);
+static void Lsm6dsv16x_ParseDataReady(Lsm6dsv16x_Context_t *const context);
+static void Lsm6dsv16x_ParseAccelerometerData(Lsm6dsv16x_Context_t *const context);
+static void Lsm6dsv16x_CorrectAccelerometerData(Lsm6dsv16x_Context_t *const context);
+static void Lsm6dsv16x_ParseGyroscopeData(Lsm6dsv16x_Context_t *const context);
+static void Lsm6dsv16x_CorrectGyroscopeData(Lsm6dsv16x_Context_t *const context);
 static void Lsm6dsv16x_ParseFifoStatus(Lsm6dsv16x_Context_t *const context);
 static void Lsm6dsv16x_ParseFifoData(Lsm6dsv16x_Context_t *const context);
 static inline Bsp_Error_t Lsm6dsv16x_ImuToBspError(const Lsm6dsv16x_Error_t error);
@@ -93,6 +99,7 @@ Bsp_Error_t Lsm6dsv16x_Initialize(Lsm6dsv16x_Context_t *context)
         memset(context->callback_context.data, 0U, sizeof(context->callback_context.data));
         context->callback_context.size        = 0U;
         context->callback_context.error       = BSP_ERROR_NONE;
+        context->data_read_context.state      = LSM6DSV16X_DATA_READ_STATE_READY;
         context->fifo_read_context.state      = LSM6DSV16X_FIFO_READ_STATE_READY;
         context->fifo_read_context.read_index = 0U;
         memset(context->fifo_read_context.quaternion_averaged, 0U, sizeof(context->fifo_read_context.quaternion_averaged));
@@ -339,7 +346,7 @@ Bsp_Error_t Lsm6dsv16x_Calibrate(Lsm6dsv16x_Context_t *const context)
     return Lsm6dsv16x_ImuToBspError(error);
 }
 
-Bsp_Error_t Lsm6dsv16x_ReadAccelerometer(Lsm6dsv16x_Context_t *const context, Accelerometer_Reading_t *const reading)
+Bsp_Error_t Lsm6dsv16x_ReadAccelerometerBlocking(Lsm6dsv16x_Context_t *const context, Accelerometer_Reading_t *const reading)
 {
     Bsp_Error_t error = BSP_ERROR_NULL;
 
@@ -355,13 +362,45 @@ Bsp_Error_t Lsm6dsv16x_ReadAccelerometer(Lsm6dsv16x_Context_t *const context, Ac
     return error;
 }
 
-Bsp_Error_t Lsm6dsv16x_ReadGyroscope(Lsm6dsv16x_Context_t *const context, Gyroscope_Reading_t *const reading)
+Bsp_Error_t Lsm6dsv16x_ReadAccelerometer(Lsm6dsv16x_Context_t *const context, Accelerometer_Reading_t *const reading)
+{
+    Bsp_Error_t error = BSP_ERROR_NULL;
+
+    if ((NULL != context) && (NULL != reading))
+    {
+        error = Lsm6dsv16x_ReadAll(context);
+
+        reading->x = Lsm6dsv16x_Fs2ToMetersPerSecondSquared(context->raw_accelerometer[LSM6DSV16X_AXIS_X]);
+        reading->y = Lsm6dsv16x_Fs2ToMetersPerSecondSquared(context->raw_accelerometer[LSM6DSV16X_AXIS_Y]);
+        reading->z = Lsm6dsv16x_Fs2ToMetersPerSecondSquared(context->raw_accelerometer[LSM6DSV16X_AXIS_Z]);
+    }
+
+    return error;
+}
+
+Bsp_Error_t Lsm6dsv16x_ReadGyroscopeBlocking(Lsm6dsv16x_Context_t *const context, Gyroscope_Reading_t *const reading)
 {
     Bsp_Error_t error = BSP_ERROR_NULL;
 
     if ((NULL != context) && (NULL != reading))
     {
         error = Lsm6dsv16x_ReadAllBlocking(context);
+
+        reading->x = Lsm6dsv16x_125dpsToRadiansPerSecond(context->raw_gyroscope[LSM6DSV16X_AXIS_X]);
+        reading->y = Lsm6dsv16x_125dpsToRadiansPerSecond(context->raw_gyroscope[LSM6DSV16X_AXIS_Y]);
+        reading->z = Lsm6dsv16x_125dpsToRadiansPerSecond(context->raw_gyroscope[LSM6DSV16X_AXIS_Z]);
+    }
+
+    return error;
+}
+
+Bsp_Error_t Lsm6dsv16x_ReadGyroscope(Lsm6dsv16x_Context_t *const context, Gyroscope_Reading_t *const reading)
+{
+    Bsp_Error_t error = BSP_ERROR_NULL;
+
+    if ((NULL != context) && (NULL != reading))
+    {
+        error = Lsm6dsv16x_ReadAll(context);
 
         reading->x = Lsm6dsv16x_125dpsToRadiansPerSecond(context->raw_gyroscope[LSM6DSV16X_AXIS_X]);
         reading->y = Lsm6dsv16x_125dpsToRadiansPerSecond(context->raw_gyroscope[LSM6DSV16X_AXIS_Y]);
@@ -563,30 +602,127 @@ static Bsp_Error_t Lsm6dsv16x_ReadAllBlocking(Lsm6dsv16x_Context_t *const contex
     if (data_ready.drdy_xl)
     {
         error |= lsm6dsv16x_acceleration_raw_get(&context->interface, context->raw_accelerometer);
-
-        context->raw_accelerometer[LSM6DSV16X_AXIS_X] -= context->accelerometer_offset[LSM6DSV16X_AXIS_X];
-        context->raw_accelerometer[LSM6DSV16X_AXIS_Y] -= context->accelerometer_offset[LSM6DSV16X_AXIS_Y];
-        context->raw_accelerometer[LSM6DSV16X_AXIS_Z] -= context->accelerometer_offset[LSM6DSV16X_AXIS_Z];
-
-        /* Correct for IMU orientation in bot */
-        context->raw_accelerometer[LSM6DSV16X_AXIS_X] *= -1;
-        context->raw_accelerometer[LSM6DSV16X_AXIS_Y] *= -1;
+        Lsm6dsv16x_CorrectAccelerometerData(context);
     }
 
     if (data_ready.drdy_gy)
     {
         error |= lsm6dsv16x_angular_rate_raw_get(&context->interface, context->raw_gyroscope);
-
-        context->raw_gyroscope[LSM6DSV16X_AXIS_X] -= context->gyroscope_offset[LSM6DSV16X_AXIS_X];
-        context->raw_gyroscope[LSM6DSV16X_AXIS_Y] -= context->gyroscope_offset[LSM6DSV16X_AXIS_Y];
-        context->raw_gyroscope[LSM6DSV16X_AXIS_Z] -= context->gyroscope_offset[LSM6DSV16X_AXIS_Z];
-
-        /* Correct for IMU orientation in bot */
-        context->raw_gyroscope[LSM6DSV16X_AXIS_X] *= -1;
-        context->raw_gyroscope[LSM6DSV16X_AXIS_Y] *= -1;
+        Lsm6dsv16x_CorrectGyroscopeData(context);
     }
 
     return Lsm6dsv16x_ImuToBspError(error);
+}
+
+static Bsp_Error_t Lsm6dsv16x_ReadAll(Lsm6dsv16x_Context_t *const context)
+{
+    Bsp_Error_t error = BSP_ERROR_NONE;
+
+    switch (context->data_read_context.state)
+    {
+    case LSM6DSV16X_DATA_READ_STATE_READY:
+        /* See lsm6dsv16x_flag_data_ready_get */
+        context->callback_context.imu_register = LSM6DSV16X_STATUS_REG;
+        context->callback_context.size         = 1U;
+        error                                  = Lsm6dsv16x_Read(context->interface.handle);
+        if (BSP_ERROR_NONE == error)
+        {
+            context->data_read_context.state = LSM6DSV16X_DATA_READ_STATE_GET_STATUS;
+        }
+        break;
+    case LSM6DSV16X_DATA_READ_STATE_GET_STATUS:
+        if (BspSpiUser_HandleTable[context->spi].busy)
+        {
+        }
+        else if (BSP_ERROR_NONE != context->callback_context.error)
+        {
+            context->data_read_context.state = LSM6DSV16X_DATA_READ_STATE_READY;
+            error                            = context->callback_context.error;
+        }
+        else
+        {
+            Lsm6dsv16x_ParseDataReady(context);
+
+            if (context->data_read_context.data_ready.drdy_xl)
+            {
+                /* See lsm6dsv16x_acceleration_raw_get */
+                context->callback_context.imu_register = LSM6DSV16X_OUTX_L_A;
+                context->callback_context.size         = 6U;
+                error                                  = Lsm6dsv16x_Read(context->interface.handle);
+                if (BSP_ERROR_NONE == error)
+                {
+                    context->data_read_context.state = LSM6DSV16X_DATA_READ_STATE_GET_ACCELEROMETER;
+                }
+            }
+            else if (context->data_read_context.data_ready.drdy_gy)
+            {
+                /* See lsm6dsv16x_angular_rate_raw_get */
+                context->callback_context.imu_register = LSM6DSV16X_OUTX_L_G;
+                context->callback_context.size         = 6U;
+                error                                  = Lsm6dsv16x_Read(context->interface.handle);
+                if (BSP_ERROR_NONE == error)
+                {
+                    context->data_read_context.state = LSM6DSV16X_DATA_READ_STATE_GET_GYROSCOPE;
+                }
+            }
+            else
+            {
+                context->data_read_context.state = LSM6DSV16X_DATA_READ_STATE_READY;
+            }
+        }
+        break;
+    case LSM6DSV16X_DATA_READ_STATE_GET_ACCELEROMETER:
+        if (BspSpiUser_HandleTable[context->spi].busy)
+        {
+        }
+        else if (BSP_ERROR_NONE != context->callback_context.error)
+        {
+            context->data_read_context.state = LSM6DSV16X_DATA_READ_STATE_READY;
+            error                            = context->callback_context.error;
+        }
+        else
+        {
+            Lsm6dsv16x_ParseAccelerometerData(context);
+            Lsm6dsv16x_CorrectAccelerometerData(context);
+
+            context->data_read_context.state = LSM6DSV16X_DATA_READ_STATE_READY;
+
+            if (context->data_read_context.data_ready.drdy_gy)
+            {
+                /* See lsm6dsv16x_angular_rate_raw_get */
+                context->callback_context.imu_register = LSM6DSV16X_OUTX_L_G;
+                context->callback_context.size         = 6U;
+                error                                  = Lsm6dsv16x_Read(context->interface.handle);
+                if (BSP_ERROR_NONE == error)
+                {
+                    context->data_read_context.state = LSM6DSV16X_DATA_READ_STATE_GET_GYROSCOPE;
+                }
+            }
+        }
+        break;
+    case LSM6DSV16X_DATA_READ_STATE_GET_GYROSCOPE:
+        if (BspSpiUser_HandleTable[context->spi].busy)
+        {
+        }
+        else if (BSP_ERROR_NONE != context->callback_context.error)
+        {
+            context->data_read_context.state = LSM6DSV16X_DATA_READ_STATE_READY;
+            error                            = context->callback_context.error;
+        }
+        else
+        {
+            Lsm6dsv16x_ParseGyroscopeData(context);
+            Lsm6dsv16x_CorrectGyroscopeData(context);
+
+            context->data_read_context.state = LSM6DSV16X_DATA_READ_STATE_READY;
+        }
+        break;
+    default:
+        error = BSP_ERROR_PERIPHERAL;
+        break;
+    }
+
+    return error;
 }
 
 static Bsp_Error_t Lsm6dsv16x_ReadFifoBlocking(Lsm6dsv16x_Context_t *const context)
@@ -719,6 +855,46 @@ static Bsp_Error_t Lsm6dsv16x_ReadFifo(Lsm6dsv16x_Context_t *const context)
     }
 
     return error;
+}
+
+static void Lsm6dsv16x_ParseDataReady(Lsm6dsv16x_Context_t *const context)
+{
+    /* See lsm6dsv16x_flag_data_ready_get */
+    const lsm6dsv16x_status_reg_t *const status = (lsm6dsv16x_status_reg_t *)context->callback_context.data;
+
+    context->data_read_context.data_ready.drdy_xl   = status->xlda;
+    context->data_read_context.data_ready.drdy_gy   = status->gda;
+    context->data_read_context.data_ready.drdy_temp = status->tda;
+}
+
+static void Lsm6dsv16x_ParseAccelerometerData(Lsm6dsv16x_Context_t *const context)
+{
+    /* See lsm6dsv16x_acceleration_raw_get */
+    context->raw_accelerometer[LSM6DSV16X_AXIS_X] = ((int16_t)context->callback_context.data[1U] << 8U) + (int16_t)context->callback_context.data[0U];
+    context->raw_accelerometer[LSM6DSV16X_AXIS_Y] = ((int16_t)context->callback_context.data[3U] << 8U) + (int16_t)context->callback_context.data[2U];
+    context->raw_accelerometer[LSM6DSV16X_AXIS_Z] = ((int16_t)context->callback_context.data[5U] << 8U) + (int16_t)context->callback_context.data[4U];
+}
+
+static void Lsm6dsv16x_CorrectAccelerometerData(Lsm6dsv16x_Context_t *const context)
+{
+    context->raw_accelerometer[LSM6DSV16X_AXIS_X] -= context->accelerometer_offset[LSM6DSV16X_AXIS_X];
+    context->raw_accelerometer[LSM6DSV16X_AXIS_Y] -= context->accelerometer_offset[LSM6DSV16X_AXIS_Y];
+    context->raw_accelerometer[LSM6DSV16X_AXIS_Z] -= context->accelerometer_offset[LSM6DSV16X_AXIS_Z];
+}
+
+static void Lsm6dsv16x_ParseGyroscopeData(Lsm6dsv16x_Context_t *const context)
+{
+    /* See lsm6dsv16x_angular_rate_raw_get */
+    context->raw_gyroscope[LSM6DSV16X_AXIS_X] = ((int16_t)context->callback_context.data[1U] << 8U) + (int16_t)context->callback_context.data[0U];
+    context->raw_gyroscope[LSM6DSV16X_AXIS_Y] = ((int16_t)context->callback_context.data[3U] << 8U) + (int16_t)context->callback_context.data[2U];
+    context->raw_gyroscope[LSM6DSV16X_AXIS_Z] = ((int16_t)context->callback_context.data[5U] << 8U) + (int16_t)context->callback_context.data[4U];
+}
+
+static void Lsm6dsv16x_CorrectGyroscopeData(Lsm6dsv16x_Context_t *const context)
+{
+    context->raw_gyroscope[LSM6DSV16X_AXIS_X] -= context->gyroscope_offset[LSM6DSV16X_AXIS_X];
+    context->raw_gyroscope[LSM6DSV16X_AXIS_Y] -= context->gyroscope_offset[LSM6DSV16X_AXIS_Y];
+    context->raw_gyroscope[LSM6DSV16X_AXIS_Z] -= context->gyroscope_offset[LSM6DSV16X_AXIS_Z];
 }
 
 static void Lsm6dsv16x_ParseFifoStatus(Lsm6dsv16x_Context_t *const context)
@@ -937,7 +1113,9 @@ static void sflp2q(float_t quat[4], const uint16_t sflp[3])
     quat[2] = npy_half_to_float(sflp[2]);
 
     for (uint8_t i = 0; i < 3; i++)
+    {
         sumsq += quat[i] * quat[i];
+    }
 
     if (sumsq > 1.0f)
     {
