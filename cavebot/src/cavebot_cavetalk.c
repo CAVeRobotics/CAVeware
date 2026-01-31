@@ -531,7 +531,7 @@ static void CavebotCaveTalk_HearRelativeMove(const cave_talk_RelativeMoveType ty
     if (cave_talk_RelativeMoveType_RELATIVE_MOVE_TYPE_CMD != type)
     {
     }
-    else if (CAVEBOT_ERROR_NONE != Cavebot_RelativeMove(position, pose))
+    else if (CAVEBOT_ERROR_NONE == Cavebot_RelativeMove(position, pose))
     {
         CaveTalk_Error_t error = CaveTalk_SpeakRelativeMove(&CavebotCaveTalk_Handle, cave_talk_RelativeMoveType_RELATIVE_MOVE_TYPE_NACK, position, pose);
         if (CAVE_TALK_ERROR_NONE != error)
@@ -552,6 +552,7 @@ static void CavebotCaveTalk_SendOdometry(void)
     cave_talk_Encoder encoder_message_1 = cave_talk_Encoder_init_zero;
     cave_talk_Encoder encoder_message_2 = cave_talk_Encoder_init_zero;
     cave_talk_Encoder encoder_message_3 = cave_talk_Encoder_init_zero;
+    cave_talk_Pose    pose_message      = cave_talk_Pose_init_zero;
 
     imu_message.accel.x_meters_per_second_squared = CavebotUser_Accelerometer.reading.x;
     imu_message.accel.y_meters_per_second_squared = CavebotUser_Accelerometer.reading.y;
@@ -578,7 +579,12 @@ static void CavebotCaveTalk_SendOdometry(void)
     encoder_message_3.total_pulses            = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].pulses;
     encoder_message_3.rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].angular_rate;
 
-    CaveTalk_Error_t error = CaveTalk_SpeakOdometry(&CavebotCaveTalk_Handle, &imu_message, &encoder_message_0, &encoder_message_1, &encoder_message_2, &encoder_message_3);
+    Cavebot_Pose_t pose = Cavebot_GetPose();
+    pose_message.x_meters        = pose.x;
+    pose_message.y_meters        = pose.y;
+    pose_message.heading_radians = pose.heading;
+
+    CaveTalk_Error_t error = CaveTalk_SpeakOdometry(&CavebotCaveTalk_Handle, &imu_message, &encoder_message_0, &encoder_message_1, &encoder_message_2, &encoder_message_3, &pose_message);
     if (CAVE_TALK_ERROR_NONE != error)
     {
         BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Speak odometry error: %d", (int)error);
