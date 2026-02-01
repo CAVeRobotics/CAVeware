@@ -238,6 +238,20 @@ Cavebot_Pose_t Rover4wd_GetPose(void)
     return Rover4wd_Pose;
 }
 
+Cavebot_Error_t Rover4wd_SetPose(const Cavebot_Pose_t *const pose)
+{
+    Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
+
+    if (NULL != pose)
+    {
+        Rover4wd_Pose = *pose;
+        Rover4wd_Tick = BspTick_GetMicroseconds();
+        error         = CAVEBOT_ERROR_NONE;
+    }
+
+    return error;
+}
+
 Bsp_MetersPerSecond_t Rover4wd_GetLinearVelocity(void)
 {
     return Rover4wd_LinearVelocity;
@@ -267,7 +281,7 @@ static void Rover4wd_EstimatePose(void)
     const Bsp_Radian_t      delta_heading_gyroscope = CavebotUser_Gyroscope.reading.z * delta_time;
     Rover4wd_Tick = tick;
 
-    /* Computer heading */
+    /* Compute heading */
     const Bsp_Radian_t delta_heading = (delta_heading_gyroscope * kRover4wd_GyroscopeWeight) + (delta_heading_wheels * (1 - kRover4wd_GyroscopeWeight));
     const Bsp_Radian_t heading       = Rover4wd_Pose.heading + (delta_heading / 2.0); /* Use the average heading for more accurate integration */
 
