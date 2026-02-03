@@ -1,5 +1,6 @@
 #include "bsp.h"
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -51,4 +52,9 @@ bool Bsp_CompareDoubleSigns(const double *const value_1, const double *const val
 {
     /* TODO CVW-49 make portable */
     return !(bool)((*(uint64_t *)(value_1) & BSP_DOUBLE_SIGN_MASK) ^ (*(uint64_t *)(value_2) & BSP_DOUBLE_SIGN_MASK));
+}
+
+double Bsp_Clip(const double value, const double min, const double max)
+{
+    return fmin(max, fmax(min, value));
 }
