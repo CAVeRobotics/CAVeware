@@ -27,7 +27,8 @@ static const Bsp_Meter_t kRover4wd_MetersPerPulse = (kRover4wd_WheelDiameter * B
 static Bsp_Meter_t            Rover4wd_DistanceLeft     = 0.0;
 static Bsp_Meter_t            Rover4wd_DistanceRight    = 0.0;
 static Bsp_Microsecond_t      Rover4wd_Tick             = 0U;
-static const double           kRover4wd_GyroscopeWeight = 0.8; /* TODO CVW-21 read from config */
+static const double           kRover4wd_GyroscopeWeight = 0.9; /* TODO CVW-21 read from config */
+static const double           kRover4wd_WheelWeight     = 1.0 - kRover4wd_GyroscopeWeight;
 static Cavebot_Pose_t         Rover4wd_Pose             = {
     .x       = 0.0,
     .y       = 0.0,
@@ -271,7 +272,7 @@ static void Rover4wd_EstimatePose(void)
     const Bsp_Meter_t  delta_left           = distance_left - Rover4wd_DistanceLeft;
     const Bsp_Meter_t  delta_right          = distance_right - Rover4wd_DistanceRight;
     const Bsp_Meter_t  delta_center         = (delta_left + delta_right) / 2.0;
-    const Bsp_Radian_t delta_heading_wheels = (delta_left - delta_right) / kRover4wd_Tread; /* TODO explain */
+    const Bsp_Radian_t delta_heading_wheels = (delta_right - delta_left) / kRover4wd_Tread; /* TODO explain */
     Rover4wd_DistanceLeft  = distance_left;
     Rover4wd_DistanceRight = distance_right;
 
@@ -281,8 +282,8 @@ static void Rover4wd_EstimatePose(void)
     const Bsp_Radian_t      delta_heading_gyroscope = CavebotUser_Gyroscope.reading.z * delta_time;
     Rover4wd_Tick = tick;
 
-    /* Compute heading */
-    const Bsp_Radian_t delta_heading = (delta_heading_gyroscope * kRover4wd_GyroscopeWeight) + (delta_heading_wheels * (1 - kRover4wd_GyroscopeWeight));
+    /* Fused heading */
+    const Bsp_Radian_t delta_heading = (delta_heading_gyroscope * kRover4wd_GyroscopeWeight) + (delta_heading_wheels * kRover4wd_WheelWeight);
     const Bsp_Radian_t heading       = Rover4wd_Pose.heading + (delta_heading / 2.0); /* Use the average heading for more accurate integration */
 
     /* Update pose */
