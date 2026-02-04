@@ -15,6 +15,7 @@
 typedef double   Bsp_Percent_t;
 typedef double   Bsp_Radian_t;
 typedef double   Bsp_RadiansPerSecond_t;
+typedef double   Bsp_Second_t;
 typedef uint32_t Bsp_Millisecond_t;
 typedef uint64_t Bsp_Microsecond_t;
 typedef int64_t  Bsp_EncoderPulse_t;

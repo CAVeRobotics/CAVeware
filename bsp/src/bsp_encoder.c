@@ -106,8 +106,7 @@ Bsp_Error_t BspEncoder_Sample(const BspEncoderUser_Timer_t timer)
 
         BspEncoder_SamplePulses(handle);
 
-        double delta_time = (double)((double)(handle->time - previous_time) / BSP_TICK_MICROSECONDS_PER_SECOND);
-        handle->raw_angular_rate = ((double)(handle->pulses - previous_pulses) * (handle->radians_per_pulse)) / delta_time;
+        handle->raw_angular_rate = ((double)(handle->pulses - previous_pulses) * (handle->radians_per_pulse)) / BspTick_GetElapsedMicroseconds(previous_time, handle->time);
         handle->angular_rate    += handle->smoothing_factor * (handle->raw_angular_rate - handle->angular_rate); /* Exponential moving average */
     }
 

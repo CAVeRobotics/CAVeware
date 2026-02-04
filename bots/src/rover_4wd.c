@@ -278,7 +278,7 @@ static void Rover4wd_EstimatePose(void)
 
     /* Gyroscope heading */
     const Bsp_Millisecond_t tick                    = BspTick_GetMicroseconds();
-    double                  delta_time              = (double)((double)(tick - Rover4wd_Tick) / BSP_TICK_MICROSECONDS_PER_SECOND);
+    const Bsp_Second_t      delta_time              = BspTick_GetElapsedMicroseconds(Rover4wd_Tick, tick);
     const Bsp_Radian_t      delta_heading_gyroscope = CavebotUser_Gyroscope.reading.z * delta_time;
     Rover4wd_Tick = tick;
 
