@@ -40,9 +40,9 @@ static Bsp_RadiansPerSecond_t Rover4wd_AngularVelocity = 0.0;
 /* TODO CVW-21 read gains, rate limit, enabled, minimum, maxmimum from config */
 static CavebotPid_Handle_t Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
     [CAVEBOT_USER_MOTOR_0] = {
-        .kp               = 0.0241322,
+        .kp               = 0.0241,
         .ki               = 0.24132,
-        .kd               = 0.0004826,
+        .kd               = 0.000482,
         .kff              = 0.0,
         .rate_limit       = 100.0,
         .integral         = 0.0,
@@ -263,7 +263,6 @@ Bsp_RadiansPerSecond_t Rover4wd_GetAngularVelocity(void)
     return Rover4wd_AngularVelocity;
 }
 
-
 static void Rover4wd_EstimatePose(void)
 {
     /* Wheel odometry */
@@ -279,7 +278,11 @@ static void Rover4wd_EstimatePose(void)
     /* Gyroscope heading */
     const Bsp_Millisecond_t tick                    = BspTick_GetMicroseconds();
     const Bsp_Second_t      delta_time              = BspTick_GetElapsedMicroseconds(Rover4wd_Tick, tick);
-    const Bsp_Radian_t      delta_heading_gyroscope = CavebotUser_Gyroscope.reading.z * delta_time;
+    Bsp_Radian_t            delta_heading_gyroscope = 0.0;
+    if ((fabs(delta_left) > 0.001) || (fabs(delta_right) > 0.001))
+    {
+        delta_heading_gyroscope = CavebotUser_Gyroscope.reading.z * delta_time;
+    }
     Rover4wd_Tick = tick;
 
     /* Fused heading */
