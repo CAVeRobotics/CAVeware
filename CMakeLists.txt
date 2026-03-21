@@ -85,6 +85,7 @@ set(CAVEBOT_SRCS
     ${CAVEBOT_SRC_DIR}/cavebot_cavetalk.c
     ${CAVEBOT_SRC_DIR}/cavebot_motion_profile.c
     ${CAVEBOT_SRC_DIR}/cavebot_pid.c
+    ${CAVEBOT_SRC_DIR}/cavebot_scheduler.c
     ${CMAKE_SOURCE_DIR}/boards/${BOARD}/cavebot_user/src/cavebot_user.c
 )
 
