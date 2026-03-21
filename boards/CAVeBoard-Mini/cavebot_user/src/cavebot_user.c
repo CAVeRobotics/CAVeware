@@ -19,6 +19,8 @@
 #include "rgbw.h"
 
 #include "cavebot.h"
+#include "cavebot_cavetalk.h"
+#include "cavebot_scheduler.h"
 
 static Lsm6dsv16x_Context_t kCavebotUser_Lsm6dsv16x = LSM6DSV16X_CONTEXT(BSP_SPI_USER_0, BSP_GPIO_USER_PIN_IMU_CS);
 static bool                 CavebotUser_Armed       = false;
@@ -144,13 +146,6 @@ BspEncoderUser_Timer_t CavebotUser_Encoders[CAVEBOT_USER_ENCODER_MAX] = {
     [CAVEBOT_USER_ENCODER_3] = BSP_ENCODER_USER_TIMER_3
 };
 
-A9488_Context_t CavebotUser_StepperMotor = {
-    .timer       = BSP_TIMER_USER_TIMER_0,
-    .step        = BSP_GPIO_USER_PIN_STEPPER_MOTOR_STEP,
-    .direction   = BSP_GPIO_USER_PIN_STEPPER_MOTOR_DIRECTION,
-    .half_pulses = 0U,
-};
-
 Rgbw_Handle_t CavebotUser_Rgbw = {
     .pins = {
         [RGBW_CHANNEL_RED]   = BSP_GPIO_USER_PIN_STATUS_LED_RED,
@@ -162,6 +157,10 @@ Rgbw_Handle_t CavebotUser_Rgbw = {
 
 Accelerometer_Handle_t CavebotUser_Accelerometer = LSM6DSV16X_ACCELEROMETER_HANDLE(kCavebotUser_Lsm6dsv16x);
 Gyroscope_Handle_t     CavebotUser_Gyroscope     = LSM6DSV16X_GYROSCOPE_HANDLE(kCavebotUser_Lsm6dsv16x);
+
+static void CavebotUser_ImuTask(void);
+static void CavebotUser_EncoderTask(void);
+static void CavebotUser_Task(void);
 
 Cavebot_Error_t CavebotUser_Initialize(void)
 {
@@ -195,6 +194,13 @@ Cavebot_Error_t CavebotUser_Initialize(void)
 
     if (BSP_ERROR_NONE == error)
     {
+        /* TODO add tasks */
+        CavebotScheduler_AddTask(CavebotUser_ImuTask, 2U);
+        CavebotScheduler_AddTask(CavebotUser_EncoderTask, 40U);
+        CavebotScheduler_AddTask(CavebotCaveTalk_Task, 1U);
+        CavebotScheduler_AddTask(CavebotUser_Task, 4000U);
+        CavebotScheduler_AddTask(Cavebot_Task, 4U);
+
         CavebotUser_Armed = Cavebot_IsArmed();
 
         /* TODO CVW-67 make all sounds non-block and add error handling */
@@ -213,34 +219,27 @@ Cavebot_Error_t CavebotUser_Initialize(void)
     return Cavebot_BspToCavebotError(error);
 }
 
-Cavebot_Error_t CavebotUser_SensorTask(void)
+static void CavebotUser_ImuTask(void)
 {
-    Bsp_Error_t error = Gyroscope_Read(&CavebotUser_Gyroscope);
+    /* TODO handle IMU failures */
 
-    if (BSP_ERROR_NONE == error)
-    {
-        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_0);
-    }
-    if (BSP_ERROR_NONE == error)
-    {
-        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_1);
-    }
-    if (BSP_ERROR_NONE == error)
-    {
-        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_2);
-    }
-    if (BSP_ERROR_NONE == error)
-    {
-        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_3);
-    }
-
-    return Cavebot_BspToCavebotError(error);
+    (void)Accelerometer_Read(&CavebotUser_Accelerometer);
+    (void)Gyroscope_Read(&CavebotUser_Gyroscope);
 }
 
-Cavebot_Error_t CavebotUser_Task(void)
+static void CavebotUser_EncoderTask(void)
 {
-    Bsp_Error_t error = BSP_ERROR_NONE;
-    const bool  armed = Cavebot_IsArmed();
+    /* TODO handle encoder failures */
+
+    BspEncoder_Sample(BSP_ENCODER_USER_TIMER_0);
+    BspEncoder_Sample(BSP_ENCODER_USER_TIMER_1);
+    BspEncoder_Sample(BSP_ENCODER_USER_TIMER_2);
+    BspEncoder_Sample(BSP_ENCODER_USER_TIMER_3);
+}
+
+void CavebotUser_Task(void)
+{
+    const bool armed = Cavebot_IsArmed();
 
     if (armed != CavebotUser_Armed)
     {
@@ -272,14 +271,13 @@ Cavebot_Error_t CavebotUser_Task(void)
         }
     }
 
+    /* TODO handle RGBW LED errors */
     if (armed)
     {
-        error = Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_RED);
+        (void)Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_RED);
     }
     else
     {
-        error = Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_GREEN);
+        (void)Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_GREEN);
     }
-
-    return Cavebot_BspToCavebotError(error);
 }
