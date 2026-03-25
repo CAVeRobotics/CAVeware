@@ -11,6 +11,7 @@
 #include "ooga_booga.pb.h"
 #include "odometry.pb.h"
 #include "relative_move.pb.h"
+#include "waypoint.pb.h"
 
 #include "bsp.h"
 #include "bsp_gpio.h"
@@ -45,10 +46,10 @@ typedef enum
     CAVEBOT_CAVE_TALK_RECEIVE_PAYLOAD
 } CavebotCaveTalk_Receive_t;
 
-static uint8_t           CavebotCaveTalk_Buffer[CAVEBOT_CAVE_TALK_BUFFER_SIZE];
-static const char *      kCavebotCaveTalk_LogTag              = "CAVE TALK";
-static bool              CavebotCaveTalk_Connected            = false;
-static bool              CavebotCaveTalk_WasArmed             = false;
+static uint8_t     CavebotCaveTalk_Buffer[CAVEBOT_CAVE_TALK_BUFFER_SIZE];
+static const char *kCavebotCaveTalk_LogTag   = "CAVE TALK";
+static bool        CavebotCaveTalk_Connected = false;
+static bool        CavebotCaveTalk_WasArmed  = false;
 static bool              CavebotCaveTalk_IsRelativeMoving     = false;
 static Bsp_Millisecond_t CavebotCaveTalk_PreviousMessage      = 0U;
 static Bsp_Millisecond_t CavebotCaveTalk_PreviousOdometry     = 0U;
@@ -82,6 +83,7 @@ static void CavebotCaveTalk_HearConfigWheelSpeedControl(const cave_talk_PID *con
                                                         const bool enabled);
 static void CavebotCaveTalk_HearConfigSteeringControl(const cave_talk_PID *const turn_rate_params, const bool enabled);
 static void CavebotCaveTalk_HearRelativeMove(const cave_talk_RelativeMoveType type, const CaveTalk_Meter_t position, const CaveTalk_Radian_t pose);
+static void CavebotCaveTalk_HearWaypoint(const cave_talk_WaypointType type, const CaveTalk_Meter_t x, const CaveTalk_Meter_t y, const CaveTalk_Radian_t heading);
 static void CavebotCaveTalk_SendOdometry(void);
 
 static CaveTalk_Handle_t CavebotCaveTalk_Handle = {
@@ -108,6 +110,7 @@ static CaveTalk_Handle_t CavebotCaveTalk_Handle = {
         .hear_config_steering_control    = CavebotCaveTalk_HearConfigSteeringControl,
         .hear_air_quality                = NULL,
         .hear_relative_move              = CavebotCaveTalk_HearRelativeMove,
+        .hear_waypoint                   = CavebotCaveTalk_HearWaypoint,
     },
 };
 
@@ -541,6 +544,37 @@ static void CavebotCaveTalk_HearRelativeMove(const cave_talk_RelativeMoveType ty
         else
         {
             CavebotCaveTalk_IsRelativeMoving = true;
+        }
+    }
+}
+
+static void CavebotCaveTalk_HearWaypoint(const cave_talk_WaypointType type, const CaveTalk_Meter_t x, const CaveTalk_Meter_t y, const CaveTalk_Radian_t heading)
+{
+    CavebotCaveTalk_HeardMessage("waypoint");
+
+    if (cave_talk_WaypointType_WAYPOINT_TYPE_CMD != type)
+    {
+    }
+    else
+    {
+        Cavebot_Pose_t waypoint = {
+            .x       = x,
+            .y       = y,
+            .heading = heading,
+        };
+
+        if (CAVEBOT_ERROR_NONE == Cavebot_SetWaypoint(&waypoint))
+        {
+            CaveTalk_Error_t error = CaveTalk_SpeakWaypoint(&CavebotCaveTalk_Handle, cave_talk_WaypointType_WAYPOINT_TYPE_NACK, x, y, heading);
+            if (CAVE_TALK_ERROR_NONE != error)
+            {
+                BSP_LOGGER_LOG_ERROR(kCavebotCaveTalk_LogTag, "Speak waypoint error: %d", (int)error);
+            }
+            else
+            {
+                /* TODO */
+                // CavebotCaveTalk_IsRelativeMoving = true;
+            }
         }
     }
 }
