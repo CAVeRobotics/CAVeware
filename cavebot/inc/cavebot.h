@@ -55,7 +55,4 @@ Bsp_MetersPerSecond_t Cavebot_GetLinearVelocity(void);
 Cavebot_Error_t Cavebot_SetWaypoint(const Cavebot_Pose_t *const waypoint);
 void Cavebot_Task(void);
 
-Cavebot_Error_t Cavebot_RelativeMove(const Bsp_Meter_t position, const Bsp_Radian_t pose);
-bool Cavebot_IsRelativeMoving(void);
-
 #endif /* CAVEBOT_H */

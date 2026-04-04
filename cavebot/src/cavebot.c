@@ -36,14 +36,6 @@ static bool              Cavebot_HasWaypoint      = false; /* TODO replace with 
 static Bsp_Microsecond_t Cavebot_WaypointTick     = 0U;
 static Bsp_Meter_t       Cavebot_WaypointDistance = 0.0;
 
-
-static Bsp_Meter_t       Cavebot_RelativeMovePosition   = 0.0;
-// static Bsp_Radian_t      Cavebot_RelativeMovePose       = 0.0;
-static Bsp_Millisecond_t Cavebot_RelativeMoveTick       = 0U;
-static bool              Cavebot_RelativeMovingPosition = false;
-static bool              Cavebot_RelativeMovingPose     = false;
-const Bsp_Meter_t kCavebot_MetersPerTick = (0.079375 * 2 * 3.14159265) / 753.2;
-
 /* TODO CVW-21 read from config */
 static const Bsp_Meter_t kCavebot_PositionTolerance = 0.05;
 
@@ -340,6 +332,7 @@ Cavebot_Error_t Cavebot_SetWaypoint(const Cavebot_Pose_t *const waypoint)
     {
         error = CAVEBOT_ERROR_NULL;
     }
+    /* TODO */
     // else if (Cavebot_HasWaypoint)
     // {
     //     error = CAVEBOT_ERROR_MOVE;
@@ -357,52 +350,11 @@ Cavebot_Error_t Cavebot_SetWaypoint(const Cavebot_Pose_t *const waypoint)
 void Cavebot_Task(void)
 {
     Cavebot_Error_t error = CAVEBOT_ERROR_MODE;
-    Bsp_Millisecond_t now   = BspTick_GetTick();
-
-    if (((Cavebot_RelativeMoveTick - now) >= 10) && Cavebot_IsArmed())
-    {
-        if (Cavebot_RelativeMovingPosition)
-        {
-            Bsp_EncoderPulse_t pulses = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].pulses + BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].pulses + BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].pulses + BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].pulses;
-            pulses = pulses / 4;
-            Bsp_MetersPerSecond_t speed = CavebotMotionProfile_TrapezoidVelocity((kCavebot_MetersPerTick * pulses), Cavebot_RelativeMovePosition, 0.03, 0.64, 0.32); /* TODO CVW-21 read static params from config */
-            Cavebot_Drive(speed, 0);
-            Cavebot_RelativeMoveTick = now;
-
-            if (speed <= 0.0)
-            {
-                Cavebot_RelativeMovingPosition = false;
-            }
-        }
-        // else if (Cavebot_RelativeMovingPose)
-        // {
-        //     Rover4wd_DisableSpeedControl();
-        //     Bsp_Radian_t yaw = atan2(2.0 * ((CavebotUser_Gyroscope.quaternion.w * CavebotUser_Gyroscope.quaternion.z) + (CavebotUser_Gyroscope.quaternion.x * CavebotUser_Gyroscope.quaternion.y)),
-        //                              1 - (2 * ((CavebotUser_Gyroscope.quaternion.y * CavebotUser_Gyroscope.quaternion.y) + (CavebotUser_Gyroscope.quaternion.z * CavebotUser_Gyroscope.quaternion.z))));
-        //     /*             if (yaw >= Cavebot_RelativeMovePose)
-        //                 {
-        //                     yaw - Cavebot_RelativeMovePose;
-        //                 } */
-        //     // Bsp_RadiansPerSecond_t angular_speed = CavebotMotionProfile_TrapezoidVelocity(yaw, Cavebot_RelativeMovePose, 15, 20, 1);
-        //     Bsp_Radian_t           error         = yaw - Cavebot_RelativeMovePose;
-        //     Bsp_RadiansPerSecond_t angular_speed = 0.0;
-        //     /* TODO */
-        //     UNUSED(error);
-        //     Cavebot_Drive(0, angular_speed);
-        //     Cavebot_RelativeMoveTick = now;
-
-        //     if (fabs(angular_speed) <= 0.0)
-        //     {
-        //         Cavebot_RelativeMovingPose = false;
-        //         Rover4wd_EnableSpeedControl();
-        //     }
-        // }
-    }
 
     switch (Cavebot_Mode)
     {
     case CAVEBOT_MODE_ARMED_AUTO:
-        BSP_UNUSED(Cavebot_UpdateVelocity);
+        Cavebot_UpdateVelocity();
         break;
     default:
         break;
@@ -500,62 +452,8 @@ static void Cavebot_UpdateVelocity(void)
         }
         else
         {
-            // const Bsp_MetersPerSecond_t maximum_linear_velocity_delta = kCavebot_MaximumLinearAcceleration * delta_time;
-            // const Bsp_MetersPerSecond_t current_linear_velocity       = Cavebot_GetLinearVelocity();
-            // BSP_UNUSED(maximum_linear_velocity_delta);
-            // BSP_UNUSED(current_linear_velocity);
-            // Bsp_MetersPerSecond_t linear_velocity = Bsp_Clip((kCavebot_LinearVelocityGain * distance), kCavebot_MinimumLinearVelocity, kCavebot_MaximumLinearVelocity);
-            // // linear_velocity = Bsp_Clip(linear_velocity, (current_linear_velocity - maximum_linear_velocity_delta), (current_linear_velocity + maximum_linear_velocity_delta));
-
-            // const Bsp_RadiansPerSecond_t maximum_angular_velocity = fmin(kCavebot_MaximumAngularVelocity, (linear_velocity / kCavebot_MinimumTurnRadius));
-            // const Bsp_RadiansPerSecond_t angular_velocity         = Bsp_Clip((kCavebot_AngularVelocityGain * angle), -maximum_angular_velocity, maximum_angular_velocity);
-
             const Cavebot_Trajectory_t trajectory = CavebotMotionProfile_Trapezoidal(Cavebot_WaypointDistance, distance, angle, delta_time);
             (void)Cavebot_Drive(trajectory.linear_velocity, trajectory.angular_velocity);
         }
     }
 }
-
-Cavebot_Error_t Cavebot_RelativeMove(const Bsp_Meter_t position, const Bsp_Radian_t pose)
-{
-    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
-
-    BSP_UNUSED(pose);
-
-    if (!Cavebot_IsArmed())
-    {
-        error = CAVEBOT_ERROR_MODE;
-    }
-    else if (Cavebot_RelativeMovingPosition || Cavebot_RelativeMovingPose)
-    {
-        error = CAVEBOT_ERROR_MOVE;
-    }
-    else if (position > 0.0)
-    {
-        /* TODO make extensible */
-        Bsp_EncoderPulse_t pulses = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].pulses + BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].pulses + BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].pulses + BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].pulses;
-        pulses = pulses / 4;
-
-        Cavebot_RelativeMovePosition   = (kCavebot_MetersPerTick * pulses) + position;
-        Cavebot_RelativeMovingPosition = true;
-    }
-    // else if (fabs(pose) > 0.0)
-    // {
-    //     // CavebotUser_Gyroscope.quaternion.y
-    //     /* yaw=atan2(2(wz+xy),1−2(y^2+z^2)) */
-    //     Bsp_Radian_t yaw = atan2(2.0 * ((CavebotUser_Gyroscope.quaternion.w * CavebotUser_Gyroscope.quaternion.z) + (CavebotUser_Gyroscope.quaternion.x * CavebotUser_Gyroscope.quaternion.y)),
-    //                              1 - (2 * ((CavebotUser_Gyroscope.quaternion.y * CavebotUser_Gyroscope.quaternion.y) + (CavebotUser_Gyroscope.quaternion.z * CavebotUser_Gyroscope.quaternion.z))));
-    //     Bsp_Radian_t delta_yaw = pose - yaw;
-    //     delta_yaw                  = atan2(sin(delta_yaw), cos(delta_yaw));
-    //     Cavebot_RelativeMovePose   = yaw + delta_yaw;
-    //     Cavebot_RelativeMovingPose = true;
-    // }
-
-    return error;
-}
-
-bool Cavebot_IsRelativeMoving(void)
-{
-    return Cavebot_RelativeMovingPosition || Cavebot_RelativeMovingPose;
-}
-
