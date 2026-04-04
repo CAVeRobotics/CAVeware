@@ -51,7 +51,6 @@ Cavebot_Error_t Cavebot_SetAuto(const bool set_auto);
 Cavebot_Error_t Cavebot_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_RadiansPerSecond_t turn_rate);
 Cavebot_Pose_t Cavebot_GetPose(void);
 Cavebot_Error_t Cavebot_SetPose(const Cavebot_Pose_t *const pose);
-Bsp_MetersPerSecond_t Cavebot_GetLinearVelocity(void);
 Cavebot_Error_t Cavebot_SetWaypoint(const Cavebot_Pose_t *const waypoint);
 void Cavebot_Task(void);
 

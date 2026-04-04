@@ -12,6 +12,7 @@
 
 #include "cavebot.h"
 #include "cavebot_user.h"
+#include "rover_4wd_ekf.h"
 
 /* TODO CVW-21 read from config */
 static const Bsp_Meter_t kRover4wd_Tread       = 0.403225;
@@ -24,18 +25,10 @@ static const Bsp_Meter_t kRover4wd_WheelDiameter = kRover4wd_WheelRadius * 2;
 /* TODO CVW-21 read from config */
 static const Bsp_Meter_t kRover4wd_MetersPerPulse = (kRover4wd_WheelDiameter * BSP_PI) / 753.2;
 
-static Bsp_Meter_t            Rover4wd_DistanceLeft     = 0.0;
-static Bsp_Meter_t            Rover4wd_DistanceRight    = 0.0;
-static Bsp_Microsecond_t      Rover4wd_Tick             = 0U;
-static const double           kRover4wd_GyroscopeWeight = 0.9; /* TODO CVW-21 read from config */
-static const double           kRover4wd_WheelWeight     = 1.0 - kRover4wd_GyroscopeWeight;
-static Cavebot_Pose_t         Rover4wd_Pose             = {
-    .x       = 0.0,
-    .y       = 0.0,
-    .heading = 0.0,
-};
-static Bsp_MetersPerSecond_t  Rover4wd_LinearVelocity  = 0.0;
-static Bsp_RadiansPerSecond_t Rover4wd_AngularVelocity = 0.0;
+static Bsp_Meter_t       Rover4wd_DistanceLeft  = 0.0;
+static Bsp_Meter_t       Rover4wd_DistanceRight = 0.0;
+static Bsp_Microsecond_t Rover4wd_PredictTick   = 0U;
+static Bsp_Microsecond_t Rover4wd_UpdateTick    = 0U;
 
 /* TODO CVW-21 read gains, rate limit, enabled, minimum, maxmimum from config */
 static CavebotPid_Handle_t Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
@@ -115,6 +108,13 @@ static Cavebot_Error_t Rover4wd_BspErrorCheck(const Bsp_Error_t error_0,
                                               const Bsp_Error_t error_1,
                                               const Bsp_Error_t error_2,
                                               const Bsp_Error_t error_3);
+
+Cavebot_Error_t Rover4wd_Initialize(void)
+{
+    Rover4wdEkf_Initialize();
+
+    return CAVEBOT_ERROR_NONE;
+}
 
 Cavebot_Error_t Rover4wd_Arm(void)
 {
@@ -236,70 +236,36 @@ Cavebot_Error_t Rover4wd_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_Radi
 
 Cavebot_Pose_t Rover4wd_GetPose(void)
 {
-    return Rover4wd_Pose;
-}
-
-Cavebot_Error_t Rover4wd_SetPose(const Cavebot_Pose_t *const pose)
-{
-    Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
-
-    if (NULL != pose)
-    {
-        Rover4wd_Pose = *pose;
-        Rover4wd_Tick = BspTick_GetMicroseconds();
-        error         = CAVEBOT_ERROR_NONE;
-    }
-
-    return error;
-}
-
-Bsp_MetersPerSecond_t Rover4wd_GetLinearVelocity(void)
-{
-    return Rover4wd_LinearVelocity;
-}
-
-Bsp_RadiansPerSecond_t Rover4wd_GetAngularVelocity(void)
-{
-    return Rover4wd_AngularVelocity;
+    return (Cavebot_Pose_t){
+               .x       = Rover4wdEfk_GetX(),
+               .y       = Rover4wdEfk_GetY(),
+               .heading = Rover4wdEfk_GetHeading(),
+    };
 }
 
 static void Rover4wd_EstimatePose(void)
 {
-    /* Wheel odometry */
-    const Bsp_Meter_t  distance_left        = (((double)BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].pulses + (double)BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].pulses) / 2.0) * kRover4wd_MetersPerPulse;
-    const Bsp_Meter_t  distance_right       = (((double)BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].pulses + (double)BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].pulses) / 2.0) * kRover4wd_MetersPerPulse;
-    const Bsp_Meter_t  delta_left           = distance_left - Rover4wd_DistanceLeft;
-    const Bsp_Meter_t  delta_right          = distance_right - Rover4wd_DistanceRight;
-    const Bsp_Meter_t  delta_center         = (delta_left + delta_right) / 2.0;
-    const Bsp_Radian_t delta_heading_wheels = (delta_right - delta_left) / kRover4wd_Tread; /* TODO explain */
+    const Bsp_Meter_t distance_left  = (((double)BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].pulses + (double)BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].pulses) / 2.0) * kRover4wd_MetersPerPulse;
+    const Bsp_Meter_t distance_right = (((double)BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].pulses + (double)BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].pulses) / 2.0) * kRover4wd_MetersPerPulse;
+    const Bsp_Meter_t delta_left     = distance_left - Rover4wd_DistanceLeft;
+    const Bsp_Meter_t delta_right    = distance_right - Rover4wd_DistanceRight;
     Rover4wd_DistanceLeft  = distance_left;
     Rover4wd_DistanceRight = distance_right;
 
-    /* Gyroscope heading */
-    const Bsp_Millisecond_t tick                    = BspTick_GetMicroseconds();
-    const Bsp_Second_t      delta_time              = BspTick_GetElapsedMicroseconds(Rover4wd_Tick, tick);
-    Bsp_Radian_t            delta_heading_gyroscope = 0.0;
-    if ((fabs(delta_left) > 0.001) || (fabs(delta_right) > 0.001))
+    const Bsp_Microsecond_t tick               = BspTick_GetMicroseconds();
+    const Bsp_Second_t      delta_time_predict = BspTick_GetElapsedMicroseconds(Rover4wd_PredictTick, tick);
+    const Bsp_Second_t      delta_time_update  = BspTick_GetElapsedMicroseconds(Rover4wd_UpdateTick, tick);
+
+    if (delta_time_predict >= 0.001)
     {
-        delta_heading_gyroscope = CavebotUser_Gyroscope.reading.z * delta_time;
+        Rover4wdEkf_Predict(delta_time_predict, CavebotUser_Accelerometer.reading.x, CavebotUser_Accelerometer.reading.y, CavebotUser_Gyroscope.reading.z);
+        Rover4wd_PredictTick = tick;
     }
-    Rover4wd_Tick = tick;
 
-    /* Fused heading */
-    const Bsp_Radian_t delta_heading = (delta_heading_gyroscope * kRover4wd_GyroscopeWeight) + (delta_heading_wheels * kRover4wd_WheelWeight);
-    const Bsp_Radian_t heading       = Rover4wd_Pose.heading + (delta_heading / 2.0); /* Use the average heading for more accurate integration */
-
-    /* Update pose */
-    Rover4wd_Pose.x       += delta_center * cos(heading);
-    Rover4wd_Pose.y       += delta_center * sin(heading);
-    Rover4wd_Pose.heading += delta_heading;
-    Rover4wd_Pose.heading  = atan2(sin(Rover4wd_Pose.heading), cos(Rover4wd_Pose.heading)); /* Normalize to [-pi, pi] */
-
-    /* Update velocities */
-    if (delta_time > 0.0)
+    if (delta_time_update >= 0.01)
     {
-        Rover4wd_LinearVelocity  = delta_center / delta_time;
-        Rover4wd_AngularVelocity = delta_heading / delta_time;
+        Rover4wdEkf_Update(delta_time_update, CavebotUser_Gyroscope.reading.z, delta_left, delta_right);
+        Rover4wd_UpdateTick = tick;
     }
 }
 

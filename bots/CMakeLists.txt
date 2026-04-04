@@ -17,6 +17,7 @@ endif()
 if (ROVER_4WD)
     message(STATUS "Adding support for Rover 4WD.")
     list(APPEND BOTS_SRCS ${BOTS_SRC_DIR}/rover_4wd.c)
+    list(APPEND BOTS_SRCS ${BOTS_SRC_DIR}/rover_4wd_ekf.c)
 endif()
 
 add_library(${PROJECT_NAME} INTERFACE)

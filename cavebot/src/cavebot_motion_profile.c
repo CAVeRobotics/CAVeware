@@ -28,23 +28,13 @@ Cavebot_Trajectory_t CavebotMotionProfile_Proportional(const Bsp_Meter_t distanc
     };
 }
 
-Cavebot_Trajectory_t CavebotMotionProfile_Trapezoidal(const Bsp_Meter_t start, const Bsp_Meter_t distance, const Bsp_Radian_t angle, const Bsp_Second_t delta_time)
+Cavebot_Trajectory_t CavebotMotionProfile_Trapezoidal(const Bsp_Meter_t start, const Bsp_Meter_t distance, const Bsp_Radian_t angle)
 {
     Bsp_Meter_t          deceleration_distance = ((kCavebotMotionProfile_MaximumLinearVelocity * kCavebotMotionProfile_MaximumLinearVelocity) / (2.0 * kCavebotMotionProfile_LinearAcceleration)) + kCavebotMotionProfile_DecelerationMargin;
     Cavebot_Trajectory_t trajectory            = {
         .linear_velocity  = 0.0,
         .angular_velocity = 0.0,
     };
-
-    // if (distance > deceleration_distance)
-    // {
-    //     trajectory.linear_velocity = Bsp_Clip((Cavebot_GetLinearVelocity() + (kCavebotMotionProfile_LinearAcceleration * delta_time)), kCavebotMotionProfile_MinimumLinearVelocity, kCavebotMotionProfile_MaximumLinearVelocity);
-    // }
-    // else
-    // {
-    //     trajectory.linear_velocity = sqrt(2.0 * kCavebotMotionProfile_LinearAcceleration * fmax(0, distance));
-    // }
-    BSP_UNUSED(delta_time);
 
     Bsp_Meter_t goal      = start;
     Bsp_Meter_t half_goal = start / 2.0;

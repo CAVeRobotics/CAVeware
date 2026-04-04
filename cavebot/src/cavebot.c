@@ -24,17 +24,16 @@
 
 #define CAVEBOT_LOOP_LOG_PERIOD (Bsp_Microsecond_t)((Bsp_Microsecond_t)5U * BSP_TICK_MICROSECONDS_PER_SECOND)
 
-static const char *      kCavebot_LogTag  = "CAVEBOT";
-static Cavebot_Bot_t     Cavebot_Bot      = CAVEBOT_BOT_4WD;
-static Cavebot_Mode_t    Cavebot_Mode     = CAVEBOT_MODE_DISARMED;
-static Cavebot_Pose_t    Cavebot_Waypoint = {
+static const char *   kCavebot_LogTag  = "CAVEBOT";
+static Cavebot_Bot_t  Cavebot_Bot      = CAVEBOT_BOT_4WD;
+static Cavebot_Mode_t Cavebot_Mode     = CAVEBOT_MODE_DISARMED;
+static Cavebot_Pose_t Cavebot_Waypoint = {
     .x       = 0.0,
     .y       = 0.0,
     .heading = 0.0
 };
-static bool              Cavebot_HasWaypoint      = false; /* TODO replace with queue */
-static Bsp_Microsecond_t Cavebot_WaypointTick     = 0U;
-static Bsp_Meter_t       Cavebot_WaypointDistance = 0.0;
+static bool           Cavebot_HasWaypoint      = false;    /* TODO replace with queue */
+static Bsp_Meter_t    Cavebot_WaypointDistance = 0.0;
 
 /* TODO CVW-21 read from config */
 static const Bsp_Meter_t kCavebot_PositionTolerance = 0.05;
@@ -278,52 +277,6 @@ Cavebot_Pose_t Cavebot_GetPose(void)
     return pose;
 }
 
-Cavebot_Error_t Cavebot_SetPose(const Cavebot_Pose_t *const pose)
-{
-    Cavebot_Error_t error = CAVEBOT_ERROR_BOT;
-
-    switch (Cavebot_Bot)
-    {
-    case CAVEBOT_BOT_4WS:
-#ifdef ROVER_4WS
-        /* TODO */
-#endif /* ROVER_4WS */
-        break;
-    case CAVEBOT_BOT_4WD:
-#ifdef ROVER_4WD
-        error = Rover4wd_SetPose(pose);
-#endif /* ROVER_4WD */
-        break;
-    default:
-        break;
-    }
-
-    return error;
-}
-
-Bsp_MetersPerSecond_t Cavebot_GetLinearVelocity(void)
-{
-    Bsp_MetersPerSecond_t linear_velocity = 0.0;
-
-    switch (Cavebot_Bot)
-    {
-    case CAVEBOT_BOT_4WS:
-#ifdef ROVER_4WS
-        /* TODO */
-#endif /* ROVER_4WS */
-        break;
-    case CAVEBOT_BOT_4WD:
-#ifdef ROVER_4WD
-        linear_velocity = Rover4wd_GetLinearVelocity();
-#endif /* ROVER_4WD */
-        break;
-    default:
-        break;
-    }
-
-    return linear_velocity;
-}
-
 Cavebot_Error_t Cavebot_SetWaypoint(const Cavebot_Pose_t *const waypoint)
 {
     Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
@@ -339,9 +292,8 @@ Cavebot_Error_t Cavebot_SetWaypoint(const Cavebot_Pose_t *const waypoint)
     // }
     else
     {
-        Cavebot_Waypoint     = *waypoint;
-        Cavebot_WaypointTick = BspTick_GetMicroseconds();
-        Cavebot_HasWaypoint  = true;
+        Cavebot_Waypoint    = *waypoint;
+        Cavebot_HasWaypoint = true;
     }
 
     return error;
@@ -400,6 +352,23 @@ static Cavebot_Error_t Cavebot_Initialize(void)
         error = Cavebot_Disarm();
     }
 
+    if (CAVEBOT_ERROR_NONE == error)
+    {
+        switch (Cavebot_Bot)
+        {
+        case CAVEBOT_BOT_4WS:
+            break;
+        case CAVEBOT_BOT_4WD:
+#ifdef ROVER_4WD
+            error = Rover4wd_Initialize();
+#endif /* ROVER_4WD */
+            break;
+        default:
+            error = CAVEBOT_ERROR_BOT;
+            break;
+        }
+    }
+
     return error;
 }
 
@@ -424,10 +393,6 @@ static void Cavebot_UpdateVelocity(void)
 {
     if (Cavebot_HasWaypoint)
     {
-        Bsp_Microsecond_t  tick       = BspTick_GetMicroseconds();
-        const Bsp_Second_t delta_time = BspTick_GetElapsedMicroseconds(Cavebot_WaypointTick, tick);
-        Cavebot_WaypointTick = tick;
-
         /* Convert to local frame */
         const Cavebot_Pose_t pose        = Cavebot_GetPose();
         const Bsp_Meter_t    delta_x     = Cavebot_Waypoint.x - pose.x;
@@ -452,7 +417,7 @@ static void Cavebot_UpdateVelocity(void)
         }
         else
         {
-            const Cavebot_Trajectory_t trajectory = CavebotMotionProfile_Trapezoidal(Cavebot_WaypointDistance, distance, angle, delta_time);
+            const Cavebot_Trajectory_t trajectory = CavebotMotionProfile_Trapezoidal(Cavebot_WaypointDistance, distance, angle);
             (void)Cavebot_Drive(trajectory.linear_velocity, trajectory.angular_velocity);
         }
     }
