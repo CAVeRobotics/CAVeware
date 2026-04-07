@@ -8,9 +8,9 @@
 
 /* TODO CVW-21 read from config */
 const float sigma_a   = 2e-3;
-const float sigma_b_a = 3e-4;
+const float sigma_b_a = 3e-3;
 const float sigma_g   = 8e-5;
-const float sigma_b_g = 2e-5;
+const float sigma_b_g = 2e-4;
 const float sigma_e   = (2.0F * 3.14159265358979323846F * 0.079375F) / 753.2F;
 const float b         = 0.403225F;
 
