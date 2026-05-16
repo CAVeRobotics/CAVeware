@@ -2,6 +2,7 @@ set(UNCRUSTIFY_NAME uncrustify)
 set(UNCRUSTIFY_DIR ${TOOLS_DIR}/uncrustify)
 set(UNCRUSTIFY_SEARCH_PATH
     ${UNCRUSTIFY_DIR}/uncrustify/build
+    /opt/uncrustify/build
 )
 
 find_program(${UNCRUSTIFY_NAME}_BIN

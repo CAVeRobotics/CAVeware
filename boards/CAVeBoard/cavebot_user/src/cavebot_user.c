@@ -171,7 +171,7 @@ Cavebot_Error_t CavebotUser_Initialize(void)
 
 Cavebot_Error_t CavebotUser_SensorTask(void)
 {
-    Bsp_Error_t error = Gyroscope_Read(&CavebotUser_Gyroscope);;
+    Bsp_Error_t error = Gyroscope_Read(&CavebotUser_Gyroscope);
 
     if (BSP_ERROR_NONE == error)
     {
