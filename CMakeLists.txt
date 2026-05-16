@@ -24,8 +24,13 @@ project(CAVeware LANGUAGES C ASM)
 # Collection functions
 include(${CMAKE_SOURCE_DIR}/collect.cmake)
 
-# CAVeTalk library
-include(${CMAKE_SOURCE_DIR}/CAVeTalk.cmake)
+################################################################################
+# External modules
+################################################################################
+set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
+set(CAVETALK_BUILD_CPP OFF)
+add_subdirectory(${EXTERNAL_DIR}/Aether)
+add_subdirectory(${EXTERNAL_DIR}/CAVeTalk)
 
 ################################################################################
 # Subdirectories
