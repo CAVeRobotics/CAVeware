@@ -10,11 +10,11 @@
 #include "accelerometer.h"
 #include "gyroscope.h"
 
-#include "cavebot_cavetalk.h"
-#include "cavebot_motion_profile.h"
-#include "cavebot_scheduler.h"
 #include "cavebot_user.h"
-#include "cavebot_version.h"
+#include "comms.h"
+#include "motion.h"
+#include "scheduler.h"
+#include "version.h"
 #ifdef ROVER_4WD
 #include "rover_4wd.h"
 #endif
@@ -61,11 +61,11 @@ int main(void)
     {
         BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize");
     }
-    else if (CAVEBOT_ERROR_NONE != CavebotCavetalk_Initialize())
+    else if (CAVEBOT_ERROR_NONE != Comms_Initialize())
     {
         BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to start CAVeTalk");
     }
-    else if (CAVEBOT_ERROR_NONE != CavebotScheduler_Start())
+    else if (CAVEBOT_ERROR_NONE != Scheduler_Start())
     {
         BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to start scheduler");
     }
@@ -75,7 +75,7 @@ int main(void)
 
         while (true)
         {
-            CavebotScheduler_Run();
+            Scheduler_Run();
             Cavebot_MeasureLoopRate(); /* TODO CVW-71 move loop rate/task logging to scheduler */
         }
     }
@@ -388,7 +388,7 @@ static Cavebot_Error_t Cavebot_Initialize(void)
     /* TODO CVW-21 read from config */
     Cavebot_Bot = CAVEBOT_BOT_4WD;
 
-    Cavebot_Error_t error = CavebotScheduler_Initialize();
+    Cavebot_Error_t error = Scheduler_Initialize();
 
     if (CAVEBOT_ERROR_NONE == error)
     {
@@ -452,7 +452,7 @@ static void Cavebot_UpdateVelocity(void)
         }
         else
         {
-            const Cavebot_Trajectory_t trajectory = CavebotMotionProfile_Trapezoidal(Cavebot_WaypointDistance, distance, angle, delta_time);
+            const Cavebot_Trajectory_t trajectory = Motion_Trapezoidal(Cavebot_WaypointDistance, distance, angle, delta_time);
             (void)Cavebot_Drive(trajectory.linear_velocity, trajectory.angular_velocity);
         }
     }

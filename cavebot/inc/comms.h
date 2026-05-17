@@ -3,7 +3,7 @@
 
 #include "cavebot.h"
 
-Cavebot_Error_t CavebotCavetalk_Initialize(void);
-void CavebotCavetalk_Task(void);
+Cavebot_Error_t Comms_Initialize(void);
+void Comms_Task(void);
 
 #endif /* CAVEBOT_CAVETALK_H */

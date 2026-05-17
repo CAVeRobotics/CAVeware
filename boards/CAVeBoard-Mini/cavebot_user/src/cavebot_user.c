@@ -19,8 +19,8 @@
 #include "rgbw.h"
 
 #include "cavebot.h"
-#include "cavebot_cavetalk.h"
-#include "cavebot_scheduler.h"
+#include "comms.h"
+#include "scheduler.h"
 
 static Lsm6dsv16x_Context_t kCavebotUser_Lsm6dsv16x = LSM6DSV16X_CONTEXT(BSP_SPI_USER_0, BSP_GPIO_USER_PIN_IMU_CS);
 static bool                 CavebotUser_Armed       = false;
@@ -195,11 +195,11 @@ Cavebot_Error_t CavebotUser_Initialize(void)
     if (BSP_ERROR_NONE == error)
     {
         /* TODO add tasks */
-        CavebotScheduler_AddTask(CavebotUser_ImuTask, 2U);
-        CavebotScheduler_AddTask(CavebotUser_EncoderTask, 40U);
-        CavebotScheduler_AddTask(CavebotCavetalk_Task, 1U);
-        CavebotScheduler_AddTask(CavebotUser_Task, 4000U);
-        CavebotScheduler_AddTask(Cavebot_Task, 4U);
+        Scheduler_AddTask(CavebotUser_ImuTask, 2U);
+        Scheduler_AddTask(CavebotUser_EncoderTask, 40U);
+        Scheduler_AddTask(Comms_Task, 1U);
+        Scheduler_AddTask(CavebotUser_Task, 4000U);
+        Scheduler_AddTask(Cavebot_Task, 4U);
 
         CavebotUser_Armed = Cavebot_IsArmed();
 

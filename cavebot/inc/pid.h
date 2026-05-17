@@ -23,11 +23,11 @@ typedef struct
     bool integral_enabled;
     double minimum;
     double maximum;
-} CavebotPid_Handle_t;
+} Pid_Handle_t;
 
-Cavebot_Error_t CavebotPid_Reset(CavebotPid_Handle_t *const handle);
-Cavebot_Error_t CavebotPid_Enable(CavebotPid_Handle_t *const handle);
-Cavebot_Error_t CavebotPid_Disable(CavebotPid_Handle_t *const handle);
-Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const double actual);
+Cavebot_Error_t Pid_Reset(Pid_Handle_t *const handle);
+Cavebot_Error_t Pid_Enable(Pid_Handle_t *const handle);
+Cavebot_Error_t Pid_Disable(Pid_Handle_t *const handle);
+Cavebot_Error_t Pid_Update(Pid_Handle_t *const handle, const double actual);
 
 #endif /* CAVEBOT_PID_H */

@@ -1,4 +1,4 @@
-#include "cavebot_pid.h"
+#include "pid.h"
 
 #include <stdbool.h>
 
@@ -7,7 +7,7 @@
 
 #include "cavebot.h"
 
-Cavebot_Error_t CavebotPid_Reset(CavebotPid_Handle_t *const handle)
+Cavebot_Error_t Pid_Reset(Pid_Handle_t *const handle)
 {
     Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
 
@@ -26,13 +26,13 @@ Cavebot_Error_t CavebotPid_Reset(CavebotPid_Handle_t *const handle)
     return error;
 }
 
-Cavebot_Error_t CavebotPid_Enable(CavebotPid_Handle_t *const handle)
+Cavebot_Error_t Pid_Enable(Pid_Handle_t *const handle)
 {
     Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
 
     if (NULL != handle)
     {
-        (void)CavebotPid_Reset(handle);
+        (void)Pid_Reset(handle);
         handle->enabled = true;
 
         error = CAVEBOT_ERROR_NONE;
@@ -41,7 +41,7 @@ Cavebot_Error_t CavebotPid_Enable(CavebotPid_Handle_t *const handle)
     return error;
 }
 
-Cavebot_Error_t CavebotPid_Disable(CavebotPid_Handle_t *const handle)
+Cavebot_Error_t Pid_Disable(Pid_Handle_t *const handle)
 {
     Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
 
@@ -55,7 +55,7 @@ Cavebot_Error_t CavebotPid_Disable(CavebotPid_Handle_t *const handle)
     return error;
 }
 
-Cavebot_Error_t CavebotPid_Update(CavebotPid_Handle_t *const handle, const double actual)
+Cavebot_Error_t Pid_Update(Pid_Handle_t *const handle, const double actual)
 {
     Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
 

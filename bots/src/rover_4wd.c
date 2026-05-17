@@ -38,7 +38,7 @@ static Bsp_MetersPerSecond_t  Rover4wd_LinearVelocity  = 0.0;
 static Bsp_RadiansPerSecond_t Rover4wd_AngularVelocity = 0.0;
 
 /* TODO CVW-21 read gains, rate limit, enabled, minimum, maxmimum from config */
-static CavebotPid_Handle_t Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
+static Pid_Handle_t Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
     [CAVEBOT_USER_MOTOR_0] = {
         .kp               = 0.0241,
         .ki               = 0.24132,
@@ -118,10 +118,10 @@ static Cavebot_Error_t Rover4wd_BspErrorCheck(const Bsp_Error_t error_0,
 
 Cavebot_Error_t Rover4wd_Arm(void)
 {
-    Cavebot_Error_t error = Rover4wd_ErrorCheck(CavebotPid_Reset(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_0]),
-                                                CavebotPid_Reset(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_2]),
-                                                CavebotPid_Reset(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_1]),
-                                                CavebotPid_Reset(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_3]));
+    Cavebot_Error_t error = Rover4wd_ErrorCheck(Pid_Reset(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_0]),
+                                                Pid_Reset(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_2]),
+                                                Pid_Reset(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_1]),
+                                                Pid_Reset(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_3]));
 
     if (CAVEBOT_ERROR_NONE == error)
     {
@@ -167,18 +167,18 @@ Cavebot_Error_t Rover4wd_Disarm(void)
 
 Cavebot_Error_t Rover4wd_EnableSpeedControl(void)
 {
-    return Rover4wd_ErrorCheck(CavebotPid_Enable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_0]),
-                               CavebotPid_Enable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_1]),
-                               CavebotPid_Enable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_2]),
-                               CavebotPid_Enable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_3]));
+    return Rover4wd_ErrorCheck(Pid_Enable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_0]),
+                               Pid_Enable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_1]),
+                               Pid_Enable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_2]),
+                               Pid_Enable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_3]));
 }
 
 Cavebot_Error_t Rover4wd_DisableSpeedControl(void)
 {
-    return Rover4wd_ErrorCheck(CavebotPid_Disable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_0]),
-                               CavebotPid_Disable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_1]),
-                               CavebotPid_Disable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_2]),
-                               CavebotPid_Disable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_3]));
+    return Rover4wd_ErrorCheck(Pid_Disable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_0]),
+                               Pid_Disable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_1]),
+                               Pid_Disable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_2]),
+                               Pid_Disable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_3]));
 }
 
 Cavebot_Error_t Rover4wd_Task(void)
@@ -309,14 +309,14 @@ static Cavebot_Error_t Rover4wd_MotorSpeedControl(const CavebotUser_Motor_t moto
 
     if (motor < CAVEBOT_USER_MOTOR_MAX)
     {
-        error = CavebotPid_Update(&Rover4wd_MotorsPid[motor], BspEncoderUser_HandleTable[CavebotUser_Encoders[motor]].angular_rate);
+        error = Pid_Update(&Rover4wd_MotorsPid[motor], BspEncoderUser_HandleTable[CavebotUser_Encoders[motor]].angular_rate);
 
         if (CAVEBOT_ERROR_NONE != error)
         {
         }
         else if (fabs(Rover4wd_MotorsPid[motor].command) <= DBL_MIN)
         {
-            error = CavebotPid_Reset(&Rover4wd_MotorsPid[motor]);
+            error = Pid_Reset(&Rover4wd_MotorsPid[motor]);
         }
         else if (Rover4wd_MotorsPid[motor].output < 0.0)
         {

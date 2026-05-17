@@ -15,54 +15,45 @@
 #include "gyroscope.h"
 
 #include "cavebot.h"
-#include "cavebot_pid.h"
 #include "cavebot_user.h"
+#include "pid.h"
 
 #define ROVER_4WS_WHEEL_OFFSET (double)(3.14159265358979323846 / 2.0)
 
 /* TODO CVW-21 read from config */
-static const Bsp_Meter_t kRover4ws_Tread       = 0.493800;
-static const Bsp_Meter_t kRover4ws_Wheelbase   = 0.466028;
+static const Bsp_Meter_t kRover4ws_Tread = 0.493800;
+static const Bsp_Meter_t kRover4ws_Wheelbase = 0.466028;
 static const Bsp_Meter_t kRover4ws_WheelRadius = 0.080000;
 
 /* TODO CVW-21 read from config */
-static const Bsp_Meter_t kRover4ws_HalfTread     = kRover4ws_Tread / 2;
+static const Bsp_Meter_t kRover4ws_HalfTread = kRover4ws_Tread / 2;
 static const Bsp_Meter_t kRover4ws_HalfWheelbase = kRover4ws_Wheelbase / 2;
 static const Bsp_Meter_t kRover4ws_WheelDiameter = kRover4ws_WheelRadius * 2;
 
 /* TODO CVW-21 read from config */
-static CavebotPid_Handle_t Rover4ws_SteeringPid = {
-    0
-};
+static Pid_Handle_t Rover4ws_SteeringPid = {
+    0};
 
 /* TODO CVW-21 read gains, rate limit, enabled, minimum, maxmimum from config */
-CavebotPid_Handle_t CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
+Pid_Handle_t CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_MAX] = {
     [CAVEBOT_USER_MOTOR_0] = {
-        .kp               = 2.0,
-        .ki               = 1.5,
-        .kd               = 0.000001,
-        .kff              = 0.0,
-        .rate_limit       = 100.0,
-        .integral         = 0.0,
-        .command          = 0.0,
-        .error            = 0.0,
-        .output           = 0.0,
-        .previous_tick    = 0U,
-        .enabled          = true,
+        .kp = 2.0,
+        .ki = 1.5,
+        .kd = 0.000001,
+        .kff = 0.0,
+        .rate_limit = 100.0,
+        .integral = 0.0,
+        .command = 0.0,
+        .error = 0.0,
+        .output = 0.0,
+        .previous_tick = 0U,
+        .enabled = true,
         .integral_enabled = true,
-        .minimum          = 0,
-        .maximum          = 18.75
-    },
-    [CAVEBOT_USER_MOTOR_1] = {
-        .kp = 2.0, .ki = 1.5, .kd = 0.000001, .kff = 0.0, .rate_limit = 100.0, .integral = 0.0, .command = 0.0, .error = 0.0, .output = 0.0, .previous_tick = 0U, .enabled = true, .integral_enabled = true, .minimum = 0, .maximum = 18.75
-    },
-    [CAVEBOT_USER_MOTOR_2] = {
-        .kp = 2.0, .ki = 1.5, .kd = 0.000001, .kff = 0.0, .rate_limit = 100.0, .integral = 0.0, .command = 0.0, .error = 0.0, .output = 0.0, .previous_tick = 0U, .enabled = true, .integral_enabled = true, .minimum = 0, .maximum = 18.75
-    },
-    [CAVEBOT_USER_MOTOR_3] = {
-        .kp = 2.0, .ki = 1.5, .kd = 0.000001, .kff = 0.0, .rate_limit = 100.0, .integral = 0.0, .command = 0.0, .error = 0.0, .output = 0.0, .previous_tick = 0U, .enabled = true, .integral_enabled = true, .minimum = 0, .maximum = 18.75
-    }
-};
+        .minimum = 0,
+        .maximum = 18.75},
+    [CAVEBOT_USER_MOTOR_1] = {.kp = 2.0, .ki = 1.5, .kd = 0.000001, .kff = 0.0, .rate_limit = 100.0, .integral = 0.0, .command = 0.0, .error = 0.0, .output = 0.0, .previous_tick = 0U, .enabled = true, .integral_enabled = true, .minimum = 0, .maximum = 18.75},
+    [CAVEBOT_USER_MOTOR_2] = {.kp = 2.0, .ki = 1.5, .kd = 0.000001, .kff = 0.0, .rate_limit = 100.0, .integral = 0.0, .command = 0.0, .error = 0.0, .output = 0.0, .previous_tick = 0U, .enabled = true, .integral_enabled = true, .minimum = 0, .maximum = 18.75},
+    [CAVEBOT_USER_MOTOR_3] = {.kp = 2.0, .ki = 1.5, .kd = 0.000001, .kff = 0.0, .rate_limit = 100.0, .integral = 0.0, .command = 0.0, .error = 0.0, .output = 0.0, .previous_tick = 0U, .enabled = true, .integral_enabled = true, .minimum = 0, .maximum = 18.75}};
 
 static Bsp_MetersPerSecond_t Rover4ws_CommandedSpeed = 0.0;
 
@@ -99,8 +90,8 @@ Cavebot_Error_t Rover4ws_ConfigureSteering(const CavebotUser_Servo_t servo,
     {
         CavebotUser_Servos[servo].minimum_duty_cycle = minimum_duty_cycle;
         CavebotUser_Servos[servo].maximum_duty_cycle = maximum_duty_cycle;
-        CavebotUser_Servos[servo].minimum_angle      = minimum_angle;
-        CavebotUser_Servos[servo].maximum_angle      = maximum_angle;
+        CavebotUser_Servos[servo].minimum_angle = minimum_angle;
+        CavebotUser_Servos[servo].maximum_angle = maximum_angle;
     }
 
     return error;
@@ -126,8 +117,8 @@ Cavebot_Error_t Rover4ws_ConfigureMotor(const CavebotUser_Motor_t motor,
     {
         CavebotUser_Motors[motor].minimum_duty_cycle = minimum_duty_cycle;
         CavebotUser_Motors[motor].maximum_duty_cycle = maximum_duty_cycle;
-        CavebotUser_Motors[motor].minimum_speed      = minimum_speed;
-        CavebotUser_Motors[motor].maximum_speed      = maximum_speed;
+        CavebotUser_Motors[motor].minimum_speed = minimum_speed;
+        CavebotUser_Motors[motor].maximum_speed = maximum_speed;
     }
 
     return error;
@@ -227,28 +218,28 @@ Cavebot_Error_t Rover4ws_SampleEncoders(void)
 
 Cavebot_Error_t Rover4ws_EnableSpeedControl(void)
 {
-    return Rover4ws_ErrorCheck(CavebotPid_Enable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_0]),
-                               CavebotPid_Enable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_1]),
-                               CavebotPid_Enable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_2]),
-                               CavebotPid_Enable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_3]));
+    return Rover4ws_ErrorCheck(Pid_Enable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_0]),
+                               Pid_Enable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_1]),
+                               Pid_Enable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_2]),
+                               Pid_Enable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_3]));
 }
 
 Cavebot_Error_t Rover4ws_DisableSpeedControl(void)
 {
-    return Rover4ws_ErrorCheck(CavebotPid_Disable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_0]),
-                               CavebotPid_Disable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_1]),
-                               CavebotPid_Disable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_2]),
-                               CavebotPid_Disable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_3]));
+    return Rover4ws_ErrorCheck(Pid_Disable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_0]),
+                               Pid_Disable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_1]),
+                               Pid_Disable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_2]),
+                               Pid_Disable(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_3]));
 }
 
 Cavebot_Error_t Rover4ws_EnableSteeringControl(void)
 {
-    return CavebotPid_Enable(&Rover4ws_SteeringPid);
+    return Pid_Enable(&Rover4ws_SteeringPid);
 }
 
 Cavebot_Error_t Rover4ws_DisableSteeringControl(void)
 {
-    return CavebotPid_Disable(&Rover4ws_SteeringPid);
+    return Pid_Disable(&Rover4ws_SteeringPid);
 }
 
 Cavebot_Error_t Rover4ws_Arm(void)
@@ -284,7 +275,7 @@ Cavebot_Error_t Rover4ws_Task(void)
         (void)Rover4ws_SampleEncoders();
 
         /* TODO SD-126 test with steering control coupled and decoupled from wheel speed control */
-        (void)CavebotPid_Update(&Rover4ws_SteeringPid, CavebotUser_Gyroscope.reading.z);
+        (void)Pid_Update(&Rover4ws_SteeringPid, CavebotUser_Gyroscope.reading.z);
         error = Rover4ws_SetSteeringAngle(Rover4ws_SteeringPid.output);
 
         if (CAVEBOT_ERROR_NONE == error)
@@ -313,7 +304,7 @@ Cavebot_Error_t Rover4ws_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_Radi
     {
         Bsp_Radian_t steering_angle = atan((turn_rate * kRover4ws_HalfWheelbase) / speed);
 
-        Rover4ws_CommandedSpeed      = speed;
+        Rover4ws_CommandedSpeed = speed;
         Rover4ws_SteeringPid.command = steering_angle;
     }
 
@@ -349,7 +340,7 @@ Cavebot_Error_t Rover4ws_ErrorCheck(const Cavebot_Error_t error_0,
 
 static Cavebot_Error_t Rover4ws_EnableSteering(void)
 {
-    Cavebot_Error_t error = CavebotPid_Reset(&Rover4ws_SteeringPid);
+    Cavebot_Error_t error = Pid_Reset(&Rover4ws_SteeringPid);
 
     if (CAVEBOT_ERROR_NONE == error)
     {
@@ -372,10 +363,10 @@ static Cavebot_Error_t Rover4ws_DisableSteering(void)
 
 static Cavebot_Error_t Rover4ws_StartMotors(void)
 {
-    Cavebot_Error_t error = Rover4ws_ErrorCheck(CavebotPid_Reset(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_0]),
-                                                CavebotPid_Reset(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_2]),
-                                                CavebotPid_Reset(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_1]),
-                                                CavebotPid_Reset(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_3]));
+    Cavebot_Error_t error = Rover4ws_ErrorCheck(Pid_Reset(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_0]),
+                                                Pid_Reset(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_2]),
+                                                Pid_Reset(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_1]),
+                                                Pid_Reset(&CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_3]));
 
     Rover4ws_CommandedSpeed = 0.0;
 
@@ -418,8 +409,8 @@ static Cavebot_Error_t Rover4ws_StopMotors(void)
 
 static void Rover4ws_SetSpeed(const Bsp_MetersPerSecond_t speed, const Bsp_Radian_t steering_angle)
 {
-    double radius              = kRover4ws_HalfWheelbase / tan(steering_angle);
-    double left_angular_speed  = (speed * (2 - (kRover4ws_Tread / radius))) / kRover4ws_WheelDiameter;
+    double radius = kRover4ws_HalfWheelbase / tan(steering_angle);
+    double left_angular_speed = (speed * (2 - (kRover4ws_Tread / radius))) / kRover4ws_WheelDiameter;
     double right_angular_speed = (speed * (2 + (kRover4ws_Tread / radius))) / kRover4ws_WheelDiameter;
 
     CavebotUser_MotorsPid[CAVEBOT_USER_MOTOR_0].command = left_angular_speed;
@@ -434,7 +425,7 @@ static Cavebot_Error_t Rover4ws_MotorSpeedControl(const CavebotUser_Motor_t moto
 
     if (motor < CAVEBOT_USER_MOTOR_MAX)
     {
-        error = CavebotPid_Update(&CavebotUser_MotorsPid[motor], BspEncoderUser_HandleTable[CavebotUser_Encoders[motor]].angular_rate);
+        error = Pid_Update(&CavebotUser_MotorsPid[motor], BspEncoderUser_HandleTable[CavebotUser_Encoders[motor]].angular_rate);
 
         if (CAVEBOT_ERROR_NONE == error)
         {
@@ -473,11 +464,11 @@ static Cavebot_Error_t Rover4ws_SetSteeringAngle(const Bsp_Radian_t steering_ang
 {
     Cavebot_Error_t error = CAVEBOT_ERROR_VALUE;
 
-    double      tan_delta        = tan(steering_angle);
+    double tan_delta = tan(steering_angle);
     Bsp_Meter_t scaled_wheelbase = kRover4ws_HalfWheelbase * tan_delta;
-    Bsp_Meter_t offset           = kRover4ws_HalfTread * tan_delta;
+    Bsp_Meter_t offset = kRover4ws_HalfTread * tan_delta;
 
-    Bsp_Radian_t delta_left  = atan(scaled_wheelbase / (kRover4ws_HalfWheelbase - offset));
+    Bsp_Radian_t delta_left = atan(scaled_wheelbase / (kRover4ws_HalfWheelbase - offset));
     Bsp_Radian_t delta_right = atan(scaled_wheelbase / (kRover4ws_HalfWheelbase + offset));
 
     if (Bsp_CompareDoubleSigns(&delta_left, &delta_right))
