@@ -61,7 +61,7 @@ int main(void)
     {
         BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize");
     }
-    else if (CAVE_TALK_ERROR_NONE != CavebotCaveTalk_Start())
+    else if (CAVEBOT_ERROR_NONE != CavebotCavetalk_Initialize())
     {
         BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to start CAVeTalk");
     }

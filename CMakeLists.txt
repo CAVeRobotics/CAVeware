@@ -28,6 +28,9 @@ include(${CMAKE_SOURCE_DIR}/collect.cmake)
 # External modules
 ################################################################################
 set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
+set(AETHER_LOG_ENABLED OFF)
+set(AETHER_TICK_USER ON)
+set(AETHER_TRANSPORT_MTU 512)
 set(CAVETALK_BUILD_CPP OFF)
 add_subdirectory(${EXTERNAL_DIR}/Aether)
 add_subdirectory(${EXTERNAL_DIR}/CAVeTalk)
@@ -127,7 +130,8 @@ target_link_libraries(${PROJECT_NAME}
         Bsp
         Drivers
         Bots
-        CAVeTalk-c
+        Aether::Aether
+        cavetalk::cavetalkc
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

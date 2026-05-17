@@ -197,7 +197,7 @@ Cavebot_Error_t CavebotUser_Initialize(void)
         /* TODO add tasks */
         CavebotScheduler_AddTask(CavebotUser_ImuTask, 2U);
         CavebotScheduler_AddTask(CavebotUser_EncoderTask, 40U);
-        CavebotScheduler_AddTask(CavebotCaveTalk_Task, 1U);
+        CavebotScheduler_AddTask(CavebotCavetalk_Task, 1U);
         CavebotScheduler_AddTask(CavebotUser_Task, 4000U);
         CavebotScheduler_AddTask(Cavebot_Task, 4U);
 

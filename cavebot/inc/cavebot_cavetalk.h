@@ -1,12 +1,9 @@
 #ifndef CAVEBOT_CAVETALK_H
 #define CAVEBOT_CAVETALK_H
 
-#include <stddef.h>
+#include "cavebot.h"
 
-#include "bsp.h"
-#include "cave_talk.h"
-
-CaveTalk_Error_t CavebotCaveTalk_Start(void);
-void CavebotCaveTalk_Task(void);
+Cavebot_Error_t CavebotCavetalk_Initialize(void);
+void CavebotCavetalk_Task(void);
 
 #endif /* CAVEBOT_CAVETALK_H */
