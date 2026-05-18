@@ -8,7 +8,7 @@
 #include "bsp_timer.h"
 #include "bsp_timer_user.h"
 
-#include "cavebot.h"
+#include "faults.h"
 
 #define CAVEBOT_SCHEDULER_TIMER     BSP_TIMER_USER_TIMER_0
 #define CAVEBOT_SCHEDULER_MAX_TASKS 16U
@@ -30,21 +30,29 @@ static size_t           Scheduler_TaskCount = 0U;
 
 static void Scheduler_Task(void *arg);
 
-Cavebot_Error_t Scheduler_Initialize(void)
+bool Scheduler_Initialize(void)
 {
-    Bsp_Callback_t callback = {
+    const Bsp_Callback_t callback = {
         .function = Scheduler_Task,
         .arg      = NULL
     };
+    const Bsp_Error_t error = BspTimer_RegisterPeriodElapsedCallback(CAVEBOT_SCHEDULER_TIMER, &callback);
+    bool initialized = true;
 
-    return Cavebot_BspToCavebotError(BspTimer_RegisterPeriodElapsedCallback(CAVEBOT_SCHEDULER_TIMER, &callback));
+    if (BSP_ERROR_NONE != error)
+    {
+        Faults_SetFault(FAULT_SCHEDULER, error);
+        initialized = false;
+    }
+
+    return initialized;
 }
 
-Cavebot_Error_t Scheduler_AddTask(void (*task)(void), const Scheduler_Tick_t interval)
+bool Scheduler_AddTask(void (*task)(void), const Scheduler_Tick_t interval)
 {
-    Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
+    bool added = false;
 
-    if (NULL != task)
+    if ((NULL != task) && (Scheduler_TaskCount < CAVEBOT_SCHEDULER_MAX_TASKS))
     {
         Scheduler_Tasks[Scheduler_TaskCount] = (Scheduler_Task_t){
             .task            = task,
@@ -54,19 +62,38 @@ Cavebot_Error_t Scheduler_AddTask(void (*task)(void), const Scheduler_Tick_t int
             .due             = false,
         };
         Scheduler_TaskCount++;
+        added = true;
     }
 
-    return error;
+    return added;
 }
 
-Cavebot_Error_t Scheduler_Start(void)
+bool Scheduler_Start(void)
 {
-    return Cavebot_BspToCavebotError(BspTimer_Start(CAVEBOT_SCHEDULER_TIMER));
+    const Bsp_Error_t error = BspTimer_Start(CAVEBOT_SCHEDULER_TIMER);
+    bool started = true;
+
+    if (BSP_ERROR_NONE != error)
+    {
+        Faults_SetFault(FAULT_SCHEDULER, error);
+        started = false;
+    }
+
+    return started;
 }
 
-Cavebot_Error_t Scheduler_Stop(void)
+bool Scheduler_Stop(void)
 {
-    return Cavebot_BspToCavebotError(BspTimer_Stop(CAVEBOT_SCHEDULER_TIMER));
+    const Bsp_Error_t error = BspTimer_Stop(CAVEBOT_SCHEDULER_TIMER);
+    bool stopped = true;
+
+    if (BSP_ERROR_NONE != error)
+    {
+        Faults_SetFault(FAULT_SCHEDULER, error);
+        stopped = false;
+    }
+
+    return stopped;
 }
 
 void Scheduler_Run(void)
