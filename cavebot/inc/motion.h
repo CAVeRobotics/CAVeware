@@ -1,5 +1,5 @@
-#ifndef CAVEBOT_MOTION_PROFILE_H
-#define CAVEBOT_MOTION_PROFILE_H
+#ifndef MOTION_H
+#define MOTION_H
 
 #include "bsp.h"
 
@@ -15,4 +15,4 @@ Bsp_MetersPerSecond_t Motion_TrapezoidVelocity(const Bsp_Meter_t current,
                                                const Bsp_MetersPerSecond_t max_velocity,
                                                const Bsp_MetersPerSecondSquared_t acceleration);
 
-#endif /* CAVEBOT_MOTION_PROFILE_H */
+#endif /* MOTION_H */

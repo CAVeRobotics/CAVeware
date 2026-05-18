@@ -94,6 +94,7 @@ configure_file(
 set(CAVEBOT_SRCS
     ${CAVEBOT_SRC_DIR}/cavebot.c
     ${CAVEBOT_SRC_DIR}/comms.c
+    ${CAVEBOT_SRC_DIR}/faults.c
     ${CAVEBOT_SRC_DIR}/motion.c
     ${CAVEBOT_SRC_DIR}/pid.c
     ${CAVEBOT_SRC_DIR}/scheduler.c

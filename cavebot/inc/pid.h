@@ -1,5 +1,5 @@
-#ifndef CAVEBOT_PID_H
-#define CAVEBOT_PID_H
+#ifndef PID_H
+#define PID_H
 
 #include <stdbool.h>
 
@@ -30,4 +30,4 @@ Cavebot_Error_t Pid_Enable(Pid_Handle_t *const handle);
 Cavebot_Error_t Pid_Disable(Pid_Handle_t *const handle);
 Cavebot_Error_t Pid_Update(Pid_Handle_t *const handle, const double actual);
 
-#endif /* CAVEBOT_PID_H */
+#endif /* PID_H */

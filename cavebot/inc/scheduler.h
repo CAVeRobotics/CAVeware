@@ -1,5 +1,5 @@
-#ifndef CAVEBOT_SCHEDULER_H
-#define CAVEBOT_SCHEDULER_H
+#ifndef SCHEDULER_H
+#define SCHEDULER_H
 
 #include <stdint.h>
 
@@ -13,4 +13,4 @@ Cavebot_Error_t Scheduler_Start(void);
 Cavebot_Error_t Scheduler_Stop(void);
 void Scheduler_Run(void);
 
-#endif /* CAVEBOT_SCHEDULER_H */
+#endif /* SCHEDULER_H */
