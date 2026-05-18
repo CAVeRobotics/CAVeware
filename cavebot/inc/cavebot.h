@@ -19,16 +19,19 @@ typedef enum
 
 typedef enum
 {
-    CAVEBOT_BOT_4WS,
-    CAVEBOT_BOT_4WD
-} Cavebot_Bot_t;
+    CAVEBOT_STATE_INITIALIZE,
+    CAVEBOT_STATE_READY,
+    CAVEBOT_STATE_MANUAL,
+    CAVEBOT_STATE_AUTO,
+    CAVEBOT_STATE_FAILED,
+    CAVEBOT_STATE_MAX
+} Cavebot_State_t;
 
 typedef enum
 {
-    CAVEBOT_MODE_DISARMED,
-    CAVEBOT_MODE_ARMED_MANUAL,
-    CAVEBOT_MODE_ARMED_AUTO
-} Cavebot_Mode_t;
+    CAVEBOT_BOT_4WS,
+    CAVEBOT_BOT_4WD
+} Cavebot_Bot_t;
 
 typedef struct
 {
@@ -44,15 +47,12 @@ typedef struct
 } Cavebot_Trajectory_t;
 
 Cavebot_Error_t Cavebot_BspToCavebotError(const Bsp_Error_t bsp_error);
-Cavebot_Error_t Cavebot_Arm(void);
-Cavebot_Error_t Cavebot_Disarm(void);
-bool Cavebot_IsArmed(void);
-Cavebot_Error_t Cavebot_SetAuto(const bool set_auto);
+Cavebot_State_t Cavebot_GetState(void);
+bool Cavebot_SetState(const Cavebot_State_t state);
 Cavebot_Error_t Cavebot_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_RadiansPerSecond_t turn_rate);
 Cavebot_Pose_t Cavebot_GetPose(void);
 Cavebot_Error_t Cavebot_SetPose(const Cavebot_Pose_t *const pose);
 Bsp_MetersPerSecond_t Cavebot_GetLinearVelocity(void);
 Cavebot_Error_t Cavebot_SetWaypoint(const Cavebot_Pose_t *const waypoint);
-void Cavebot_Task(void);
 
 #endif /* CAVEBOT_H */

@@ -6,7 +6,7 @@
 
 static const char *kFsmLogTag = "FSM";
 
-bool Fsm_Initialize(Fsm_t *const fsm, const Fsm_State_t *const state, const char *const name)
+bool Fsm_Initialize(Fsm_t *const fsm, Fsm_State_t *const state, const char *const name)
 {
     bool initialized = false;
 
@@ -32,7 +32,7 @@ void Fsm_Update(Fsm_t *const fsm)
 {
     if (NULL != fsm)
     {
-        const Fsm_State_t *next = NULL;
+        Fsm_State_t *next = NULL;
 
         if (NULL != fsm->state->update)
         {

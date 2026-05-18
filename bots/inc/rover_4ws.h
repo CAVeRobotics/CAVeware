@@ -27,7 +27,7 @@ Cavebot_Error_t Rover4ws_EnableSteeringControl(void);
 Cavebot_Error_t Rover4ws_DisableSteeringControl(void);
 Cavebot_Error_t Rover4ws_Arm(void);
 Cavebot_Error_t Rover4ws_Disarm(void);
-Cavebot_Error_t Rover4ws_Task(void);
+Cavebot_Error_t Rover4ws_Run(void);
 Cavebot_Error_t Rover4ws_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_RadiansPerSecond_t turn_rate);
 Cavebot_Error_t Rover4ws_ErrorCheck(const Cavebot_Error_t error_0,
                                     const Cavebot_Error_t error_1,

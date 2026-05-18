@@ -266,7 +266,7 @@ Cavebot_Error_t Rover4ws_Disarm(void)
     return error;
 }
 
-Cavebot_Error_t Rover4ws_Task(void)
+Cavebot_Error_t Rover4ws_Run(void)
 {
     Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
 

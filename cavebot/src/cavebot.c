@@ -12,6 +12,8 @@
 
 #include "cavebot_user.h"
 #include "comms.h"
+#include "fault_handler.h"
+#include "fsm.h"
 #include "motion.h"
 #include "scheduler.h"
 #include "version.h"
@@ -22,50 +24,113 @@
 #include "rover_4ws.h"
 #endif
 
-#define CAVEBOT_LOOP_LOG_PERIOD (Bsp_Microsecond_t)((Bsp_Microsecond_t)5U * BSP_TICK_MICROSECONDS_PER_SECOND)
+#define CAVEBOT_LOOP_LOG_PERIOD   (Bsp_Microsecond_t)((Bsp_Microsecond_t)5U * BSP_TICK_MICROSECONDS_PER_SECOND)
+#define CAVEBOT_COMMS_TASK_PERIOD (Scheduler_Tick_t)1U
+#define CAVEBOT_TASK_PERIOD       (Scheduler_Tick_t)4U
 
-static const char *      kCavebot_LogTag  = "CAVEBOT";
-static Cavebot_Bot_t     Cavebot_Bot      = CAVEBOT_BOT_4WD;
-static Cavebot_Mode_t    Cavebot_Mode     = CAVEBOT_MODE_DISARMED;
+static const char *  kCavebot_LogTag = "CAVEBOT";
+static Cavebot_Bot_t Cavebot_Bot     = CAVEBOT_BOT_4WD; /* TODO CVW-21 read from config */
+
 static Cavebot_Pose_t    Cavebot_Waypoint = {
     .x       = 0.0,
     .y       = 0.0,
     .heading = 0.0
 };
-static bool              Cavebot_HasWaypoint      = false; /* TODO replace with queue */
-static Bsp_Microsecond_t Cavebot_WaypointTick     = 0U;
-static Bsp_Meter_t       Cavebot_WaypointDistance = 0.0;
+static bool              Cavebot_HasWaypoint        = false; /* TODO replace with queue */
+static Bsp_Microsecond_t Cavebot_WaypointTick       = 0U;
+static Bsp_Meter_t       Cavebot_WaypointDistance   = 0.0;
+static const Bsp_Meter_t kCavebot_PositionTolerance = 0.05; /* TODO CVW-21 read from config */
 
-/* TODO CVW-21 read from config */
-static const Bsp_Meter_t kCavebot_PositionTolerance = 0.05;
-
-static Cavebot_Error_t Cavebot_Initialize(void);
+static void Cavebot_EnterInitialize(void);
+static Fsm_State_t *Cavebot_UpdateInitialize(void);
+static void Cavebot_EnterReady(void);
+static Fsm_State_t *Cavebot_UpdateReady(void);
+static void Cavebot_EnterManual(void);
+static Fsm_State_t *Cavebot_UpdateManual(void);
+static void Cavebot_EnterAuto(void);
+static Fsm_State_t *Cavebot_UpdateAuto(void);
+static void Cavebot_EnterFailed(void);
+static Fsm_State_t *Cavebot_UpdateFailed(void);
+static void Cavebot_Arm(void);
+static void Cavebot_Disarm(void);
+static void Cavebot_Run(void);
+static void Cavebot_Task(void);
 static void Cavebot_MeasureLoopRate(void);
 static void Cavebot_UpdateVelocity(void);
 
+static Fsm_t             Cavebot_Fsm;
+static const char *const Cavebot_FsmName                   = "CAVEBOT FSM";
+static Cavebot_State_t   Cavebot_State                     = CAVEBOT_STATE_INITIALIZE;
+static Cavebot_State_t   Cavebot_RequestedState            = CAVEBOT_STATE_INITIALIZE;
+static Fsm_State_t       Cavebot_States[CAVEBOT_STATE_MAX] = {
+    [CAVEBOT_STATE_INITIALIZE] = {
+        .name   = "INITIALIZE",
+        .enter  = Cavebot_EnterInitialize,
+        .update = Cavebot_UpdateInitialize,
+        .exit   = NULL,
+    },
+    [CAVEBOT_STATE_READY] = {
+        .name   = "READY",
+        .enter  = Cavebot_EnterReady,
+        .update = Cavebot_UpdateReady,
+        .exit   = NULL,
+    },
+    [CAVEBOT_STATE_MANUAL] = {
+        .name   = "MANUAL",
+        .enter  = Cavebot_EnterManual,
+        .update = Cavebot_UpdateManual,
+        .exit   = NULL,
+    },
+    [CAVEBOT_STATE_AUTO] = {
+        .name   = "AUTO",
+        .enter  = Cavebot_EnterAuto,
+        .update = Cavebot_UpdateAuto,
+        .exit   = NULL,
+    },
+    [CAVEBOT_STATE_FAILED] = {
+        .name   = "FAILED",
+        .enter  = Cavebot_EnterFailed,
+        .update = Cavebot_UpdateFailed,
+        .exit   = NULL,
+    },
+};
+
 int main(void)
 {
-    Bsp_Initialize();
+    Bsp_Initialize(); /* TODO create custom logger in cavebot_user to set logging faults */
 
     /* Immediately print out build info in case there is a problem starting BSP tick */
     BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build branch: %s", CAVEBOT_GIT_BRANCH);
-    BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build commit: %s", CAVEBOT_GIT_COMMIT_HASH);
+    BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build commit: %s (%s)", CAVEBOT_GIT_COMMIT_HASH, CAVEBOT_GIT_DIRTY);
     BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build tag: %s", CAVEBOT_GIT_TAG);
-    BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build status: %s", CAVEBOT_GIT_DIRTY);
 
-    if (BSP_ERROR_NONE != BspTick_Start())
+    Bsp_Error_t error = BspTick_Start();
+    if (BSP_ERROR_NONE != error)
     {
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_TIMER, error);
         BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to start BSP Tick");
     }
-    else if (CAVEBOT_ERROR_NONE != Cavebot_Initialize())
+    else if (!Scheduler_Initialize())
     {
-        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize");
+        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize scheduler");
     }
-    else if (CAVEBOT_ERROR_NONE != Comms_Initialize())
+    else if (CAVEBOT_ERROR_NONE != CavebotUser_Initialize())
     {
-        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to start CAVeTalk");
+        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize board user");
     }
-    else if (CAVEBOT_ERROR_NONE != Scheduler_Start())
+    else if (!Comms_Initialize())
+    {
+        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize comms");
+    }
+    else if (!Fsm_Initialize(&Cavebot_Fsm, &Cavebot_States[CAVEBOT_STATE_INITIALIZE], Cavebot_FsmName))
+    {
+        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize FSM");
+    }
+    else if (!Scheduler_AddTask(Comms_Task, CAVEBOT_COMMS_TASK_PERIOD) || Scheduler_AddTask(Cavebot_Task, CAVEBOT_TASK_PERIOD))
+    {
+        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to add tasks to scheduler");
+    }
+    else if (!Scheduler_Start())
     {
         BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to start scheduler");
     }
@@ -85,138 +150,50 @@ int main(void)
 
 Cavebot_Error_t Cavebot_BspToCavebotError(const Bsp_Error_t bsp_error)
 {
-    Cavebot_Error_t cavebot_error = CAVEBOT_ERROR_NONE;
+    BSP_UNUSED(bsp_error);
 
-    switch (bsp_error)
-    {
-    case BSP_ERROR_NONE:
-        break;
-    case BSP_ERROR_NULL:
-        cavebot_error = CAVEBOT_ERROR_NULL;
-        break;
-    case BSP_ERROR_PERIPHERAL:
-        cavebot_error = CAVEBOT_ERROR_PERIPHERAL;
-        break;
-    case BSP_ERROR_VALUE:
-        cavebot_error = CAVEBOT_ERROR_VALUE;
-        break;
-    case BSP_ERROR_HAL:
-    case BSP_ERROR_BUSY:
-    case BSP_ERROR_TIMEOUT:
-    default:
-        cavebot_error = CAVEBOT_ERROR_BSP;
-        break;
-    }
+    /* TODO */
 
-    return cavebot_error;
+    return CAVEBOT_ERROR_NONE;
 }
 
-Cavebot_Error_t Cavebot_Arm(void)
+Cavebot_State_t Cavebot_GetState(void)
 {
-    Cavebot_Error_t error = CAVEBOT_ERROR_BOT;
+    return Cavebot_State;
+}
 
-    switch (Cavebot_Bot)
+bool Cavebot_SetState(const Cavebot_State_t state)
+{
+    Cavebot_RequestedState = Cavebot_State;
+
+    switch (Cavebot_State)
     {
-    case CAVEBOT_BOT_4WS:
-#ifdef ROVER_4WS
-        error = Rover4ws_Arm();
-#endif /* ROVER_4WS */
+    case CAVEBOT_STATE_READY:
+        if ((CAVEBOT_STATE_MANUAL == state) || (CAVEBOT_STATE_AUTO == state))
+        {
+            Cavebot_RequestedState = state;
+        }
         break;
-    case CAVEBOT_BOT_4WD:
-#ifdef ROVER_4WD
-        error = Rover4wd_Arm();
-#endif /* ROVER_4WD */
+    case CAVEBOT_STATE_MANUAL:
+        if ((CAVEBOT_STATE_READY == state) || (CAVEBOT_STATE_AUTO == state))
+        {
+            Cavebot_RequestedState = state;
+        }
         break;
+    case CAVEBOT_STATE_AUTO:
+        if ((CAVEBOT_STATE_READY == state) || (CAVEBOT_STATE_MANUAL == state))
+        {
+            Cavebot_RequestedState = state;
+        }
+        break;
+    case CAVEBOT_STATE_INITIALIZE:
+    case CAVEBOT_STATE_FAILED:
+    case CAVEBOT_STATE_MAX:
     default:
         break;
     }
 
-    if (CAVEBOT_ERROR_NONE == error)
-    {
-        /* TODO set manual vs auto */
-        // Cavebot_Mode = CAVEBOT_MODE_ARMED_MANUAL;
-        Cavebot_Mode = CAVEBOT_MODE_ARMED_AUTO;
-
-        BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Armed", (int)error);
-    }
-    else
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to arm with error %d", (int)error);
-    }
-
-    return error;
-}
-
-Cavebot_Error_t Cavebot_Disarm(void)
-{
-    Cavebot_Error_t error = CAVEBOT_ERROR_BOT;
-
-    switch (Cavebot_Bot)
-    {
-    case CAVEBOT_BOT_4WS:
-#ifdef ROVER_4WS
-        error = Rover4ws_Disarm();
-#endif /* ROVER_4WS */
-        break;
-    case CAVEBOT_BOT_4WD:
-#ifdef ROVER_4WD
-        error = Rover4wd_Disarm();
-#endif /* ROVER_4WD */
-        break;
-    default:
-        break;
-    }
-
-    if (CAVEBOT_ERROR_NONE == error)
-    {
-        Cavebot_Mode = CAVEBOT_MODE_DISARMED;
-
-        BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Disarmed", (int)error);
-    }
-    else
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to disarm with error %d", (int)error);
-    }
-
-    return error;
-}
-
-bool Cavebot_IsArmed(void)
-{
-    bool armed = false;
-
-    switch (Cavebot_Mode)
-    {
-    case CAVEBOT_MODE_ARMED_MANUAL:
-    case CAVEBOT_MODE_ARMED_AUTO:
-        armed = true;
-        break;
-    default:
-        break;
-    }
-
-    return armed;
-}
-
-Cavebot_Error_t Cavebot_SetAuto(const bool set_auto)
-{
-    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
-
-    if (!Cavebot_IsArmed())
-    {
-        error = CAVEBOT_ERROR_MODE;
-    }
-    else if (set_auto)
-    {
-        Cavebot_Mode = CAVEBOT_MODE_ARMED_AUTO;
-    }
-    else
-    {
-        Cavebot_Mode = CAVEBOT_MODE_ARMED_MANUAL;
-        error        = Cavebot_Drive(0.0, 0.0);
-    }
-
-    return error;
+    return Cavebot_RequestedState != Cavebot_State;
 }
 
 Cavebot_Error_t Cavebot_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_RadiansPerSecond_t turn_rate)
@@ -236,6 +213,7 @@ Cavebot_Error_t Cavebot_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_Radia
 #endif /* ROVER_4WD */
         break;
     default:
+        /* TODO handle invalid bot */
         break;
     }
 
@@ -272,6 +250,7 @@ Cavebot_Pose_t Cavebot_GetPose(void)
 #endif /* ROVER_4WD */
         break;
     default:
+        /* TODO handle invalid bot */
         break;
     }
 
@@ -295,6 +274,7 @@ Cavebot_Error_t Cavebot_SetPose(const Cavebot_Pose_t *const pose)
 #endif /* ROVER_4WD */
         break;
     default:
+        /* TODO handle invalid bot */
         break;
     }
 
@@ -318,6 +298,7 @@ Bsp_MetersPerSecond_t Cavebot_GetLinearVelocity(void)
 #endif /* ROVER_4WD */
         break;
     default:
+        /* TODO handle invalid bot */
         break;
     }
 
@@ -347,60 +328,189 @@ Cavebot_Error_t Cavebot_SetWaypoint(const Cavebot_Pose_t *const waypoint)
     return error;
 }
 
-void Cavebot_Task(void)
+static void Cavebot_EnterInitialize(void)
 {
-    Cavebot_Error_t error = CAVEBOT_ERROR_MODE;
+    Cavebot_State = CAVEBOT_STATE_INITIALIZE;
+}
 
-    switch (Cavebot_Mode)
+static Fsm_State_t *Cavebot_UpdateInitialize(void)
+{
+    Fsm_State_t *next = &Cavebot_States[CAVEBOT_STATE_READY];
+
+    if (FaultHandler_HasCriticalFaults())
     {
-    case CAVEBOT_MODE_ARMED_AUTO:
-        Cavebot_UpdateVelocity();
-        break;
-    default:
-        break;
+        next = &Cavebot_States[CAVEBOT_STATE_FAILED];
     }
+
+    return next;
+}
+
+static void Cavebot_EnterReady(void)
+{
+    Cavebot_State = CAVEBOT_STATE_READY;
+
+    Cavebot_Disarm();
+}
+
+static Fsm_State_t *Cavebot_UpdateReady(void)
+{
+    Fsm_State_t *next = &Cavebot_States[CAVEBOT_STATE_READY];
+
+    if (FaultHandler_HasCriticalFaults())
+    {
+        next = &Cavebot_States[CAVEBOT_STATE_FAILED];
+    }
+    else if ((CAVEBOT_STATE_MANUAL == Cavebot_RequestedState) || (CAVEBOT_STATE_AUTO == Cavebot_RequestedState))
+    {
+        next = &Cavebot_States[Cavebot_RequestedState];
+    }
+
+    return next;
+}
+
+static void Cavebot_EnterManual(void)
+{
+    Cavebot_State = CAVEBOT_STATE_MANUAL;
+
+    Cavebot_Arm();
+}
+
+static Fsm_State_t *Cavebot_UpdateManual(void)
+{
+    Fsm_State_t *next = &Cavebot_States[CAVEBOT_STATE_MANUAL];
+
+    if (FaultHandler_HasCriticalFaults())
+    {
+        next = &Cavebot_States[CAVEBOT_STATE_FAILED];
+    }
+    else if ((CAVEBOT_STATE_READY == Cavebot_RequestedState) || (CAVEBOT_STATE_AUTO == Cavebot_RequestedState))
+    {
+        next = &Cavebot_States[Cavebot_RequestedState];
+    }
+    else
+    {
+        Cavebot_Run();
+    }
+
+    return next;
+}
+
+static void Cavebot_EnterAuto(void)
+{
+    Cavebot_State = CAVEBOT_STATE_AUTO;
+
+    Cavebot_Arm();
+}
+
+static Fsm_State_t *Cavebot_UpdateAuto(void)
+{
+    Fsm_State_t *next = &Cavebot_States[CAVEBOT_STATE_AUTO];
+
+    if (FaultHandler_HasCriticalFaults())
+    {
+        next = &Cavebot_States[CAVEBOT_STATE_FAILED];
+    }
+    else if ((CAVEBOT_STATE_READY == Cavebot_RequestedState) || (CAVEBOT_STATE_MANUAL == Cavebot_RequestedState))
+    {
+        next = &Cavebot_States[Cavebot_RequestedState];
+    }
+    else
+    {
+        Cavebot_UpdateVelocity();
+        Cavebot_Run();
+    }
+
+    return next;
+}
+
+static void Cavebot_EnterFailed(void)
+{
+    Cavebot_State = CAVEBOT_STATE_FAILED;
+
+    Cavebot_Disarm();
+}
+
+static Fsm_State_t *Cavebot_UpdateFailed(void)
+{
+    Fsm_State_t *next = &Cavebot_States[CAVEBOT_STATE_FAILED];
+
+    if (!FaultHandler_HasCriticalFaults())
+    {
+        next = &Cavebot_States[CAVEBOT_STATE_READY];
+    }
+
+    return next;
+}
+
+static void Cavebot_Arm(void)
+{
+    /* TODO add logging in bots */
 
     switch (Cavebot_Bot)
     {
     case CAVEBOT_BOT_4WS:
 #ifdef ROVER_4WS
-        error = Rover4ws_Task();
+        (void)Rover4ws_Arm();
 #endif /* ROVER_4WS */
         break;
     case CAVEBOT_BOT_4WD:
 #ifdef ROVER_4WD
-        error = Rover4wd_Task();
+        (void)Rover4wd_Arm();
 #endif /* ROVER_4WD */
         break;
     default:
-        error = CAVEBOT_ERROR_BOT;
+        /* TODO handle invalid bot */
         break;
-    }
-
-    if (CAVEBOT_ERROR_NONE != error)
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Task error %d", (int)error);
     }
 }
 
-static Cavebot_Error_t Cavebot_Initialize(void)
+static void Cavebot_Disarm(void)
 {
-    /* TODO CVW-21 read from config */
-    Cavebot_Bot = CAVEBOT_BOT_4WD;
+    /* TODO add logging in bots */
 
-    Cavebot_Error_t error = Scheduler_Initialize();
-
-    if (CAVEBOT_ERROR_NONE == error)
+    switch (Cavebot_Bot)
     {
-        error = CavebotUser_Initialize();
+    case CAVEBOT_BOT_4WS:
+#ifdef ROVER_4WS
+        (void)Rover4ws_Disarm();
+#endif /* ROVER_4WS */
+        break;
+    case CAVEBOT_BOT_4WD:
+#ifdef ROVER_4WD
+        (void)Rover4wd_Disarm();
+#endif /* ROVER_4WD */
+        break;
+    default:
+        /* TODO handle invalid bot */
+        break;
     }
+}
 
-    if (CAVEBOT_ERROR_NONE == error)
+static void Cavebot_Run(void)
+{
+    /* TODO add logging in bots */
+
+    switch (Cavebot_Bot)
     {
-        error = Cavebot_Disarm();
+    case CAVEBOT_BOT_4WS:
+#ifdef ROVER_4WS
+        (void)Rover4ws_Run();
+#endif /* ROVER_4WS */
+        break;
+    case CAVEBOT_BOT_4WD:
+#ifdef ROVER_4WD
+        (void)Rover4wd_Run();
+#endif /* ROVER_4WD */
+        break;
+    default:
+        /* TODO handle invalid bot */
+        break;
     }
+}
 
-    return error;
+static void Cavebot_Task(void)
+{
+    Fsm_Update(&Cavebot_Fsm);
 }
 
 static void Cavebot_MeasureLoopRate(void)

@@ -11,6 +11,7 @@
 #include "accelerometer.h"
 #include "gyroscope.h"
 
+#include "cavebot.h"
 #include "pid.h"
 
 typedef enum

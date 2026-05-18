@@ -8,7 +8,7 @@
 #include "bsp_timer.h"
 #include "bsp_timer_user.h"
 
-#include "faults.h"
+#include "fault_handler.h"
 
 #define CAVEBOT_SCHEDULER_TIMER     BSP_TIMER_USER_TIMER_0
 #define CAVEBOT_SCHEDULER_MAX_TASKS 16U
@@ -41,7 +41,7 @@ bool Scheduler_Initialize(void)
 
     if (BSP_ERROR_NONE != error)
     {
-        FaultHandler_SetFault(FAULT_SCHEDULER, error);
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_SCHEDULER, error);
         initialized = false;
     }
 
@@ -75,7 +75,7 @@ bool Scheduler_Start(void)
 
     if (BSP_ERROR_NONE != error)
     {
-        FaultHandler_SetFault(FAULT_SCHEDULER, error);
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_SCHEDULER, error);
         started = false;
     }
 
@@ -89,7 +89,7 @@ bool Scheduler_Stop(void)
 
     if (BSP_ERROR_NONE != error)
     {
-        FaultHandler_SetFault(FAULT_SCHEDULER, error);
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_SCHEDULER, error);
         stopped = false;
     }
 

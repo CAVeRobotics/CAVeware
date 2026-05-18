@@ -181,7 +181,7 @@ Cavebot_Error_t Rover4wd_DisableSpeedControl(void)
                                Pid_Disable(&Rover4wd_MotorsPid[CAVEBOT_USER_MOTOR_3]));
 }
 
-Cavebot_Error_t Rover4wd_Task(void)
+Cavebot_Error_t Rover4wd_Run(void)
 {
     Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
 

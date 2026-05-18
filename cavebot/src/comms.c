@@ -41,7 +41,6 @@ static uint8_t    Comms_ReceiveBuffer[AETHER_TRANSPORT_MTU];
 static uint8_t    Comms_MessageBuffer[AETHER_TRANSPORT_MTU];
 static uint8_t    Comms_HandleBuffer[AETHER_TRANSPORT_MTU];
 
-static Cavebot_Error_t Comms_AetherToCavebotError(const a_Err_t error);
 static a_Err_t Comms_Start(void *arg);
 static a_Err_t Comms_Stop(void *arg);
 static size_t Comms_Send(const uint8_t *const data, const size_t size, void *arg);
@@ -55,36 +54,46 @@ a_Tick_Ms_t a_TickUser_GetTick(void)
     return (a_Tick_Ms_t)BspTick_GetTick();
 }
 
-Cavebot_Error_t Comms_Initialize(void)
+bool Comms_Initialize(void)
 {
-    Cavebot_Error_t error = Comms_AetherToCavebotError(a_Initialize(A_TRANSPORT_PEER_ID_MAX));
+    a_Err_t error = a_Initialize(A_TRANSPORT_PEER_ID_MAX);
 
-    if (CAVEBOT_ERROR_NONE == error)
+    if (A_ERR_NONE != error)
     {
-        error = Comms_AetherToCavebotError(
-            a_Socket_Initialize(
-                &Comms_Socket,
-                A_SOCKET_TYPE_SERIAL,
-                (a_Socket_Functions_t){
+        /* TODO CVW-22 log error */
+    }
+    else
+    {
+        const a_Socket_Functions_t functions = {
             .start   = Comms_Start,
             .stop    = Comms_Stop,
             .send    = Comms_Send,
             .receive = Comms_Receive,
             .arg     = NULL,
-        },
-                Comms_SendBuffer,
-                sizeof(Comms_SendBuffer),
-                Comms_ReceiveBuffer,
-                sizeof(Comms_ReceiveBuffer)));
+        };
+        error = a_Socket_Initialize(&Comms_Socket,
+                                    A_SOCKET_TYPE_SERIAL,
+                                    functions,
+                                    Comms_SendBuffer,
+                                    sizeof(Comms_SendBuffer),
+                                    Comms_ReceiveBuffer,
+                                    sizeof(Comms_ReceiveBuffer));
     }
 
-    if (CAVEBOT_ERROR_NONE == error)
+    if (A_ERR_NONE != error)
     {
-        error = Comms_AetherToCavebotError(
-            a_AddSocket(&Comms_Socket, Comms_MessageBuffer, sizeof(Comms_MessageBuffer), true));
+        /* TODO CVW-22 log error */
+    }
+    else
+    {
+        error = a_AddSocket(&Comms_Socket, Comms_MessageBuffer, sizeof(Comms_MessageBuffer), true);
     }
 
-    if (CAVEBOT_ERROR_NONE == error)
+    if (A_ERR_NONE != error)
+    {
+        /* TODO CVW-22 log error */
+    }
+    else
     {
         (void)CaveTalk_Initialize(&Comms_Handle,
                                   &Comms_Callbacks,
@@ -93,38 +102,14 @@ Cavebot_Error_t Comms_Initialize(void)
                                   sizeof(Comms_HandleBuffer));
     }
 
-    return error;
+    /* TODO CVW-22 log if initialization failed and set fault */
+
+    return A_ERR_NONE == error;
 }
 
 void Comms_Task(void)
 {
     a_Task();
-}
-
-static Cavebot_Error_t Comms_AetherToCavebotError(const a_Err_t error)
-{
-
-    Cavebot_Error_t cavebot_error = CAVEBOT_ERROR_NONE;
-
-    switch (error)
-    {
-    case A_ERR_NULL:
-        cavebot_error = CAVEBOT_ERROR_NULL;
-        break;
-    case A_ERR_SIZE:
-    case A_ERR_MEMORY:
-    case A_ERR_SERIALIZATION:
-    case A_ERR_SOCKET:
-    case A_ERR_SEQUENCE:
-    case A_ERR_DUPLICATE:
-    case A_ERR_TIMEOUT:
-    case A_ERR_MAX:
-    case A_ERR_NONE:
-    default:
-        break;
-    }
-
-    return cavebot_error;
 }
 
 static a_Err_t Comms_Start(void *arg)
