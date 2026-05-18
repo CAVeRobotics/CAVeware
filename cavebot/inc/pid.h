@@ -5,8 +5,6 @@
 
 #include "bsp.h"
 
-#include "cavebot.h"
-
 typedef struct
 {
     double kp;
@@ -25,9 +23,9 @@ typedef struct
     double maximum;
 } Pid_Handle_t;
 
-Cavebot_Error_t Pid_Reset(Pid_Handle_t *const handle);
-Cavebot_Error_t Pid_Enable(Pid_Handle_t *const handle);
-Cavebot_Error_t Pid_Disable(Pid_Handle_t *const handle);
-Cavebot_Error_t Pid_Update(Pid_Handle_t *const handle, const double actual);
+void Pid_Reset(Pid_Handle_t *const handle);
+void Pid_Enable(Pid_Handle_t *const handle);
+void Pid_Disable(Pid_Handle_t *const handle);
+void Pid_Update(Pid_Handle_t *const handle, const double actual);
 
 #endif /* PID_H */

@@ -5,12 +5,8 @@
 #include "bsp.h"
 #include "bsp_tick.h"
 
-#include "cavebot.h"
-
-Cavebot_Error_t Pid_Reset(Pid_Handle_t *const handle)
+void Pid_Reset(Pid_Handle_t *const handle)
 {
-    Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
-
     if (NULL != handle)
     {
         handle->integral         = 0.0;
@@ -19,49 +15,31 @@ Cavebot_Error_t Pid_Reset(Pid_Handle_t *const handle)
         handle->output           = 0.0;
         handle->previous_tick    = BspTick_GetMicroseconds();
         handle->integral_enabled = true;
-
-        error = CAVEBOT_ERROR_NONE;
     }
-
-    return error;
 }
 
-Cavebot_Error_t Pid_Enable(Pid_Handle_t *const handle)
+void Pid_Enable(Pid_Handle_t *const handle)
 {
-    Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
-
     if (NULL != handle)
     {
         (void)Pid_Reset(handle);
         handle->enabled = true;
-
-        error = CAVEBOT_ERROR_NONE;
     }
-
-    return error;
 }
 
-Cavebot_Error_t Pid_Disable(Pid_Handle_t *const handle)
+void Pid_Disable(Pid_Handle_t *const handle)
 {
-    Cavebot_Error_t error = CAVEBOT_ERROR_NULL;
-
     if (NULL != handle)
     {
         handle->enabled = false;
-
-        error = CAVEBOT_ERROR_NONE;
     }
-
-    return error;
 }
 
-Cavebot_Error_t Pid_Update(Pid_Handle_t *const handle, const double actual)
+void Pid_Update(Pid_Handle_t *const handle, const double actual)
 {
-    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
-
     if (NULL == handle)
     {
-        error = CAVEBOT_ERROR_NULL;
+        /* Do nothing */
     }
     else if (!handle->enabled)
     {
@@ -118,6 +96,4 @@ Cavebot_Error_t Pid_Update(Pid_Handle_t *const handle, const double actual)
         handle->error         = pid_error;
         handle->previous_tick = tick;
     }
-
-    return error;
 }
