@@ -19,7 +19,7 @@ typedef enum
     FAULT_HANDLER_FAULT_ENCODER,
     FAULT_HANDLER_FAULT_COMMS,
     FAULT_HANDLER_FAULT_LOGGING,
-    FAULT_HANDLER_FAULT_LED,
+    FAULT_HANDLER_FAULT_RGBW,
     FAULT_HANDLER_FAULT_BUZZER,
     FAULT_HANDLER_FAULT_MAX
 } FaultHandler_Fault_t;
@@ -27,16 +27,17 @@ typedef enum
 /* TODO CVW-50 save file and line */
 typedef struct
 {
-    uint32_t threshold;
-    uint32_t count;
-    Bsp_Millisecond_t tick_first;
-    Bsp_Millisecond_t tick_current;
-    FaultHandler_Error_t code_first;
-    FaultHandler_Error_t code_current;
+    const uint32_t threshold;
+    volatile uint32_t count;
+    volatile Bsp_Millisecond_t tick;
+    volatile FaultHandler_Error_t error;
+    volatile int line;
+    volatile const char *file;
 } FaultHandler_FaultState_t;
 
 void FaultHandler_SetFault(const FaultHandler_Fault_t fault, const FaultHandler_Error_t error);
 void FaultHandler_ClearFault(const FaultHandler_Fault_t fault);
 bool FaultHandler_HasCriticalFaults(void);
+bool FaultHandler_HasFault(const FaultHandler_Fault_t fault);
 
 #endif /* FAULT_HANDLER_H */
