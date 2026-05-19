@@ -5,10 +5,11 @@
 
 #include "bsp_tick.h"
 
-#define FAULT_HANDLER_ERROR_NONE (FaultHandler_Error_t)0U
+#define FAULT_HANDLER_ERROR_NONE    (FaultHandler_Error_t)0U
+#define FAULT_HANDLER_CRITICAL_MASK (uint32_t)0x7FU
 
-static volatile uint32_t                  FaultHandler_Mask                            = 0x00000000U;
-static volatile FaultHandler_FaultState_t FaultHandler_Faults[FAULT_HANDLER_FAULT_MAX] = {
+static volatile uint32_t         FaultHandler_Mask                            = 0x00000000U;
+static FaultHandler_FaultState_t FaultHandler_Faults[FAULT_HANDLER_FAULT_MAX] = {
     [FAULT_HANDLER_FAULT_MEMORY] = {
         .threshold = 1U,
         .count     = 0U,
@@ -99,6 +100,7 @@ static volatile FaultHandler_FaultState_t FaultHandler_Faults[FAULT_HANDLER_FAUL
     },
 };
 
+/* TODO CVW-50 make interrupt safe */
 void FaultHandler_SetFault(const FaultHandler_Fault_t fault, const FaultHandler_Error_t error)
 {
     if ((fault < FAULT_HANDLER_FAULT_MAX) && (error > FAULT_HANDLER_ERROR_NONE))
@@ -118,6 +120,7 @@ void FaultHandler_SetFault(const FaultHandler_Fault_t fault, const FaultHandler_
     }
 }
 
+/* TODO CVW-50 make interrupt safe */
 void FaultHandler_ClearFault(const FaultHandler_Fault_t fault)
 {
     if (fault < FAULT_HANDLER_FAULT_MAX)
@@ -129,16 +132,17 @@ void FaultHandler_ClearFault(const FaultHandler_Fault_t fault)
 
 bool FaultHandler_HasCriticalFaults(void)
 {
-    /* TODO CVW-50 */
+    const uint32_t mask = FaultHandler_Mask;
 
-    return false;
+    return 0U != (mask & FAULT_HANDLER_CRITICAL_MASK);
 }
 
 bool FaultHandler_HasFault(const FaultHandler_Fault_t fault)
 {
-    bool has_fault = false;
+    bool           has_fault = false;
+    const uint32_t mask      = FaultHandler_Mask;
 
-    if ((fault < FAULT_HANDLER_FAULT_MAX) && ((FaultHandler_Mask & (1U << fault)) > 0U))
+    if ((fault < FAULT_HANDLER_FAULT_MAX) && (0U != (mask & (1U << fault))))
     {
         has_fault = true;
     }
