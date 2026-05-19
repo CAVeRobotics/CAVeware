@@ -114,7 +114,7 @@ int main(void)
     {
         BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize scheduler");
     }
-    else if (CAVEBOT_ERROR_NONE != CavebotUser_Initialize())
+    else if (!CavebotUser_Initialize())
     {
         BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize board user");
     }
@@ -146,15 +146,6 @@ int main(void)
     }
 
     return 0;
-}
-
-Cavebot_Error_t Cavebot_BspToCavebotError(const Bsp_Error_t bsp_error)
-{
-    BSP_UNUSED(bsp_error);
-
-    /* TODO */
-
-    return CAVEBOT_ERROR_NONE;
 }
 
 Cavebot_State_t Cavebot_GetState(void)
@@ -196,37 +187,45 @@ bool Cavebot_SetState(const Cavebot_State_t state)
     return Cavebot_RequestedState != Cavebot_State;
 }
 
-Cavebot_Error_t Cavebot_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_RadiansPerSecond_t turn_rate)
+bool Cavebot_IsArmed(void)
 {
-    Cavebot_Error_t error = CAVEBOT_ERROR_BOT;
+    bool armed = false;
 
+    switch (Cavebot_State)
+    {
+    case CAVEBOT_STATE_MANUAL:
+    case CAVEBOT_STATE_AUTO:
+        armed = true;
+        break;
+    case CAVEBOT_STATE_INITIALIZE:
+    case CAVEBOT_STATE_READY:
+    case CAVEBOT_STATE_FAILED:
+    case CAVEBOT_STATE_MAX:
+    default:
+        break;
+    }
+
+    return armed;
+}
+
+void Cavebot_Drive(const Bsp_MetersPerSecond_t speed, const Bsp_RadiansPerSecond_t turn_rate)
+{
     switch (Cavebot_Bot)
     {
     case CAVEBOT_BOT_4WS:
 #ifdef ROVER_4WS
-        error = Rover4ws_Drive(speed, turn_rate);
+        Rover4ws_Drive(speed, turn_rate);
 #endif /* ROVER_4WS */
         break;
     case CAVEBOT_BOT_4WD:
 #ifdef ROVER_4WD
-        error = Rover4wd_Drive(speed, turn_rate);
+        Rover4wd_Drive(speed, turn_rate);
 #endif /* ROVER_4WD */
         break;
     default:
         /* TODO handle invalid bot */
         break;
     }
-
-    if (CAVEBOT_ERROR_NONE != error)
-    {
-        BSP_LOGGER_LOG_WARNING(kCavebot_LogTag, "Failed to set speed %lf m/s and turn rate %lf rad/s with error %d", speed, turn_rate, (int)error);
-    }
-    else
-    {
-        BSP_LOGGER_LOG_VERBOSE(kCavebot_LogTag, "Set speed %lf m/s and turn rate %lf rad/s", speed, turn_rate);
-    }
-
-    return error;
 }
 
 Cavebot_Pose_t Cavebot_GetPose(void)
@@ -257,10 +256,8 @@ Cavebot_Pose_t Cavebot_GetPose(void)
     return pose;
 }
 
-Cavebot_Error_t Cavebot_SetPose(const Cavebot_Pose_t *const pose)
+void Cavebot_SetPose(const Cavebot_Pose_t *const pose)
 {
-    Cavebot_Error_t error = CAVEBOT_ERROR_BOT;
-
     switch (Cavebot_Bot)
     {
     case CAVEBOT_BOT_4WS:
@@ -270,15 +267,13 @@ Cavebot_Error_t Cavebot_SetPose(const Cavebot_Pose_t *const pose)
         break;
     case CAVEBOT_BOT_4WD:
 #ifdef ROVER_4WD
-        error = Rover4wd_SetPose(pose);
+        Rover4wd_SetPose(pose);
 #endif /* ROVER_4WD */
         break;
     default:
         /* TODO handle invalid bot */
         break;
     }
-
-    return error;
 }
 
 Bsp_MetersPerSecond_t Cavebot_GetLinearVelocity(void)
@@ -305,13 +300,13 @@ Bsp_MetersPerSecond_t Cavebot_GetLinearVelocity(void)
     return linear_velocity;
 }
 
-Cavebot_Error_t Cavebot_SetWaypoint(const Cavebot_Pose_t *const waypoint)
+bool Cavebot_SetWaypoint(const Cavebot_Pose_t *const waypoint)
 {
-    Cavebot_Error_t error = CAVEBOT_ERROR_NONE;
+    bool waypoint_set = false;
 
     if (NULL == waypoint)
     {
-        error = CAVEBOT_ERROR_NULL;
+        /* Do nothing */
     }
     /* TODO */
     // else if (Cavebot_HasWaypoint)
@@ -323,9 +318,10 @@ Cavebot_Error_t Cavebot_SetWaypoint(const Cavebot_Pose_t *const waypoint)
         Cavebot_Waypoint     = *waypoint;
         Cavebot_WaypointTick = BspTick_GetMicroseconds();
         Cavebot_HasWaypoint  = true;
+        waypoint_set         = true;
     }
 
-    return error;
+    return waypoint_set;
 }
 
 static void Cavebot_EnterInitialize(void)
