@@ -150,7 +150,7 @@ struct Bsp_Gpio
     Bsp_GpioPin_t gpio_pin;
     Bsp_GpioMode_t mode;
     Bsp_Microsecond_t debounce;
-    Bsp_Microsecond_t previous;
+    volatile Bsp_Microsecond_t previous;
     Bsp_Callback_t callback;
 };
 #endif /* BSP_GPIO */

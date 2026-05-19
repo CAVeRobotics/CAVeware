@@ -15,6 +15,7 @@
 #include "cavebot.h"
 #include "cavebot_user.h"
 #include "fault_handler.h"
+#include "pid.h"
 
 static const char *const kRover4wd_LogTag = "ROVER 4WD";
 
