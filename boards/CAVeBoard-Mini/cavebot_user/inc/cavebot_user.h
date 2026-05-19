@@ -1,6 +1,8 @@
 #ifndef CAVEBOT_USER_H
 #define CAVEBOT_USER_H
 
+#include <stdbool.h>
+
 #include "bsp.h"
 #include "bsp_encoder_user.h"
 #include "bsp_motor.h"
@@ -10,9 +12,6 @@
 
 #include "accelerometer.h"
 #include "gyroscope.h"
-
-#include "cavebot.h"
-#include "pid.h"
 
 typedef enum
 {
@@ -50,6 +49,6 @@ extern Accelerometer_Handle_t CavebotUser_Accelerometer;
 extern Gyroscope_Handle_t     CavebotUser_Gyroscope;
 extern Rgbw_Handle_t          CavebotUser_Rgbw;
 
-Cavebot_Error_t CavebotUser_Initialize(void);
+bool CavebotUser_Initialize(void);
 
 #endif /* CAVEBOT_USER_H */
