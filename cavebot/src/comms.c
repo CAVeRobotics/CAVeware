@@ -3,51 +3,43 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "acceleration.pb.h"
 #include "aether.h"
-#include "arm.pb.h"
 #include "cavetalk.h"
-#include "drive.pb.h"
-#include "encoders.pb.h"
-#include "gyroscope.pb.h"
-#include "log.pb.h"
 
-#include "bsp.h"
-#include "bsp_gpio.h"
-#include "bsp_gpio_user.h"
-#include "bsp_encoder_user.h"
 #include "bsp_logger.h"
 #include "bsp_tick.h"
 #include "bsp_uart.h"
 #include "bsp_uart_user.h"
 
-#include "accelerometer.h"
-#include "gyroscope.h"
-
 #include "cavebot.h"
-#include "cavebot_user.h"
-#ifdef BOARD_CAVEBOARD
-#include "rover_4ws.h"
-#endif
-#ifdef BOARD_CAVEBOARD_MINI
-#include "rover_4wd.h"
-#endif
+#include "fault_handler.h"
 
-#define CAVEBOT_CAVETALK_ID 0x00000001U
+#define COMMS_CAVETALK_ID 0x00000001U
+#define COMMS_UART        BSP_UART_USER_1
 
-static a_Socket_t Comms_Socket;
-static uint8_t    Comms_SendBuffer[AETHER_TRANSPORT_MTU];
-static uint8_t    Comms_ReceiveBuffer[AETHER_TRANSPORT_MTU];
-static uint8_t    Comms_MessageBuffer[AETHER_TRANSPORT_MTU];
-static uint8_t    Comms_HandleBuffer[AETHER_TRANSPORT_MTU];
+static const char *const kComms_LogTag = "COMMS";
+static a_Socket_t        Comms_Socket;
+static uint8_t           Comms_SendBuffer[AETHER_TRANSPORT_MTU];
+static uint8_t           Comms_ReceiveBuffer[AETHER_TRANSPORT_MTU];
+static uint8_t           Comms_MessageBuffer[AETHER_TRANSPORT_MTU];
+static uint8_t           Comms_HandleBuffer[AETHER_TRANSPORT_MTU];
 
 static a_Err_t Comms_Start(void *arg);
 static a_Err_t Comms_Stop(void *arg);
 static size_t Comms_Send(const uint8_t *const data, const size_t size, void *arg);
 static size_t Comms_Receive(uint8_t *const data, const size_t size, void *arg);
+static void Comms_HearArm(const cavetalk_Mode mode);
+static void Comms_HearDrive(const cavetalk_Drive *const drive);
 
 static CaveTalk_Handle_t    Comms_Handle;
-static CaveTalk_Callbacks_t Comms_Callbacks = CAVETALK_CALLBACKS_NULL; /* TODO CVW-22 */
+static CaveTalk_Callbacks_t Comms_Callbacks = {
+    .hear_log          = NULL,
+    .hear_arm          = Comms_HearArm,
+    .hear_drive        = Comms_HearDrive,
+    .hear_acceleration = NULL,
+    .hear_gyroscope    = NULL,
+    .hear_encoders     = NULL,
+};
 
 a_Tick_Ms_t a_TickUser_GetTick(void)
 {
@@ -56,21 +48,18 @@ a_Tick_Ms_t a_TickUser_GetTick(void)
 
 bool Comms_Initialize(void)
 {
+    const a_Socket_Functions_t functions = {
+        .start   = Comms_Start,
+        .stop    = Comms_Stop,
+        .send    = Comms_Send,
+        .receive = Comms_Receive,
+        .arg     = NULL,
+    };
+
     a_Err_t error = a_Initialize(A_TRANSPORT_PEER_ID_MAX);
 
-    if (A_ERR_NONE != error)
+    if (A_ERR_NONE == error)
     {
-        /* TODO CVW-22 log error */
-    }
-    else
-    {
-        const a_Socket_Functions_t functions = {
-            .start   = Comms_Start,
-            .stop    = Comms_Stop,
-            .send    = Comms_Send,
-            .receive = Comms_Receive,
-            .arg     = NULL,
-        };
         error = a_Socket_Initialize(&Comms_Socket,
                                     A_SOCKET_TYPE_SERIAL,
                                     functions,
@@ -80,29 +69,24 @@ bool Comms_Initialize(void)
                                     sizeof(Comms_ReceiveBuffer));
     }
 
-    if (A_ERR_NONE != error)
-    {
-        /* TODO CVW-22 log error */
-    }
-    else
+    if (A_ERR_NONE == error)
     {
         error = a_AddSocket(&Comms_Socket, Comms_MessageBuffer, sizeof(Comms_MessageBuffer), true);
     }
 
     if (A_ERR_NONE != error)
     {
-        /* TODO CVW-22 log error */
+        BSP_LOGGER_LOG_ERROR(kComms_LogTag, "Failed to initialize with error %s", a_Err_ToString(error));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_COMMS, error);
     }
     else
     {
         (void)CaveTalk_Initialize(&Comms_Handle,
                                   &Comms_Callbacks,
-                                  CAVEBOT_CAVETALK_ID,
+                                  COMMS_CAVETALK_ID,
                                   Comms_HandleBuffer,
                                   sizeof(Comms_HandleBuffer));
     }
-
-    /* TODO CVW-22 log if initialization failed and set fault */
 
     return A_ERR_NONE == error;
 }
@@ -116,38 +100,94 @@ static a_Err_t Comms_Start(void *arg)
 {
     BSP_UNUSED(arg);
 
-    /* TODO CVW-22 */
+    a_Err_t     aether_error = A_ERR_NONE;
+    Bsp_Error_t error        = BspUart_Start(COMMS_UART);
 
-    return A_ERR_MAX;
+    if (BSP_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kComms_LogTag, "Failed to start with error %s", Bsp_ErrorToString(error));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_COMMS, error);
+        aether_error = A_ERR_SOCKET;
+    }
+
+    return aether_error;
 }
 
 static a_Err_t Comms_Stop(void *arg)
 {
     BSP_UNUSED(arg);
 
-    /* TODO CVW-22 */
+    a_Err_t     aether_error = A_ERR_NONE;
+    Bsp_Error_t error        = BspUart_Stop(COMMS_UART);
 
-    return A_ERR_MAX;
+    if (BSP_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kComms_LogTag, "Failed to stop with error %s", Bsp_ErrorToString(error));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_COMMS, error);
+        aether_error = A_ERR_SOCKET;
+    }
+
+    return aether_error;
 }
 
 static size_t Comms_Send(const uint8_t *const data, const size_t size, void *arg)
 {
-    BSP_UNUSED(data);
-    BSP_UNUSED(size);
     BSP_UNUSED(arg);
 
-    /* TODO CVW-22 */
+    size_t      sent  = size;
+    Bsp_Error_t error = BspUart_Transmit(COMMS_UART, data, size);
 
-    return SIZE_MAX;
+    if (BSP_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_DEBUG(kComms_LogTag, "Failed to send with error %s", Bsp_ErrorToString(error));
+        sent = SIZE_MAX;
+    }
+
+    return sent;
 }
 
 static size_t Comms_Receive(uint8_t *const data, const size_t size, void *arg)
 {
-    BSP_UNUSED(data);
-    BSP_UNUSED(size);
     BSP_UNUSED(arg);
 
-    /* TODO CVW-22 */
+    size_t      received = 0U;
+    Bsp_Error_t error    = BspUart_Receive(COMMS_UART, data, size, &received);
 
-    return SIZE_MAX;
+    if (BSP_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_DEBUG(kComms_LogTag, "Failed to receive with error %s", Bsp_ErrorToString(error));
+        received = SIZE_MAX;
+    }
+
+    return received;
+}
+
+static void Comms_HearArm(const cavetalk_Mode mode)
+{
+    bool set = false;
+
+    switch (mode)
+    {
+    case cavetalk_Mode_MODE_DISARMED:
+        set = Cavebot_SetState(CAVEBOT_STATE_READY);
+        break;
+    case cavetalk_Mode_MODE_ARMED_MANUAL:
+        set = Cavebot_SetState(CAVEBOT_STATE_MANUAL);
+        break;
+    case cavetalk_Mode_MODE_ARMED_AUTO:
+        set = Cavebot_SetState(CAVEBOT_STATE_AUTO);
+        break;
+    default:
+        break;
+    }
+
+    if (!set)
+    {
+        BSP_LOGGER_LOG_WARNING(kComms_LogTag, "Failed to set state %d", mode);
+    }
+}
+
+static void Comms_HearDrive(const cavetalk_Drive *const drive)
+{
+    Cavebot_Drive(drive->speed_meters_per_second, drive->turn_rate_radians_per_second);
 }
