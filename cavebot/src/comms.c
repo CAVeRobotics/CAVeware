@@ -28,6 +28,7 @@ static a_Err_t Comms_Start(void *arg);
 static a_Err_t Comms_Stop(void *arg);
 static size_t Comms_Send(const uint8_t *const data, const size_t size, void *arg);
 static size_t Comms_Receive(uint8_t *const data, const size_t size, void *arg);
+static void Comms_Hear(const char *const key, const uint8_t *const data, const size_t size, void *arg);
 static void Comms_HearArm(const cavetalk_Mode mode);
 static void Comms_HearDrive(const cavetalk_Drive *const drive);
 
@@ -56,6 +57,7 @@ bool Comms_Initialize(void)
         .arg     = NULL,
     };
 
+    a_EnableRouting(false);
     a_Err_t error = a_Initialize(A_TRANSPORT_PEER_ID_MAX);
 
     if (A_ERR_NONE == error)
@@ -86,6 +88,43 @@ bool Comms_Initialize(void)
                                   COMMS_CAVETALK_ID,
                                   Comms_HandleBuffer,
                                   sizeof(Comms_HandleBuffer));
+
+        error = a_Subscribe(CaveTalk_GetKey(&Comms_Handle, COMMS_CAVETALK_ID, cavetalk_Id_ID_ARM), Comms_Hear, NULL);
+
+        if (A_ERR_NONE == error)
+        {
+            error = a_Subscribe(CaveTalk_GetKey(&Comms_Handle, COMMS_CAVETALK_ID, cavetalk_Id_ID_DRIVE), Comms_Hear, NULL);
+        }
+
+        /* Add other subscriptions here */
+
+        if (A_ERR_NONE == error)
+        {
+            error = a_Declare(CaveTalk_GetKey(&Comms_Handle, COMMS_CAVETALK_ID, cavetalk_Id_ID_ACCELERATION));
+        }
+
+        if (A_ERR_NONE == error)
+        {
+            error = a_Declare(CaveTalk_GetKey(&Comms_Handle, COMMS_CAVETALK_ID, cavetalk_Id_ID_ENCODERS));
+        }
+
+        if (A_ERR_NONE == error)
+        {
+            error = a_Declare(CaveTalk_GetKey(&Comms_Handle, COMMS_CAVETALK_ID, cavetalk_Id_ID_GYROSCOPE));
+        }
+
+        if (A_ERR_NONE == error)
+        {
+            error = a_Declare(CaveTalk_GetKey(&Comms_Handle, COMMS_CAVETALK_ID, cavetalk_Id_ID_LOG));
+        }
+
+        /* Add other declarations here */
+
+        if (A_ERR_NONE != error)
+        {
+            BSP_LOGGER_LOG_ERROR(kComms_LogTag, "Failed to setup keys with error %s", a_Err_ToString(error));
+            FaultHandler_SetFault(FAULT_HANDLER_FAULT_COMMS, error);
+        }
     }
 
     return A_ERR_NONE == error;
@@ -160,6 +199,17 @@ static size_t Comms_Receive(uint8_t *const data, const size_t size, void *arg)
     }
 
     return received;
+}
+
+static void Comms_Hear(const char *const key, const uint8_t *const data, const size_t size, void *arg)
+{
+    BSP_UNUSED(arg);
+
+    CaveTalk_Hear(&Comms_Handle, (CaveTalk_Message_t){
+        .key  = key,
+        .data = data,
+        .size = size,
+    });
 }
 
 static void Comms_HearArm(const cavetalk_Mode mode)
