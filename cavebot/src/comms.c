@@ -14,11 +14,11 @@
 #include "cavebot.h"
 #include "fault_handler.h"
 
-#define COMMS_CAVETALK_ID 0x00000001U
-#define COMMS_UART        BSP_UART_USER_1
+#define COMMS_UART BSP_UART_USER_1
 
 static const char *const kComms_LogTag = "COMMS";
 static a_Socket_t        Comms_Socket;
+static a_Session_t       Comms_Session;
 static uint8_t           Comms_SendBuffer[AETHER_TRANSPORT_MTU];
 static uint8_t           Comms_ReceiveBuffer[AETHER_TRANSPORT_MTU];
 static uint8_t           Comms_MessageBuffer[AETHER_TRANSPORT_MTU];
@@ -62,18 +62,18 @@ bool Comms_Initialize(void)
 
     if (A_ERR_NONE == error)
     {
-        error = a_Socket_Initialize(&Comms_Socket,
-                                    A_SOCKET_TYPE_SERIAL,
-                                    functions,
-                                    Comms_SendBuffer,
-                                    sizeof(Comms_SendBuffer),
-                                    Comms_ReceiveBuffer,
-                                    sizeof(Comms_ReceiveBuffer));
+        error = a_InitializeSocket(&Comms_Socket,
+                                   A_SOCKET_TYPE_SERIAL,
+                                   functions,
+                                   Comms_SendBuffer,
+                                   sizeof(Comms_SendBuffer),
+                                   Comms_ReceiveBuffer,
+                                   sizeof(Comms_ReceiveBuffer));
     }
 
     if (A_ERR_NONE == error)
     {
-        error = a_AddSocket(&Comms_Socket, Comms_MessageBuffer, sizeof(Comms_MessageBuffer), true);
+        error = a_AddSession(&Comms_Session, &Comms_Socket, Comms_MessageBuffer, sizeof(Comms_MessageBuffer), true);
     }
 
     if (A_ERR_NONE != error)
