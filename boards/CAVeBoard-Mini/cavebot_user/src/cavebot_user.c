@@ -2,6 +2,8 @@
 
 #include <stdbool.h>
 
+#include "aether.h"
+#include "cavetalk.h"
 #include "spi.h"
 
 #include "bsp.h"
@@ -165,7 +167,9 @@ Gyroscope_Handle_t     CavebotUser_Gyroscope     = LSM6DSV16X_GYROSCOPE_HANDLE(k
 static void CavebotUser_ImuTask(void);
 static void CavebotUser_EncoderTask(void);
 static void CavebotUser_Task(void);
+static void CavebotUser_CommsTask(void);
 static void CavebotUser_ExitInitialize(void);
+
 static void CavebotUser_OnArm(void);
 static void CavebotUser_OnDisarm(void);
 static Fsm_State_t *CavebotUser_UpdateState(void);
@@ -271,31 +275,29 @@ bool CavebotUser_Initialize(void)
         initialized = false;
     }
 
-    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_ACCELEROMETER) && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_GYROSCOPE))
+    if (!Scheduler_AddTask(CavebotUser_ImuTask, 2U))
     {
-        if (!Scheduler_AddTask(CavebotUser_ImuTask, 2U))
-        {
-            BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add IMU task to scheduler");
-            initialized = false;
-        }
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add IMU task to scheduler");
+        initialized = false;
     }
 
-    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_ENCODER))
+    if (!Scheduler_AddTask(CavebotUser_EncoderTask, 40U))
     {
-        if (!Scheduler_AddTask(CavebotUser_EncoderTask, 40U))
-        {
-            BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add encoder task to scheduler");
-            initialized = false;
-        }
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add encoder task to scheduler");
+        initialized = false;
     }
 
-    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_RGBW) && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_BUZZER))
+    if (!Scheduler_AddTask(CavebotUser_Task, 4000U))
     {
-        if (!Scheduler_AddTask(CavebotUser_Task, 4000U))
-        {
-            BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add encoder task to scheduler");
-            initialized = false;
-        }
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add board task to scheduler");
+        initialized = false;
+    }
+
+    /* TODO run at 100Hz */
+    if (!Scheduler_AddTask(CavebotUser_CommsTask, 4000U))
+    {
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add telemetry task to scheduler");
+        initialized = false;
     }
 
     return initialized;
@@ -303,43 +305,52 @@ bool CavebotUser_Initialize(void)
 
 static void CavebotUser_ImuTask(void)
 {
-    Bsp_Error_t error = Accelerometer_Read(&CavebotUser_Accelerometer);
-    if (BSP_ERROR_NONE != error)
+    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_ACCELEROMETER))
     {
-        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ACCELEROMETER, error);
+        const Bsp_Error_t error = Accelerometer_Read(&CavebotUser_Accelerometer);
+        if (BSP_ERROR_NONE != error)
+        {
+            FaultHandler_SetFault(FAULT_HANDLER_FAULT_ACCELEROMETER, error);
+        }
     }
 
-    error = Gyroscope_Read(&CavebotUser_Gyroscope);
-    if (BSP_ERROR_NONE != error)
+    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_GYROSCOPE))
     {
-        FaultHandler_SetFault(FAULT_HANDLER_FAULT_GYROSCOPE, error);
+        const Bsp_Error_t error = Gyroscope_Read(&CavebotUser_Gyroscope);
+        if (BSP_ERROR_NONE != error)
+        {
+            FaultHandler_SetFault(FAULT_HANDLER_FAULT_GYROSCOPE, error);
+        }
     }
 }
 
 static void CavebotUser_EncoderTask(void)
 {
-    Bsp_Error_t error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_0);
-    if (BSP_ERROR_NONE != error)
+    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_ENCODER))
     {
-        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
-    }
+        Bsp_Error_t error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_0);
+        if (BSP_ERROR_NONE != error)
+        {
+            FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
+        }
 
-    error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_1);
-    if (BSP_ERROR_NONE != error)
-    {
-        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
-    }
+        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_1);
+        if (BSP_ERROR_NONE != error)
+        {
+            FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
+        }
 
-    error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_2);
-    if (BSP_ERROR_NONE != error)
-    {
-        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
-    }
+        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_2);
+        if (BSP_ERROR_NONE != error)
+        {
+            FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
+        }
 
-    error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_3);
-    if (BSP_ERROR_NONE != error)
-    {
-        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
+        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_3);
+        if (BSP_ERROR_NONE != error)
+        {
+            FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
+        }
     }
 }
 
@@ -348,51 +359,77 @@ void CavebotUser_Task(void)
     Fsm_Update(&CavebotUser_Fsm);
 }
 
+static void CavebotUser_CommsTask(void)
+{
+    /* TODO publish sensor readings at 100Hz */
+}
+
 static void CavebotUser_ExitInitialize(void)
 {
-    /* TODO CVW-67 make all sounds non-block and add error handling */
-    /* Initialization sound */
-    BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
-    BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1, 0.5);
-    BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 31110);
-    Bsp_Delay(100);
-    BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 23333);
-    Bsp_Delay(100);
-    BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 15556);
-    Bsp_Delay(100);
-    BspPwm_Stop(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_RGBW))
+    {
+        /* TODO CVW-50 handle RGBW LED errors */
+        (void)Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_GREEN);
+    }
+
+    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_BUZZER))
+    {
+        /* TODO CVW-67 make all sounds non-block and add error handling */
+        /* Initialization sound */
+        BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+        BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1, 0.5);
+        BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 31110);
+        Bsp_Delay(100);
+        BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 23333);
+        Bsp_Delay(100);
+        BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 15556);
+        Bsp_Delay(100);
+        BspPwm_Stop(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+    }
 }
 
 static void CavebotUser_OnArm(void)
 {
-    /* TODO CVW-50 handle RGBW LED errors */
-    (void)Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_RED);
+    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_RGBW))
+    {
+        /* TODO CVW-50 handle RGBW LED errors */
+        (void)Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_RED);
+    }
 
-    /* TODO CVW-67 make all sounds non-block and add error handling */
-    /* Arm sound */
-    BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
-    BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1, 0.5);
-    BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 15556);
-    Bsp_Delay(100);
-    BspPwm_Stop(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
-    Bsp_Delay(100);
-    BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
-    Bsp_Delay(100);
-    BspPwm_Stop(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_BUZZER))
+    {
+        /* TODO CVW-67 make all sounds non-block and add error handling */
+        /* Arm sound */
+        BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+        BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1, 0.5);
+        BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 15556);
+        Bsp_Delay(100);
+        BspPwm_Stop(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+        Bsp_Delay(100);
+        BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+        Bsp_Delay(100);
+        BspPwm_Stop(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+    }
 }
 
 static void CavebotUser_OnDisarm(void)
 {
-    /* TODO CVW-50 handle RGBW LED errors */
-    (void)Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_GREEN);
+    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_RGBW))
+    {
+        /* TODO CVW-50 handle RGBW LED errors */
+        (void)Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_GREEN);
+    }
 
-    /* TODO CVW-67 make all sounds non-block and add error handling */
-    /* Disarm sound */
-    BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
-    BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1, 0.5);
-    BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 15556);
-    Bsp_Delay(300);
-    BspPwm_Stop(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_BUZZER))
+    {
+        /* TODO CVW-67 make all sounds non-block and add error handling */
+        /* Disarm sound */
+        BspPwm_Start(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+        BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1, 0.5);
+        BspPwm_SetPeriod(BSP_PWM_USER_TIMER_6, 15556);
+        Bsp_Delay(300);
+        BspPwm_Stop(BSP_PWM_USER_TIMER_6, BSP_TIMER_CHANNEL_1);
+    }
 }
 
 static Fsm_State_t *CavebotUser_UpdateState(void)

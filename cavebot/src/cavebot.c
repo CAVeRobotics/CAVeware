@@ -7,9 +7,6 @@
 #include "bsp_tick.h"
 #include "bsp_logger.h"
 
-#include "accelerometer.h"
-#include "gyroscope.h"
-
 #include "cavebot_user.h"
 #include "comms.h"
 #include "fault_handler.h"
@@ -114,34 +111,38 @@ int main(void)
     {
         BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize scheduler");
     }
-    else if (!CavebotUser_Initialize())
+    else if (!Fsm_Initialize(&Cavebot_Fsm, &Cavebot_States[CAVEBOT_STATE_INITIALIZE], Cavebot_FsmName))
     {
-        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize board user");
+        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize FSM");
     }
     else if (!Comms_Initialize())
     {
         BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize comms");
     }
-    else if (!Fsm_Initialize(&Cavebot_Fsm, &Cavebot_States[CAVEBOT_STATE_INITIALIZE], Cavebot_FsmName))
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to initialize FSM");
-    }
-    else if (!Scheduler_AddTask(Comms_Task, CAVEBOT_COMMS_TASK_PERIOD) || Scheduler_AddTask(Cavebot_Task, CAVEBOT_TASK_PERIOD))
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to add tasks to scheduler");
-    }
-    else if (!Scheduler_Start())
-    {
-        BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to start scheduler");
-    }
     else
     {
-        BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Initialized");
-
-        while (true)
+        if (!CavebotUser_Initialize())
         {
-            Scheduler_Run();
-            Cavebot_MeasureLoopRate(); /* TODO CVW-71 move loop rate/task logging to scheduler */
+            BSP_LOGGER_LOG_WARNING(kCavebot_LogTag, "Failed to initialize board");
+        }
+
+        if (!Scheduler_AddTask(Comms_Task, CAVEBOT_COMMS_TASK_PERIOD) || Scheduler_AddTask(Cavebot_Task, CAVEBOT_TASK_PERIOD))
+        {
+            BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to add tasks to scheduler");
+        }
+        else if (!Scheduler_Start())
+        {
+            BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to start scheduler");
+        }
+        else
+        {
+            BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Initialization finished");
+
+            while (true)
+            {
+                Scheduler_Run();
+                Cavebot_MeasureLoopRate(); /* TODO CVW-71 move loop rate/task logging to scheduler */
+            }
         }
     }
 
