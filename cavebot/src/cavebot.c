@@ -3,6 +3,8 @@
 #include <math.h>
 #include <stdbool.h>
 
+#include "cavetalk.h"
+
 #include "bsp.h"
 #include "bsp_tick.h"
 #include "bsp_logger.h"
@@ -347,6 +349,7 @@ static void Cavebot_EnterReady(void)
     Cavebot_State = CAVEBOT_STATE_READY;
 
     Cavebot_Disarm();
+    Comms_SpeakGetMode(cavetalk_Mode_MODE_DISARMED);
 }
 
 static Fsm_State_t *Cavebot_UpdateReady(void)
@@ -370,6 +373,7 @@ static void Cavebot_EnterManual(void)
     Cavebot_State = CAVEBOT_STATE_MANUAL;
 
     Cavebot_Arm();
+    Comms_SpeakGetMode(cavetalk_Mode_MODE_ARMED_MANUAL);
 }
 
 static Fsm_State_t *Cavebot_UpdateManual(void)
@@ -397,6 +401,7 @@ static void Cavebot_EnterAuto(void)
     Cavebot_State = CAVEBOT_STATE_AUTO;
 
     Cavebot_Arm();
+    Comms_SpeakGetMode(cavetalk_Mode_MODE_ARMED_AUTO);
 }
 
 static Fsm_State_t *Cavebot_UpdateAuto(void)

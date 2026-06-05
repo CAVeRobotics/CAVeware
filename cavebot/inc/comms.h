@@ -12,7 +12,7 @@
 bool Comms_Initialize(void);
 void Comms_Task(void);
 void Comms_SpeakLog(char *const log);
-void Comms_SpeakArm(const cavetalk_Mode mode);
+void Comms_SpeakGetMode(const cavetalk_Mode mode);
 void Comms_SpeakAcceleration(const cavetalk_Acceleration *const acceleration);
 void Comms_SpeakGyroscope(const cavetalk_Gyroscope *const gyroscope);
 void Comms_SpeakEncoders(cavetalk_Encoder *const encoders, const size_t count);

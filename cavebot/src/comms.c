@@ -31,13 +31,14 @@ static size_t Comms_Send(const uint8_t *const data, const size_t size, void *arg
 static size_t Comms_Receive(uint8_t *const data, const size_t size, void *arg);
 static void Comms_Speak(const char *const key, const uint8_t *const data, const size_t size);
 static void Comms_Hear(const char *const key, const uint8_t *const data, const size_t size, void *arg);
-static void Comms_HearArm(const cavetalk_Mode mode);
+static void Comms_HearSetMode(const cavetalk_Mode mode);
 static void Comms_HearDrive(const cavetalk_Drive *const drive);
 
 static CaveTalk_Handle_t    Comms_Handle;
 static CaveTalk_Callbacks_t Comms_Callbacks = {
     .hear_log          = NULL,
-    .hear_arm          = Comms_HearArm,
+    .hear_set_mode     = Comms_HearSetMode,
+    .hear_get_mode     = NULL,
     .hear_drive        = Comms_HearDrive,
     .hear_acceleration = NULL,
     .hear_gyroscope    = NULL,
@@ -91,7 +92,7 @@ bool Comms_Initialize(void)
                                   Comms_HandleBuffer,
                                   sizeof(Comms_HandleBuffer));
 
-        error = a_Subscribe(CaveTalk_GetKey(&Comms_Handle, COMMS_CAVETALK_ID, cavetalk_Id_ID_ARM), Comms_Hear, NULL);
+        error = a_Subscribe(CaveTalk_GetKey(&Comms_Handle, COMMS_CAVETALK_ID, cavetalk_Id_ID_SET_MODE), Comms_Hear, NULL);
 
         if (A_ERR_NONE == error)
         {
@@ -118,6 +119,11 @@ bool Comms_Initialize(void)
         if (A_ERR_NONE == error)
         {
             error = a_Declare(CaveTalk_GetKey(&Comms_Handle, COMMS_CAVETALK_ID, cavetalk_Id_ID_LOG));
+        }
+
+        if (A_ERR_NONE == error)
+        {
+            error = a_Declare(CaveTalk_GetKey(&Comms_Handle, COMMS_CAVETALK_ID, cavetalk_Id_ID_GET_MODE));
         }
 
         /* Add other declarations here */
@@ -147,13 +153,14 @@ void Comms_SpeakLog(char *const log)
     }
 }
 
-void Comms_SpeakArm(const cavetalk_Mode mode)
+void Comms_SpeakGetMode(const cavetalk_Mode mode)
 {
-    CaveTalk_Message_t *message = CaveTalk_SpeakArm(&Comms_Handle, mode);
+    CaveTalk_Message_t *message = CaveTalk_SpeakGetMode(&Comms_Handle, mode);
 
-    BSP_UNUSED(message);
-
-    /* TODO CVW-22 send arm status back to command peer */
+    if (NULL != message)
+    {
+        Comms_Speak(message->key, message->data, message->size);
+    }
 }
 
 void Comms_SpeakAcceleration(const cavetalk_Acceleration *const acceleration)
@@ -276,7 +283,7 @@ static void Comms_Hear(const char *const key, const uint8_t *const data, const s
     });
 }
 
-static void Comms_HearArm(const cavetalk_Mode mode)
+static void Comms_HearSetMode(const cavetalk_Mode mode)
 {
     bool set = false;
 
