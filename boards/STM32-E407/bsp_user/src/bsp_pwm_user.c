@@ -9,9 +9,15 @@ const Bsp_PwmConfig_t BspPwmUser_TimerConfigTable[BSP_PWM_USER_TIMER_MAX] = {
         .timer_handle = &htim1, .max_channel = BSP_TIMER_CHANNEL_4
     },
     [BSP_PWM_USER_TIMER_1] = {
-        .timer_handle = &htim8, .max_channel = BSP_TIMER_CHANNEL_4
+        .timer_handle = &htim9, .max_channel = BSP_TIMER_CHANNEL_2
     },
     [BSP_PWM_USER_TIMER_2] = {
+        .timer_handle = &htim10, .max_channel = BSP_TIMER_CHANNEL_1
+    },
+    [BSP_PWM_USER_TIMER_3] = {
+        .timer_handle = &htim11, .max_channel = BSP_TIMER_CHANNEL_1
+    },
+    [BSP_PWM_USER_TIMER_4] = {
         .timer_handle = &htim14, .max_channel = BSP_TIMER_CHANNEL_1
     },
 };

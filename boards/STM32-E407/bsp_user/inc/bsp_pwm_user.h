@@ -8,6 +8,8 @@ typedef enum
     BSP_PWM_USER_TIMER_0,
     BSP_PWM_USER_TIMER_1,
     BSP_PWM_USER_TIMER_2,
+    BSP_PWM_USER_TIMER_3,
+    BSP_PWM_USER_TIMER_4,
     BSP_PWM_USER_TIMER_MAX
 } BspPwmUser_Timer_t;
 
