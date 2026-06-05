@@ -287,14 +287,13 @@ bool CavebotUser_Initialize(void)
         initialized = false;
     }
 
-    if (!Scheduler_AddTask(CavebotUser_Task, 4000U))
+    if (!Scheduler_AddTask(CavebotUser_Task, 800U))
     {
         BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add board task to scheduler");
         initialized = false;
     }
 
-    /* TODO run at 100Hz */
-    if (!Scheduler_AddTask(CavebotUser_CommsTask, 4000U))
+    if (!Scheduler_AddTask(CavebotUser_CommsTask, 40U))
     {
         BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add telemetry task to scheduler");
         initialized = false;
@@ -361,7 +360,41 @@ void CavebotUser_Task(void)
 
 static void CavebotUser_CommsTask(void)
 {
-    /* TODO publish sensor readings at 100Hz */
+    cavetalk_Acceleration acceleration = {
+        .x_meters_per_second_squared = CavebotUser_Accelerometer.reading.x,
+        .y_meters_per_second_squared = CavebotUser_Accelerometer.reading.y,
+        .z_meters_per_second_squared = CavebotUser_Accelerometer.reading.z,
+    };
+    Comms_SpeakAcceleration(&acceleration);
+
+    cavetalk_Gyroscope gyroscope = {
+        .roll_radians_per_second  = CavebotUser_Gyroscope.reading.x,
+        .pitch_radians_per_second = CavebotUser_Gyroscope.reading.y,
+        .yaw_radians_per_second   = CavebotUser_Gyroscope.reading.z,
+    };
+    Comms_SpeakGyroscope(&gyroscope);
+
+    cavetalk_Encoder encoders[BSP_ENCODER_USER_TIMER_MAX] = {
+        [BSP_ENCODER_USER_TIMER_0] = {
+            .pulses                  = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].pulses,
+            .rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].angular_rate,
+        },
+        [BSP_ENCODER_USER_TIMER_1] = {
+            .pulses                  = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].pulses,
+            .rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].angular_rate,
+        },
+        [BSP_ENCODER_USER_TIMER_2] = {
+            .pulses                  = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].pulses,
+            .rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].angular_rate,
+        },
+        [BSP_ENCODER_USER_TIMER_3] = {
+            .pulses                  = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].pulses,
+            .rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].angular_rate,
+        },
+    };
+    Comms_SpeakEncoders(encoders, sizeof(encoders) / sizeof(encoders[0]));
+
+    /* TODO CVW-22 faults */
 }
 
 static void CavebotUser_ExitInitialize(void)

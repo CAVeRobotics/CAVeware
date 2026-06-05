@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "aether.h"
 #include "cavetalk.h"
@@ -28,6 +29,7 @@ static a_Err_t Comms_Start(void *arg);
 static a_Err_t Comms_Stop(void *arg);
 static size_t Comms_Send(const uint8_t *const data, const size_t size, void *arg);
 static size_t Comms_Receive(uint8_t *const data, const size_t size, void *arg);
+static void Comms_Speak(const char *const key, const uint8_t *const data, const size_t size);
 static void Comms_Hear(const char *const key, const uint8_t *const data, const size_t size, void *arg);
 static void Comms_HearArm(const cavetalk_Mode mode);
 static void Comms_HearDrive(const cavetalk_Drive *const drive);
@@ -135,6 +137,55 @@ void Comms_Task(void)
     a_Task();
 }
 
+void Comms_SpeakLog(char *const log)
+{
+    CaveTalk_Message_t *message = CaveTalk_SpeakLog(&Comms_Handle, log);
+
+    if (NULL != message)
+    {
+        Comms_Speak(message->key, message->data, message->size);
+    }
+}
+
+void Comms_SpeakArm(const cavetalk_Mode mode)
+{
+    CaveTalk_Message_t *message = CaveTalk_SpeakArm(&Comms_Handle, mode);
+
+    BSP_UNUSED(message);
+
+    /* TODO CVW-22 send arm status back to command peer */
+}
+
+void Comms_SpeakAcceleration(const cavetalk_Acceleration *const acceleration)
+{
+    CaveTalk_Message_t *message = CaveTalk_SpeakAcceleration(&Comms_Handle, acceleration);
+
+    if (NULL != message)
+    {
+        Comms_Speak(message->key, message->data, message->size);
+    }
+}
+
+void Comms_SpeakGyroscope(const cavetalk_Gyroscope *const gyroscope)
+{
+    CaveTalk_Message_t *message = CaveTalk_SpeakGyroscope(&Comms_Handle, gyroscope);
+
+    if (NULL != message)
+    {
+        Comms_Speak(message->key, message->data, message->size);
+    }
+}
+
+void Comms_SpeakEncoders(cavetalk_Encoder *const encoders, const size_t count)
+{
+    CaveTalk_Message_t *message = CaveTalk_SpeakEncoders(&Comms_Handle, encoders, count);
+
+    if (NULL != message)
+    {
+        Comms_Speak(message->key, message->data, message->size);
+    }
+}
+
 static a_Err_t Comms_Start(void *arg)
 {
     BSP_UNUSED(arg);
@@ -199,6 +250,19 @@ static size_t Comms_Receive(uint8_t *const data, const size_t size, void *arg)
     }
 
     return received;
+}
+
+static void Comms_Speak(const char *const key, const uint8_t *const data, const size_t size)
+{
+    if ((NULL != key) && (NULL != data) && (0U != size))
+    {
+        const a_Err_t error = a_Publish(key, data, size);
+
+        if (A_ERR_NONE != error)
+        {
+            FaultHandler_SetFault(FAULT_HANDLER_FAULT_COMMS, error);
+        }
+    }
 }
 
 static void Comms_Hear(const char *const key, const uint8_t *const data, const size_t size, void *arg)
