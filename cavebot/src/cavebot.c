@@ -128,7 +128,7 @@ int main(void)
             BSP_LOGGER_LOG_WARNING(kCavebot_LogTag, "Failed to initialize board");
         }
 
-        if (!Scheduler_AddTask(Comms_Task, CAVEBOT_COMMS_TASK_PERIOD) || Scheduler_AddTask(Cavebot_Task, CAVEBOT_TASK_PERIOD))
+        if (!Scheduler_AddTask(Comms_Task, CAVEBOT_COMMS_TASK_PERIOD) || !Scheduler_AddTask(Cavebot_Task, CAVEBOT_TASK_PERIOD))
         {
             BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to add tasks to scheduler");
         }
