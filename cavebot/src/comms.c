@@ -17,7 +17,8 @@
 
 #define COMMS_UART BSP_UART_USER_1
 
-static const char *const kComms_LogTag = "COMMS";
+static const char *const kComms_LogTag   = "COMMS";
+static bool              Comms_Connected = false;
 static a_Socket_t        Comms_Socket;
 static a_Session_t       Comms_Session;
 static uint8_t           Comms_SendBuffer[AETHER_TRANSPORT_MTU];
@@ -29,6 +30,7 @@ static a_Err_t Comms_Start(void *arg);
 static a_Err_t Comms_Stop(void *arg);
 static size_t Comms_Send(const uint8_t *const data, const size_t size, void *arg);
 static size_t Comms_Receive(uint8_t *const data, const size_t size, void *arg);
+static void Comms_EventHandler(const a_Event_t event, const a_Session_t *const session, const a_Err_t *const error, void *arg);
 static void Comms_Speak(const char *const key, const uint8_t *const data, const size_t size);
 static void Comms_Hear(const char *const key, const uint8_t *const data, const size_t size, void *arg);
 static void Comms_HearSetMode(const cavetalk_Mode mode);
@@ -60,12 +62,13 @@ bool Comms_Initialize(void)
         .arg     = NULL,
     };
 
-    a_EnableRouting(false);
-    /* TODO CVW-22 register event handler to set fault for "systems level" errors, e.g. memory error */
     a_Err_t error = a_Initialize(A_TRANSPORT_PEER_ID_MAX);
 
     if (A_ERR_NONE == error)
     {
+        a_EnableRouting(false);
+        a_RegisterEventHandler(Comms_EventHandler, NULL);
+
         error = a_InitializeSocket(&Comms_Socket,
                                    A_SOCKET_TYPE_SERIAL,
                                    functions,
@@ -146,51 +149,66 @@ void Comms_Task(void)
 
 void Comms_SpeakLog(char *const log)
 {
-    CaveTalk_Message_t *message = CaveTalk_SpeakLog(&Comms_Handle, log);
-
-    if (NULL != message)
+    if (Comms_Connected && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
     {
-        Comms_Speak(message->key, message->data, message->size);
+        CaveTalk_Message_t *message = CaveTalk_SpeakLog(&Comms_Handle, log);
+
+        if (NULL != message)
+        {
+            Comms_Speak(message->key, message->data, message->size);
+        }
     }
 }
 
 void Comms_SpeakGetMode(const cavetalk_Mode mode)
 {
-    CaveTalk_Message_t *message = CaveTalk_SpeakGetMode(&Comms_Handle, mode);
-
-    if (NULL != message)
+    if (Comms_Connected && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
     {
-        Comms_Speak(message->key, message->data, message->size);
+        CaveTalk_Message_t *message = CaveTalk_SpeakGetMode(&Comms_Handle, mode);
+
+        if (NULL != message)
+        {
+            Comms_Speak(message->key, message->data, message->size);
+        }
     }
 }
 
 void Comms_SpeakAcceleration(const cavetalk_Acceleration *const acceleration)
 {
-    CaveTalk_Message_t *message = CaveTalk_SpeakAcceleration(&Comms_Handle, acceleration);
-
-    if (NULL != message)
+    if (Comms_Connected && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
     {
-        Comms_Speak(message->key, message->data, message->size);
+        CaveTalk_Message_t *message = CaveTalk_SpeakAcceleration(&Comms_Handle, acceleration);
+
+        if (NULL != message)
+        {
+            Comms_Speak(message->key, message->data, message->size);
+        }
     }
 }
 
 void Comms_SpeakGyroscope(const cavetalk_Gyroscope *const gyroscope)
 {
-    CaveTalk_Message_t *message = CaveTalk_SpeakGyroscope(&Comms_Handle, gyroscope);
-
-    if (NULL != message)
+    if (Comms_Connected && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
     {
-        Comms_Speak(message->key, message->data, message->size);
+        CaveTalk_Message_t *message = CaveTalk_SpeakGyroscope(&Comms_Handle, gyroscope);
+
+        if (NULL != message)
+        {
+            Comms_Speak(message->key, message->data, message->size);
+        }
     }
 }
 
 void Comms_SpeakEncoders(cavetalk_Encoder *const encoders, const size_t count)
 {
-    CaveTalk_Message_t *message = CaveTalk_SpeakEncoders(&Comms_Handle, encoders, count);
-
-    if (NULL != message)
+    if (Comms_Connected && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
     {
-        Comms_Speak(message->key, message->data, message->size);
+        CaveTalk_Message_t *message = CaveTalk_SpeakEncoders(&Comms_Handle, encoders, count);
+
+        if (NULL != message)
+        {
+            Comms_Speak(message->key, message->data, message->size);
+        }
     }
 }
 
@@ -260,19 +278,40 @@ static size_t Comms_Receive(uint8_t *const data, const size_t size, void *arg)
     return received;
 }
 
+static void Comms_EventHandler(const a_Event_t event, const a_Session_t *const session, const a_Err_t *const error, void *arg)
+{
+    BSP_UNUSED(session);
+    BSP_UNUSED(arg);
+
+    switch (event)
+    {
+    case A_EVENT_OPEN:
+        Comms_Connected = true;
+        BSP_LOGGER_LOG_DEBUG(kComms_LogTag, "Connected");
+        break;
+    case A_EVENT_CLOSE:
+        Comms_Connected = false;
+        BSP_LOGGER_LOG_DEBUG(kComms_LogTag, "Disconnected");
+        break;
+    case A_EVENT_ERROR:
+        if ((NULL != error) && (A_ERR_MEMORY == *error))
+        {
+            FaultHandler_SetFault(FAULT_HANDLER_FAULT_MEMORY, *error);
+            FaultHandler_SetFault(FAULT_HANDLER_FAULT_COMMS, *error);
+        }
+        break;
+    default:
+        break;
+    }
+}
+
 static void Comms_Speak(const char *const key, const uint8_t *const data, const size_t size)
 {
-    if ((NULL != key) &&
-        (NULL != data) &&
-        (0U != size) &&
-        !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
-    {
-        const a_Err_t error = a_Publish(key, data, size);
+    const a_Err_t error = a_Publish(key, data, size);
 
-        if (A_ERR_NONE != error)
-        {
-            FaultHandler_SetFault(FAULT_HANDLER_FAULT_COMMS, error);
-        }
+    if (A_ERR_NONE != error)
+    {
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_COMMS, error);
     }
 }
 
