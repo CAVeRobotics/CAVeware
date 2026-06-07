@@ -307,12 +307,7 @@ static void Comms_EventHandler(const a_Event_t event, const a_Session_t *const s
 
 static void Comms_Speak(const char *const key, const uint8_t *const data, const size_t size)
 {
-    const a_Err_t error = a_Publish(key, data, size);
-
-    if (A_ERR_NONE != error)
-    {
-        FaultHandler_SetFault(FAULT_HANDLER_FAULT_COMMS, error);
-    }
+    FaultHandler_SetFault(FAULT_HANDLER_FAULT_COMMS, a_Publish(key, data, size));
 }
 
 static void Comms_Hear(const char *const key, const uint8_t *const data, const size_t size, void *arg)

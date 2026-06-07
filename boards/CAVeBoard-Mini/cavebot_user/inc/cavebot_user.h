@@ -50,5 +50,6 @@ extern Gyroscope_Handle_t     CavebotUser_Gyroscope;
 extern Rgbw_Handle_t          CavebotUser_Rgbw;
 
 bool CavebotUser_Initialize(void);
+bool CavebotUser_AddTasks(void);
 
 #endif /* CAVEBOT_USER_H */

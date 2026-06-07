@@ -103,7 +103,7 @@ int main(void)
     BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build commit: %s (%s)", CAVEBOT_GIT_COMMIT_HASH, CAVEBOT_GIT_DIRTY);
     BSP_LOGGER_LOG_INFO(kCavebot_LogTag, "Build tag: %s", CAVEBOT_GIT_TAG);
 
-    Bsp_Error_t error = BspTick_Start();
+    const Bsp_Error_t error = BspTick_Start();
     if (BSP_ERROR_NONE != error)
     {
         FaultHandler_SetFault(FAULT_HANDLER_FAULT_TIMER, error);
@@ -128,7 +128,9 @@ int main(void)
             BSP_LOGGER_LOG_WARNING(kCavebot_LogTag, "Failed to initialize board");
         }
 
-        if (!Scheduler_AddTask(Comms_Task, CAVEBOT_COMMS_TASK_PERIOD) || !Scheduler_AddTask(Cavebot_Task, CAVEBOT_TASK_PERIOD))
+        if (!Scheduler_AddTask(Comms_Task, CAVEBOT_COMMS_TASK_PERIOD) ||
+            !Scheduler_AddTask(Cavebot_Task, CAVEBOT_TASK_PERIOD) ||
+            !CavebotUser_AddTasks())
         {
             BSP_LOGGER_LOG_ERROR(kCavebot_LogTag, "Failed to add tasks to scheduler");
         }
@@ -380,6 +382,7 @@ static Fsm_State_t *Cavebot_UpdateManual(void)
 {
     Fsm_State_t *next = &Cavebot_States[CAVEBOT_STATE_MANUAL];
 
+    /* TODO CVW-22 if connection drops in manual, fail safely */
     if (FaultHandler_HasCriticalFaults())
     {
         next = &Cavebot_States[CAVEBOT_STATE_FAILED];
@@ -408,6 +411,7 @@ static Fsm_State_t *Cavebot_UpdateAuto(void)
 {
     Fsm_State_t *next = &Cavebot_States[CAVEBOT_STATE_AUTO];
 
+    /* TODO CVW-22 if connection drops in auto, continue operating safely */
     if (FaultHandler_HasCriticalFaults())
     {
         next = &Cavebot_States[CAVEBOT_STATE_FAILED];

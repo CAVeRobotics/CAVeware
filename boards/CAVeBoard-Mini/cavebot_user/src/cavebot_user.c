@@ -211,7 +211,7 @@ static Fsm_State_t       CavebotUser_States[CAVEBOT_STATE_MAX] = {
 
 bool CavebotUser_Initialize(void)
 {
-    bool initialized = false;
+    bool initialized = true;
 
     Bsp_Error_t error = Rgbw_SetColor(&CavebotUser_Rgbw, RGBW_COLOR_YELLOW);
     if (BSP_ERROR_NONE != error)
@@ -269,34 +269,36 @@ bool CavebotUser_Initialize(void)
         initialized = false;
     }
 
+    return initialized;
+}
+
+bool CavebotUser_AddTasks(void)
+{
+    bool initialized = false;
+
     if (!Fsm_Initialize(&CavebotUser_Fsm, &CavebotUser_States[CAVEBOT_STATE_INITIALIZE], CavebotUser_FsmName))
     {
         BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to initialize FSM");
-        initialized = false;
     }
-
-    if (!Scheduler_AddTask(CavebotUser_ImuTask, 2U))
+    else if (!Scheduler_AddTask(CavebotUser_ImuTask, 2U))
     {
         BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add IMU task to scheduler");
-        initialized = false;
     }
-
-    if (!Scheduler_AddTask(CavebotUser_EncoderTask, 40U))
+    else if (!Scheduler_AddTask(CavebotUser_EncoderTask, 40U))
     {
         BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add encoder task to scheduler");
-        initialized = false;
     }
-
-    if (!Scheduler_AddTask(CavebotUser_Task, 800U))
+    else if (!Scheduler_AddTask(CavebotUser_Task, 800U))
     {
         BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add board task to scheduler");
-        initialized = false;
     }
-
-    if (!Scheduler_AddTask(CavebotUser_CommsTask, 40U))
+    else if (!Scheduler_AddTask(CavebotUser_CommsTask, 40U))
     {
         BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add telemetry task to scheduler");
-        initialized = false;
+    }
+    else
+    {
+        initialized = true;
     }
 
     return initialized;
@@ -306,20 +308,12 @@ static void CavebotUser_ImuTask(void)
 {
     if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_ACCELEROMETER))
     {
-        const Bsp_Error_t error = Accelerometer_Read(&CavebotUser_Accelerometer);
-        if (BSP_ERROR_NONE != error)
-        {
-            FaultHandler_SetFault(FAULT_HANDLER_FAULT_ACCELEROMETER, error);
-        }
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ACCELEROMETER, Accelerometer_Read(&CavebotUser_Accelerometer));
     }
 
     if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_GYROSCOPE))
     {
-        const Bsp_Error_t error = Gyroscope_Read(&CavebotUser_Gyroscope);
-        if (BSP_ERROR_NONE != error)
-        {
-            FaultHandler_SetFault(FAULT_HANDLER_FAULT_GYROSCOPE, error);
-        }
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_GYROSCOPE, Gyroscope_Read(&CavebotUser_Gyroscope));
     }
 }
 
@@ -327,29 +321,10 @@ static void CavebotUser_EncoderTask(void)
 {
     if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_ENCODER))
     {
-        Bsp_Error_t error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_0);
-        if (BSP_ERROR_NONE != error)
-        {
-            FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
-        }
-
-        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_1);
-        if (BSP_ERROR_NONE != error)
-        {
-            FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
-        }
-
-        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_2);
-        if (BSP_ERROR_NONE != error)
-        {
-            FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
-        }
-
-        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_3);
-        if (BSP_ERROR_NONE != error)
-        {
-            FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
-        }
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, BspEncoder_Sample(BSP_ENCODER_USER_TIMER_0));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, BspEncoder_Sample(BSP_ENCODER_USER_TIMER_1));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, BspEncoder_Sample(BSP_ENCODER_USER_TIMER_2));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, BspEncoder_Sample(BSP_ENCODER_USER_TIMER_3));
     }
 }
 
@@ -360,14 +335,14 @@ void CavebotUser_Task(void)
 
 static void CavebotUser_CommsTask(void)
 {
-    cavetalk_Acceleration acceleration = {
+    const cavetalk_Acceleration acceleration = {
         .x_meters_per_second_squared = CavebotUser_Accelerometer.reading.x,
         .y_meters_per_second_squared = CavebotUser_Accelerometer.reading.y,
         .z_meters_per_second_squared = CavebotUser_Accelerometer.reading.z,
     };
     Comms_SpeakAcceleration(&acceleration);
 
-    cavetalk_Gyroscope gyroscope = {
+    const cavetalk_Gyroscope gyroscope = {
         .roll_radians_per_second  = CavebotUser_Gyroscope.reading.x,
         .pitch_radians_per_second = CavebotUser_Gyroscope.reading.y,
         .yaw_radians_per_second   = CavebotUser_Gyroscope.reading.z,
