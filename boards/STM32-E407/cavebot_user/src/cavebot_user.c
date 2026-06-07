@@ -309,14 +309,14 @@ void CavebotUser_Task(void)
 
 static void CavebotUser_CommsTask(void)
 {
-    cavetalk_Acceleration acceleration = {
+    const cavetalk_Acceleration acceleration = {
         .x_meters_per_second_squared = CavebotUser_Accelerometer.reading.x,
         .y_meters_per_second_squared = CavebotUser_Accelerometer.reading.y,
         .z_meters_per_second_squared = CavebotUser_Accelerometer.reading.z,
     };
     Comms_SpeakAcceleration(&acceleration);
 
-    cavetalk_Gyroscope gyroscope = {
+    const cavetalk_Gyroscope gyroscope = {
         .roll_radians_per_second  = CavebotUser_Gyroscope.reading.x,
         .pitch_radians_per_second = CavebotUser_Gyroscope.reading.y,
         .yaw_radians_per_second   = CavebotUser_Gyroscope.reading.z,

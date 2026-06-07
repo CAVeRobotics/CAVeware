@@ -61,6 +61,7 @@ bool Comms_Initialize(void)
     };
 
     a_EnableRouting(false);
+    /* TODO CVW-22 register event handler to set fault for "systems level" errors, e.g. memory error */
     a_Err_t error = a_Initialize(A_TRANSPORT_PEER_ID_MAX);
 
     if (A_ERR_NONE == error)
@@ -236,7 +237,7 @@ static size_t Comms_Send(const uint8_t *const data, const size_t size, void *arg
 
     if (BSP_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_DEBUG(kComms_LogTag, "Failed to send with error %s", Bsp_ErrorToString(error));
+        BSP_LOGGER_LOG_WARNING(kComms_LogTag, "Failed to send with error %s", Bsp_ErrorToString(error));
         sent = SIZE_MAX;
     }
 
@@ -252,7 +253,7 @@ static size_t Comms_Receive(uint8_t *const data, const size_t size, void *arg)
 
     if (BSP_ERROR_NONE != error)
     {
-        BSP_LOGGER_LOG_DEBUG(kComms_LogTag, "Failed to receive with error %s", Bsp_ErrorToString(error));
+        BSP_LOGGER_LOG_WARNING(kComms_LogTag, "Failed to receive with error %s", Bsp_ErrorToString(error));
         received = SIZE_MAX;
     }
 
@@ -261,7 +262,10 @@ static size_t Comms_Receive(uint8_t *const data, const size_t size, void *arg)
 
 static void Comms_Speak(const char *const key, const uint8_t *const data, const size_t size)
 {
-    if ((NULL != key) && (NULL != data) && (0U != size))
+    if ((NULL != key) &&
+        (NULL != data) &&
+        (0U != size) &&
+        !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
     {
         const a_Err_t error = a_Publish(key, data, size);
 
