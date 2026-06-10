@@ -294,10 +294,19 @@ static void Comms_EventHandler(const a_Event_t event, const a_Session_t *const s
         BSP_LOGGER_LOG_DEBUG(kComms_LogTag, "Disconnected");
         break;
     case A_EVENT_ERROR:
-        if ((NULL != error) && (A_ERR_MEMORY == *error))
+        if (NULL == error)
+        {
+            /* Invalid error event */
+        }
+        else if ((A_ERR_NULL == *error) || (A_ERR_MEMORY == *error))
         {
             FaultHandler_SetFault(FAULT_HANDLER_FAULT_MEMORY, *error);
             FaultHandler_SetFault(FAULT_HANDLER_FAULT_COMMS, *error);
+            BSP_LOGGER_LOG_ERROR(kComms_LogTag, "Received error %s", a_Err_ToString(*error));
+        }
+        else
+        {
+            BSP_LOGGER_LOG_WARNING(kComms_LogTag, "Received error %s", a_Err_ToString(*error));
         }
         break;
     default:
