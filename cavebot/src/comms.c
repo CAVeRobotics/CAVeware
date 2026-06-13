@@ -144,14 +144,17 @@ bool Comms_Initialize(void)
 
 void Comms_Task(void)
 {
-    a_Task();
+    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
+    {
+        a_Task();
+    }
 }
 
 void Comms_SpeakLog(char *const log)
 {
     if (Comms_Connected && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
     {
-        CaveTalk_Message_t *message = CaveTalk_SpeakLog(&Comms_Handle, log);
+        const CaveTalk_Message_t *message = CaveTalk_SpeakLog(&Comms_Handle, log);
 
         if (NULL != message)
         {
@@ -164,7 +167,7 @@ void Comms_SpeakGetMode(const cavetalk_Mode mode)
 {
     if (Comms_Connected && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
     {
-        CaveTalk_Message_t *message = CaveTalk_SpeakGetMode(&Comms_Handle, mode);
+        const CaveTalk_Message_t *message = CaveTalk_SpeakGetMode(&Comms_Handle, mode);
 
         if (NULL != message)
         {
@@ -177,7 +180,7 @@ void Comms_SpeakAcceleration(const cavetalk_Acceleration *const acceleration)
 {
     if (Comms_Connected && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
     {
-        CaveTalk_Message_t *message = CaveTalk_SpeakAcceleration(&Comms_Handle, acceleration);
+        const CaveTalk_Message_t *message = CaveTalk_SpeakAcceleration(&Comms_Handle, acceleration);
 
         if (NULL != message)
         {
@@ -190,7 +193,7 @@ void Comms_SpeakGyroscope(const cavetalk_Gyroscope *const gyroscope)
 {
     if (Comms_Connected && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
     {
-        CaveTalk_Message_t *message = CaveTalk_SpeakGyroscope(&Comms_Handle, gyroscope);
+        const CaveTalk_Message_t *message = CaveTalk_SpeakGyroscope(&Comms_Handle, gyroscope);
 
         if (NULL != message)
         {
@@ -203,7 +206,7 @@ void Comms_SpeakEncoders(cavetalk_Encoder *const encoders, const size_t count)
 {
     if (Comms_Connected && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
     {
-        CaveTalk_Message_t *message = CaveTalk_SpeakEncoders(&Comms_Handle, encoders, count);
+        const CaveTalk_Message_t *message = CaveTalk_SpeakEncoders(&Comms_Handle, encoders, count);
 
         if (NULL != message)
         {
@@ -216,8 +219,8 @@ static a_Err_t Comms_Start(void *arg)
 {
     BSP_UNUSED(arg);
 
-    a_Err_t     aether_error = A_ERR_NONE;
-    Bsp_Error_t error        = BspUart_Start(COMMS_UART);
+    const Bsp_Error_t error        = BspUart_Start(COMMS_UART);
+    a_Err_t           aether_error = A_ERR_NONE;
 
     if (BSP_ERROR_NONE != error)
     {
@@ -233,8 +236,8 @@ static a_Err_t Comms_Stop(void *arg)
 {
     BSP_UNUSED(arg);
 
-    a_Err_t     aether_error = A_ERR_NONE;
-    Bsp_Error_t error        = BspUart_Stop(COMMS_UART);
+    const Bsp_Error_t error        = BspUart_Stop(COMMS_UART);
+    a_Err_t           aether_error = A_ERR_NONE;
 
     if (BSP_ERROR_NONE != error)
     {
