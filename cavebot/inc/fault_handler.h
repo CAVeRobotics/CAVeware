@@ -6,6 +6,7 @@
 
 #include "bsp.h"
 
+typedef uint32_t FaultHandler_Mask_t;
 typedef uint32_t FaultHandler_Error_t;
 
 typedef enum
@@ -37,7 +38,9 @@ typedef struct
 
 void FaultHandler_SetFault(const FaultHandler_Fault_t fault, const FaultHandler_Error_t error);
 void FaultHandler_ClearFault(const FaultHandler_Fault_t fault);
+void FaultHandler_ClearFaults(const FaultHandler_Mask_t faults);
 bool FaultHandler_HasCriticalFaults(void);
 bool FaultHandler_HasFault(const FaultHandler_Fault_t fault);
+FaultHandler_Mask_t FaultHandler_GetFaults(void);
 
 #endif /* FAULT_HANDLER_H */

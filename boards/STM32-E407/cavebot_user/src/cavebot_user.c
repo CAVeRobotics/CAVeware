@@ -284,14 +284,14 @@ void CavebotUser_Task(void)
 
 static void CavebotUser_CommsTask(void)
 {
-    const cavetalk_Acceleration acceleration = {
+    cavetalk_Acceleration acceleration = {
         .x_meters_per_second_squared = CavebotUser_Accelerometer.reading.x,
         .y_meters_per_second_squared = CavebotUser_Accelerometer.reading.y,
         .z_meters_per_second_squared = CavebotUser_Accelerometer.reading.z,
     };
     Comms_SpeakAcceleration(&acceleration);
 
-    const cavetalk_Gyroscope gyroscope = {
+    cavetalk_Gyroscope gyroscope = {
         .roll_radians_per_second  = CavebotUser_Gyroscope.reading.x,
         .pitch_radians_per_second = CavebotUser_Gyroscope.reading.y,
         .yaw_radians_per_second   = CavebotUser_Gyroscope.reading.z,
@@ -318,7 +318,10 @@ static void CavebotUser_CommsTask(void)
     };
     Comms_SpeakEncoders(encoders, sizeof(encoders) / sizeof(encoders[0]));
 
-    /* TODO CVW-22 faults */
+    cavetalk_Faults faults = {
+        .mask = FaultHandler_GetFaults(),
+    };
+    Comms_SpeakFaults(&faults);
 }
 
 static void CavebotUser_ExitInitialize(void)

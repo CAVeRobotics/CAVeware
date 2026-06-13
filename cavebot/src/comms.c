@@ -1,5 +1,6 @@
 #include "comms.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -14,6 +15,18 @@
 
 #include "cavebot.h"
 #include "fault_handler.h"
+
+static_assert(cavetalk_Fault_FAULT_MEMORY == (1U << FAULT_HANDLER_FAULT_MEMORY), "Fault mismatch");
+static_assert(cavetalk_Fault_FAULT_SCHEDULER == (1U << FAULT_HANDLER_FAULT_SCHEDULER), "Fault mismatch");
+static_assert(cavetalk_Fault_FAULT_TIMER == (1U << FAULT_HANDLER_FAULT_TIMER), "Fault mismatch");
+static_assert(cavetalk_Fault_FAULT_MOTOR == (1U << FAULT_HANDLER_FAULT_MOTOR), "Fault mismatch");
+static_assert(cavetalk_Fault_FAULT_ACCELEROMETER == (1U << FAULT_HANDLER_FAULT_ACCELEROMETER), "Fault mismatch");
+static_assert(cavetalk_Fault_FAULT_GYROSCOPE == (1U << FAULT_HANDLER_FAULT_GYROSCOPE), "Fault mismatch");
+static_assert(cavetalk_Fault_FAULT_ENCODER == (1U << FAULT_HANDLER_FAULT_ENCODER), "Fault mismatch");
+static_assert(cavetalk_Fault_FAULT_COMMS == (1U << FAULT_HANDLER_FAULT_COMMS), "Fault mismatch");
+static_assert(cavetalk_Fault_FAULT_LOGGING == (1U << FAULT_HANDLER_FAULT_LOGGING), "Fault mismatch");
+static_assert(cavetalk_Fault_FAULT_RGBW == (1U << FAULT_HANDLER_FAULT_RGBW), "Fault mismatch");
+static_assert(cavetalk_Fault_FAULT_BUZZER == (1U << FAULT_HANDLER_FAULT_BUZZER), "Fault mismatch");
 
 #define COMMS_UART BSP_UART_USER_1
 
@@ -35,6 +48,7 @@ static void Comms_Speak(const char *const key, const uint8_t *const data, const 
 static void Comms_Hear(const char *const key, const uint8_t *const data, const size_t size, void *arg);
 static void Comms_HearSetMode(const cavetalk_Mode mode);
 static void Comms_HearDrive(const cavetalk_Drive *const drive);
+static void Comms_HearClearFaults(const cavetalk_ClearFaults *const faults);
 
 static CaveTalk_Handle_t    Comms_Handle;
 static CaveTalk_Callbacks_t Comms_Callbacks = {
@@ -45,6 +59,8 @@ static CaveTalk_Callbacks_t Comms_Callbacks = {
     .hear_acceleration = NULL,
     .hear_gyroscope    = NULL,
     .hear_encoders     = NULL,
+    .hear_faults       = NULL,
+    .hear_clear_faults = Comms_HearClearFaults,
 };
 
 a_Tick_Ms_t a_TickUser_GetTick(void)
@@ -103,6 +119,11 @@ bool Comms_Initialize(void)
             error = a_Subscribe(CaveTalk_GetKey(&Comms_Handle, COMMS_CAVETALK_ID, cavetalk_Id_ID_DRIVE), Comms_Hear, NULL);
         }
 
+        if (A_ERR_NONE == error)
+        {
+            error = a_Subscribe(CaveTalk_GetKey(&Comms_Handle, COMMS_CAVETALK_ID, cavetalk_Id_ID_CLEAR_FAULTS), Comms_Hear, NULL);
+        }
+
         /* Add other subscriptions here */
 
         if (A_ERR_NONE == error)
@@ -128,6 +149,11 @@ bool Comms_Initialize(void)
         if (A_ERR_NONE == error)
         {
             error = a_Declare(CaveTalk_GetKey(&Comms_Handle, COMMS_CAVETALK_ID, cavetalk_Id_ID_GET_MODE));
+        }
+
+        if (A_ERR_NONE == error)
+        {
+            error = a_Declare(CaveTalk_GetKey(&Comms_Handle, COMMS_CAVETALK_ID, cavetalk_Id_ID_FAULTS));
         }
 
         /* Add other declarations here */
@@ -176,7 +202,7 @@ void Comms_SpeakGetMode(const cavetalk_Mode mode)
     }
 }
 
-void Comms_SpeakAcceleration(const cavetalk_Acceleration *const acceleration)
+void Comms_SpeakAcceleration(cavetalk_Acceleration *const acceleration)
 {
     if (Comms_Connected && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
     {
@@ -189,7 +215,7 @@ void Comms_SpeakAcceleration(const cavetalk_Acceleration *const acceleration)
     }
 }
 
-void Comms_SpeakGyroscope(const cavetalk_Gyroscope *const gyroscope)
+void Comms_SpeakGyroscope(cavetalk_Gyroscope *const gyroscope)
 {
     if (Comms_Connected && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
     {
@@ -207,6 +233,19 @@ void Comms_SpeakEncoders(cavetalk_Encoder *const encoders, const size_t count)
     if (Comms_Connected && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
     {
         const CaveTalk_Message_t *message = CaveTalk_SpeakEncoders(&Comms_Handle, encoders, count);
+
+        if (NULL != message)
+        {
+            Comms_Speak(message->key, message->data, message->size);
+        }
+    }
+}
+
+void Comms_SpeakFaults(cavetalk_Faults *const faults)
+{
+    if (Comms_Connected && !FaultHandler_HasFault(FAULT_HANDLER_FAULT_COMMS))
+    {
+        const CaveTalk_Message_t *message = CaveTalk_SpeakFaults(&Comms_Handle, faults);
 
         if (NULL != message)
         {
@@ -361,4 +400,9 @@ static void Comms_HearSetMode(const cavetalk_Mode mode)
 static void Comms_HearDrive(const cavetalk_Drive *const drive)
 {
     Cavebot_Drive(drive->speed_meters_per_second, drive->turn_rate_radians_per_second);
+}
+
+static void Comms_HearClearFaults(const cavetalk_ClearFaults *const faults)
+{
+    FaultHandler_ClearFaults(faults->mask);
 }

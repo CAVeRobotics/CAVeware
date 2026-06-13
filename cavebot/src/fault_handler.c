@@ -6,10 +6,10 @@
 #include "bsp_tick.h"
 
 #define FAULT_HANDLER_ERROR_NONE    (FaultHandler_Error_t)0U
-#define FAULT_HANDLER_CRITICAL_MASK (uint32_t)0x7FU
+#define FAULT_HANDLER_CRITICAL_MASK (FaultHandler_Mask_t)0x7FU
 
-static volatile uint32_t         FaultHandler_Mask                            = 0x00000000U;
-static FaultHandler_FaultState_t FaultHandler_Faults[FAULT_HANDLER_FAULT_MAX] = {
+static volatile FaultHandler_Mask_t FaultHandler_Mask                            = 0x00000000U;
+static FaultHandler_FaultState_t    FaultHandler_Faults[FAULT_HANDLER_FAULT_MAX] = {
     [FAULT_HANDLER_FAULT_MEMORY] = {
         .threshold = 1U,
         .count     = 0U,
@@ -120,27 +120,36 @@ void FaultHandler_SetFault(const FaultHandler_Fault_t fault, const FaultHandler_
     }
 }
 
-/* TODO CVW-50 make interrupt safe */
 void FaultHandler_ClearFault(const FaultHandler_Fault_t fault)
 {
     if (fault < FAULT_HANDLER_FAULT_MAX)
     {
-        FaultHandler_Mask               &= ~(1U << fault);
+        FaultHandler_Mask_t mask = FaultHandler_Mask;
+        mask &= ~(1U << fault);
+
+        FaultHandler_Mask                = mask;
         FaultHandler_Faults[fault].count = 0U;
     }
 }
 
+void FaultHandler_ClearFaults(const FaultHandler_Mask_t faults)
+{
+    FaultHandler_Mask_t mask = FaultHandler_Mask;
+    mask             &= ~faults;
+    FaultHandler_Mask = mask;
+}
+
 bool FaultHandler_HasCriticalFaults(void)
 {
-    const uint32_t mask = FaultHandler_Mask;
+    const FaultHandler_Mask_t mask = FaultHandler_Mask;
 
     return 0U != (mask & FAULT_HANDLER_CRITICAL_MASK);
 }
 
 bool FaultHandler_HasFault(const FaultHandler_Fault_t fault)
 {
-    bool           has_fault = false;
-    const uint32_t mask      = FaultHandler_Mask;
+    const FaultHandler_Mask_t mask      = FaultHandler_Mask;
+    bool                      has_fault = false;
 
     if ((fault < FAULT_HANDLER_FAULT_MAX) && (0U != (mask & (1U << fault))))
     {
@@ -148,4 +157,9 @@ bool FaultHandler_HasFault(const FaultHandler_Fault_t fault)
     }
 
     return has_fault;
+}
+
+FaultHandler_Mask_t FaultHandler_GetFaults(void)
+{
+    return FaultHandler_Mask;
 }
