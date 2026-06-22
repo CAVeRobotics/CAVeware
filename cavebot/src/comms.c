@@ -20,6 +20,7 @@ static_assert(cavetalk_Fault_FAULT_MEMORY == (1U << FAULT_HANDLER_FAULT_MEMORY),
 static_assert(cavetalk_Fault_FAULT_SCHEDULER == (1U << FAULT_HANDLER_FAULT_SCHEDULER), "Fault mismatch");
 static_assert(cavetalk_Fault_FAULT_TIMER == (1U << FAULT_HANDLER_FAULT_TIMER), "Fault mismatch");
 static_assert(cavetalk_Fault_FAULT_MOTOR == (1U << FAULT_HANDLER_FAULT_MOTOR), "Fault mismatch");
+static_assert(cavetalk_Fault_FAULT_SERVO == (1U << FAULT_HANDLER_FAULT_SERVO), "Fault mismatch");
 static_assert(cavetalk_Fault_FAULT_ACCELEROMETER == (1U << FAULT_HANDLER_FAULT_ACCELEROMETER), "Fault mismatch");
 static_assert(cavetalk_Fault_FAULT_GYROSCOPE == (1U << FAULT_HANDLER_FAULT_GYROSCOPE), "Fault mismatch");
 static_assert(cavetalk_Fault_FAULT_ENCODER == (1U << FAULT_HANDLER_FAULT_ENCODER), "Fault mismatch");

@@ -149,10 +149,10 @@ bool Rover4ws_Arm(void)
 
     if (BSP_ERROR_NONE == error)
     {
-        error = Rover4ws_BspErrorCheck(BspServo_Start(&CavebotUser_Servos[CAVEBOT_USER_SERVO_0]),
-                                       BspServo_Start(&CavebotUser_Servos[CAVEBOT_USER_SERVO_2]),
-                                       BspServo_Start(&CavebotUser_Servos[CAVEBOT_USER_SERVO_1]),
-                                       BspServo_Start(&CavebotUser_Servos[CAVEBOT_USER_SERVO_3]));
+        error = Rover4ws_ErrorCheck(BspServo_Start(&CavebotUser_Servos[CAVEBOT_USER_SERVO_0]),
+                                    BspServo_Start(&CavebotUser_Servos[CAVEBOT_USER_SERVO_2]),
+                                    BspServo_Start(&CavebotUser_Servos[CAVEBOT_USER_SERVO_1]),
+                                    BspServo_Start(&CavebotUser_Servos[CAVEBOT_USER_SERVO_3]));
 
         if (BSP_ERROR_NONE != error)
         {
@@ -195,10 +195,10 @@ bool Rover4ws_Disarm(void)
 
     if (BSP_ERROR_NONE == error)
     {
-        error = Rover4ws_BspErrorCheck(BspServo_Stop(&CavebotUser_Servos[CAVEBOT_USER_SERVO_0]),
-                                       BspServo_Stop(&CavebotUser_Servos[CAVEBOT_USER_SERVO_2]),
-                                       BspServo_Stop(&CavebotUser_Servos[CAVEBOT_USER_SERVO_1]),
-                                       BspServo_Stop(&CavebotUser_Servos[CAVEBOT_USER_SERVO_3]));
+        error = Rover4ws_ErrorCheck(BspServo_Stop(&CavebotUser_Servos[CAVEBOT_USER_SERVO_0]),
+                                    BspServo_Stop(&CavebotUser_Servos[CAVEBOT_USER_SERVO_2]),
+                                    BspServo_Stop(&CavebotUser_Servos[CAVEBOT_USER_SERVO_1]),
+                                    BspServo_Stop(&CavebotUser_Servos[CAVEBOT_USER_SERVO_3]));
 
         if (BSP_ERROR_NONE != error)
         {

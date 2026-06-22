@@ -1,11 +1,15 @@
 #include "cavebot_user.h"
 
-#include "spi.h"
+#include <stdbool.h>
+
+#include "aether.h"
+#include "cavetalk.h"
 
 #include "bsp.h"
 #include "bsp_encoder.h"
 #include "bsp_encoder_user.h"
 #include "bsp_gpio_user.h"
+#include "bsp_logger.h"
 #include "bsp_motor.h"
 #include "bsp_pwm_user.h"
 #include "bsp_servo.h"
@@ -14,8 +18,14 @@
 #include "lsm6dsv16x.h"
 
 #include "cavebot.h"
+#include "comms.h"
+#include "fault_handler.h"
+#include "fsm.h"
+#include "scheduler.h"
 
-static const Lsm6dsv16x_Context_t kCavebotUser_Lsm6dsv16x = LSM6DSV16X_CONTEXT(BSP_SPI_USER_0, BSP_GPIO_USER_PIN_IMU_CS);
+static const char *const kCavebotUser_LogTag = "CAVEBOT USER";
+
+static Lsm6dsv16x_Context_t kCavebotUser_Lsm6dsv16x = LSM6DSV16X_CONTEXT(BSP_SPI_USER_0, BSP_GPIO_USER_PIN_IMU_CS);
 
 BspServo_Handle_t CavebotUser_Servos[CAVEBOT_USER_SERVO_MAX] = {
     [CAVEBOT_USER_SERVO_0] = {
@@ -141,59 +151,225 @@ BspEncoderUser_Timer_t CavebotUser_Encoders[CAVEBOT_USER_ENCODER_MAX] = {
 Accelerometer_Handle_t CavebotUser_Accelerometer = LSM6DSV16X_ACCELEROMETER_HANDLE(kCavebotUser_Lsm6dsv16x);
 Gyroscope_Handle_t     CavebotUser_Gyroscope     = LSM6DSV16X_GYROSCOPE_HANDLE(kCavebotUser_Lsm6dsv16x);
 
-Cavebot_Error_t CavebotUser_Initialize(void)
+static void CavebotUser_ImuTask(void);
+static void CavebotUser_EncoderTask(void);
+static void CavebotUser_Task(void);
+static void CavebotUser_CommsTask(void);
+static void CavebotUser_ExitInitialize(void);
+
+static void CavebotUser_OnArm(void);
+static void CavebotUser_OnDisarm(void);
+static Fsm_State_t *CavebotUser_UpdateState(void);
+
+static Fsm_t             CavebotUser_Fsm;
+static const char *const CavebotUser_FsmName                   = "CAVEBOT USER  FSM";
+static Fsm_State_t       CavebotUser_States[CAVEBOT_STATE_MAX] = {
+    [CAVEBOT_STATE_INITIALIZE] = {
+        .name   = "INITIALIZE",
+        .enter  = NULL,
+        .update = CavebotUser_UpdateState,
+        .exit   = CavebotUser_ExitInitialize,
+    },
+    [CAVEBOT_STATE_READY] = {
+        .name   = "READY",
+        .enter  = NULL,
+        .update = CavebotUser_UpdateState,
+        .exit   = NULL,
+    },
+    [CAVEBOT_STATE_MANUAL] = {
+        .name   = "MANUAL",
+        .enter  = CavebotUser_OnArm,
+        .update = CavebotUser_UpdateState,
+        .exit   = CavebotUser_OnDisarm,
+    },
+    [CAVEBOT_STATE_AUTO] = {
+        .name   = "AUTO",
+        .enter  = CavebotUser_OnArm,
+        .update = CavebotUser_UpdateState,
+        .exit   = CavebotUser_OnDisarm,
+    },
+    [CAVEBOT_STATE_FAILED] = {
+        .name   = "FAILED",
+        .enter  = NULL,
+        .update = CavebotUser_UpdateState,
+        .exit   = NULL,
+    },
+};
+
+bool CavebotUser_Initialize(void)
 {
+    bool initialized = true;
+
     Bsp_Error_t error = Accelerometer_Initialize(&CavebotUser_Accelerometer);
-    if (BSP_ERROR_NONE == error)
+    if (BSP_ERROR_NONE != error)
     {
-        error = Gyroscope_Initialize(&CavebotUser_Gyroscope);
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to initialize accelerometer with error %s", Bsp_ErrorToString(error));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ACCELEROMETER, error);
+        initialized = false;
     }
 
-    if (BSP_ERROR_NONE == error)
+    error = Gyroscope_Initialize(&CavebotUser_Gyroscope);
+    if (BSP_ERROR_NONE != error)
     {
-        error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_0);
-    }
-    if (BSP_ERROR_NONE == error)
-    {
-        error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_1);
-    }
-    if (BSP_ERROR_NONE == error)
-    {
-        error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_2);
-    }
-    if (BSP_ERROR_NONE == error)
-    {
-        error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_3);
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to initialize gyroscope with error %s", Bsp_ErrorToString(error));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_GYROSCOPE, error);
+        initialized = false;
     }
 
-    return Cavebot_BspToCavebotError(error);
+    error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_0);
+    if (BSP_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to initialize encoder %d with error %s", BSP_ENCODER_USER_TIMER_0, Bsp_ErrorToString(error));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
+        initialized = false;
+    }
+
+    error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_1);
+    if (BSP_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to initialize encoder %d with error %s", BSP_ENCODER_USER_TIMER_1, Bsp_ErrorToString(error));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
+        initialized = false;
+    }
+
+    error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_2);
+    if (BSP_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to initialize encoder %d with error %s", BSP_ENCODER_USER_TIMER_2, Bsp_ErrorToString(error));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
+        initialized = false;
+    }
+
+    error = BspEncoder_Start(BSP_ENCODER_USER_TIMER_3);
+    if (BSP_ERROR_NONE != error)
+    {
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to initialize encoder %d with error %s", BSP_ENCODER_USER_TIMER_3, Bsp_ErrorToString(error));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, error);
+        initialized = false;
+    }
+
+    return initialized;
 }
 
-Cavebot_Error_t CavebotUser_SensorTask(void)
+bool CavebotUser_AddTasks(void)
 {
-    Bsp_Error_t error = Gyroscope_Read(&CavebotUser_Gyroscope);
+    bool initialized = false;
 
-    if (BSP_ERROR_NONE == error)
+    if (!Fsm_Initialize(&CavebotUser_Fsm, &CavebotUser_States[CAVEBOT_STATE_INITIALIZE], CavebotUser_FsmName))
     {
-        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_0);
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to initialize FSM");
     }
-    if (BSP_ERROR_NONE == error)
+    else if (!Scheduler_AddTask(CavebotUser_ImuTask, 2U))
     {
-        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_1);
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add IMU task to scheduler");
     }
-    if (BSP_ERROR_NONE == error)
+    else if (!Scheduler_AddTask(CavebotUser_EncoderTask, 40U))
     {
-        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_2);
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add encoder task to scheduler");
     }
-    if (BSP_ERROR_NONE == error)
+    else if (!Scheduler_AddTask(CavebotUser_Task, 800U))
     {
-        error = BspEncoder_Sample(BSP_ENCODER_USER_TIMER_3);
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add board task to scheduler");
+    }
+    else if (!Scheduler_AddTask(CavebotUser_CommsTask, 40U))
+    {
+        BSP_LOGGER_LOG_ERROR(kCavebotUser_LogTag, "Failed to add telemetry task to scheduler");
+    }
+    else
+    {
+        initialized = true;
     }
 
-    return Cavebot_BspToCavebotError(error);
+    return initialized;
 }
 
-Cavebot_Error_t CavebotUser_Task(void)
+static void CavebotUser_ImuTask(void)
 {
-    return CAVEBOT_ERROR_NONE;
+    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_ACCELEROMETER))
+    {
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ACCELEROMETER, Accelerometer_Read(&CavebotUser_Accelerometer));
+    }
+
+    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_GYROSCOPE))
+    {
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_GYROSCOPE, Gyroscope_Read(&CavebotUser_Gyroscope));
+    }
+}
+
+static void CavebotUser_EncoderTask(void)
+{
+    if (!FaultHandler_HasFault(FAULT_HANDLER_FAULT_ENCODER))
+    {
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, BspEncoder_Sample(BSP_ENCODER_USER_TIMER_0));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, BspEncoder_Sample(BSP_ENCODER_USER_TIMER_1));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, BspEncoder_Sample(BSP_ENCODER_USER_TIMER_2));
+        FaultHandler_SetFault(FAULT_HANDLER_FAULT_ENCODER, BspEncoder_Sample(BSP_ENCODER_USER_TIMER_3));
+    }
+}
+
+void CavebotUser_Task(void)
+{
+    Fsm_Update(&CavebotUser_Fsm);
+}
+
+static void CavebotUser_CommsTask(void)
+{
+    cavetalk_Acceleration acceleration = {
+        .x_meters_per_second_squared = CavebotUser_Accelerometer.reading.x,
+        .y_meters_per_second_squared = CavebotUser_Accelerometer.reading.y,
+        .z_meters_per_second_squared = CavebotUser_Accelerometer.reading.z,
+    };
+    Comms_SpeakAcceleration(&acceleration);
+
+    cavetalk_Gyroscope gyroscope = {
+        .roll_radians_per_second  = CavebotUser_Gyroscope.reading.x,
+        .pitch_radians_per_second = CavebotUser_Gyroscope.reading.y,
+        .yaw_radians_per_second   = CavebotUser_Gyroscope.reading.z,
+    };
+    Comms_SpeakGyroscope(&gyroscope);
+
+    cavetalk_Encoder encoders[BSP_ENCODER_USER_TIMER_MAX] = {
+        [BSP_ENCODER_USER_TIMER_0] = {
+            .pulses                  = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].pulses,
+            .rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_0].angular_rate,
+        },
+        [BSP_ENCODER_USER_TIMER_1] = {
+            .pulses                  = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].pulses,
+            .rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_1].angular_rate,
+        },
+        [BSP_ENCODER_USER_TIMER_2] = {
+            .pulses                  = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].pulses,
+            .rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_2].angular_rate,
+        },
+        [BSP_ENCODER_USER_TIMER_3] = {
+            .pulses                  = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].pulses,
+            .rate_radians_per_second = BspEncoderUser_HandleTable[BSP_ENCODER_USER_TIMER_3].angular_rate,
+        },
+    };
+    Comms_SpeakEncoders(encoders, sizeof(encoders) / sizeof(encoders[0]));
+
+    cavetalk_Faults faults = {
+        .mask = FaultHandler_GetFaults(),
+    };
+    Comms_SpeakFaults(&faults);
+}
+
+static void CavebotUser_ExitInitialize(void)
+{
+    /* TODO set LED */
+}
+
+static void CavebotUser_OnArm(void)
+{
+    /* TODO set LED */
+}
+
+static void CavebotUser_OnDisarm(void)
+{
+    /* TODO set LED */
+}
+
+static Fsm_State_t *CavebotUser_UpdateState(void)
+{
+    return &CavebotUser_States[Cavebot_GetState()];
 }
