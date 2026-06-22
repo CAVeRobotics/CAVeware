@@ -13,6 +13,7 @@
 #include "accelerometer.h"
 #include "gyroscope.h"
 
+typedef int32_t Lsm6dsv16x_Error_t;
 typedef int16_t Lsm6dsv16x_RawData_t;
 
 typedef enum
@@ -25,12 +26,51 @@ typedef enum
 
 typedef enum
 {
-    LSM6DSV16X_QUATERION_AXIS_W,
-    LSM6DSV16X_QUATERION_AXIS_X,
-    LSM6DSV16X_QUATERION_AXIS_Y,
-    LSM6DSV16X_QUATERION_AXIS_Z,
-    LSM6DSV16X_QUATERION_AXIS_MAX
-} Lsm6dsv16x_QuaterionAxis_t;
+    LSM6DSV16X_QUATERNION_AXIS_W,
+    LSM6DSV16X_QUATERNION_AXIS_X,
+    LSM6DSV16X_QUATERNION_AXIS_Y,
+    LSM6DSV16X_QUATERNION_AXIS_Z,
+    LSM6DSV16X_QUATERNION_AXIS_MAX
+} Lsm6dsv16x_QuaternionAxis_t;
+
+typedef enum
+{
+    LSM6DSV16X_DATA_READ_STATE_READY,
+    LSM6DSV16X_DATA_READ_STATE_GET_STATUS,
+    LSM6DSV16X_DATA_READ_STATE_GET_ACCELEROMETER,
+    LSM6DSV16X_DATA_READ_STATE_GET_GYROSCOPE
+}Lsm6dsv16x_DataReadState_t;
+
+typedef enum
+{
+    LSM6DSV16X_FIFO_READ_STATE_READY,
+    LSM6DSV16X_FIFO_READ_STATE_GET_STATUS,
+    LSM6DSV16X_FIFO_READ_STATE_GET_RAW_OUT
+} Lsm6dsv16x_FifoReadState_t;
+
+typedef struct
+{
+    uint8_t imu_register;
+    uint8_t data[8U];
+    uint16_t size;
+    volatile Bsp_Error_t error;
+} Lsm6dsv16x_CallbackContext_t;
+
+typedef struct
+{
+    Lsm6dsv16x_DataReadState_t state;
+    lsm6dsv16x_data_ready_t data_ready;
+} Lsm6dsv16x_DataReadContext_t;
+
+typedef struct
+{
+    Lsm6dsv16x_FifoReadState_t state;
+    lsm6dsv16x_fifo_status_t status;
+    lsm6dsv16x_fifo_out_raw_t data;
+    uint16_t read_index;
+    float_t quaternion_averaged[LSM6DSV16X_QUATERNION_AXIS_MAX];
+    uint16_t quaternion_count;
+} Lsm6dsv16x_FifoReadContext_t;
 
 typedef struct
 {
@@ -38,60 +78,80 @@ typedef struct
     BspSpiUser_Spi_t spi;
     BspGpioUser_Pin_t chip_select;
     bool initialized;
+    Lsm6dsv16x_CallbackContext_t callback_context;
+    Lsm6dsv16x_DataReadContext_t data_read_context;
     Lsm6dsv16x_RawData_t raw_accelerometer[LSM6DSV16X_AXIS_MAX];
     Lsm6dsv16x_RawData_t raw_gyroscope[LSM6DSV16X_AXIS_MAX];
-    double quaternion[LSM6DSV16X_QUATERION_AXIS_MAX];
+    Lsm6dsv16x_FifoReadContext_t fifo_read_context;
+    double quaternion[LSM6DSV16X_QUATERNION_AXIS_MAX];
     Lsm6dsv16x_RawData_t accelerometer_offset[LSM6DSV16X_AXIS_MAX]; /* Onboard registers may not have enough precision to store offset */
     Lsm6dsv16x_RawData_t gyroscope_offset[LSM6DSV16X_AXIS_MAX];     /* Onboard registers may not have enough precision to store offset */
 } Lsm6dsv16x_Context_t;
 
-extern int32_t Lsm6dsv16x_Write(void *const handle, const uint8_t imu_register, const uint8_t *const data, const uint16_t size);
-extern int32_t Lsm6dsv16x_Read(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size);
+extern int32_t Lsm6dsv16x_WriteBlocking(void *const handle, const uint8_t imu_register, const uint8_t *const data, const uint16_t size);
+extern int32_t Lsm6dsv16x_ReadBlocking(void *const handle, const uint8_t imu_register, uint8_t *const data, const uint16_t size);
 
 Bsp_Error_t Lsm6dsv16x_Initialize(Lsm6dsv16x_Context_t *context);
 bool Lsm6dsv16x_IsInitialized(const Lsm6dsv16x_Context_t *const context);
 Bsp_Error_t Lsm6dsv16x_Calibrate(Lsm6dsv16x_Context_t *const context);
+Bsp_Error_t Lsm6dsv16x_ReadAccelerometerBlocking(Lsm6dsv16x_Context_t *const context, Accelerometer_Reading_t *const reading);
 Bsp_Error_t Lsm6dsv16x_ReadAccelerometer(Lsm6dsv16x_Context_t *const context, Accelerometer_Reading_t *const reading);
+Bsp_Error_t Lsm6dsv16x_ReadGyroscopeBlocking(Lsm6dsv16x_Context_t *const context, Gyroscope_Reading_t *const reading);
 Bsp_Error_t Lsm6dsv16x_ReadGyroscope(Lsm6dsv16x_Context_t *const context, Gyroscope_Reading_t *const reading);
-Bsp_Error_t Lsm6dsv16x_ReadQuaterion(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion);
+Bsp_Error_t Lsm6dsv16x_ReadQuaternionBlocking(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion);
+Bsp_Error_t Lsm6dsv16x_ReadQuaternion(Lsm6dsv16x_Context_t *const context, Gyroscope_Quaternion_t *const quaternion);
 
-#define LSM6DSV16X_CONTEXT(user_spi, chip_select_pin)       \
-        {                                                   \
-            .interface     = {                              \
-                .write_reg = Lsm6dsv16x_Write,              \
-                .read_reg  = Lsm6dsv16x_Read,               \
-                .mdelay    = Bsp_Delay,                     \
-                .handle    = NULL,                          \
-            },                                              \
-            .spi                    = user_spi,             \
-            .chip_select            = chip_select_pin,      \
-            .initialized            = false,                \
-            .accelerometer_offset   = {                     \
-                [LSM6DSV16X_AXIS_X] = 0,                    \
-                [LSM6DSV16X_AXIS_Y] = 0,                    \
-                [LSM6DSV16X_AXIS_Z] = 0,                    \
-            },                                              \
-            .gyroscope_offset       = {                     \
-                [LSM6DSV16X_AXIS_X] = 0,                    \
-                [LSM6DSV16X_AXIS_Y] = 0,                    \
-                [LSM6DSV16X_AXIS_Z] = 0,                    \
-            },                                              \
-            .raw_accelerometer      = {                     \
-                [LSM6DSV16X_AXIS_X] = 0,                    \
-                [LSM6DSV16X_AXIS_Y] = 0,                    \
-                [LSM6DSV16X_AXIS_Z] = 0,                    \
-            },                                              \
-            .raw_gyroscope          = {                     \
-                [LSM6DSV16X_AXIS_X] = 0,                    \
-                [LSM6DSV16X_AXIS_Y] = 0,                    \
-                [LSM6DSV16X_AXIS_Z] = 0,                    \
-            },                                              \
-            .quaternion                       = {           \
-                [LSM6DSV16X_QUATERION_AXIS_W] = 0.0,        \
-                [LSM6DSV16X_QUATERION_AXIS_X] = 0.0,        \
-                [LSM6DSV16X_QUATERION_AXIS_Y] = 0.0,        \
-                [LSM6DSV16X_QUATERION_AXIS_Z] = 0.0,        \
-            },                                              \
+#define LSM6DSV16X_CONTEXT(user_spi, chip_select_pin)                    \
+        {                                                                \
+            .interface     = {                                           \
+                .write_reg = Lsm6dsv16x_WriteBlocking,                   \
+                .read_reg  = Lsm6dsv16x_ReadBlocking,                    \
+                .mdelay    = Bsp_Delay,                                  \
+                .handle    = NULL,                                       \
+            },                                                           \
+            .spi              = user_spi,                                \
+            .chip_select      = chip_select_pin,                         \
+            .initialized      = false,                                   \
+            .callback_context = {                                        \
+                .imu_register = 0U,                                      \
+                .data         = {0U},                                    \
+                .size         = 0U,                                      \
+                .error        = BSP_ERROR_NONE,                          \
+            },                                                           \
+            .raw_accelerometer      = {                                  \
+                [LSM6DSV16X_AXIS_X] = 0,                                 \
+                [LSM6DSV16X_AXIS_Y] = 0,                                 \
+                [LSM6DSV16X_AXIS_Z] = 0,                                 \
+            },                                                           \
+            .raw_gyroscope          = {                                  \
+                [LSM6DSV16X_AXIS_X] = 0,                                 \
+                [LSM6DSV16X_AXIS_Y] = 0,                                 \
+                [LSM6DSV16X_AXIS_Z] = 0,                                 \
+            },                                                           \
+            .fifo_read_context       = {                                 \
+                .state               = LSM6DSV16X_FIFO_READ_STATE_READY, \
+                .status              = {0U},                             \
+                .data                = {0U},                             \
+                .read_index          = 0U,                               \
+                .quaternion_averaged = {0U},                             \
+                .quaternion_count    = 0U,                               \
+            },                                                           \
+            .quaternion                        = {                       \
+                [LSM6DSV16X_QUATERNION_AXIS_W] = 0.0,                    \
+                [LSM6DSV16X_QUATERNION_AXIS_X] = 0.0,                    \
+                [LSM6DSV16X_QUATERNION_AXIS_Y] = 0.0,                    \
+                [LSM6DSV16X_QUATERNION_AXIS_Z] = 0.0,                    \
+            },                                                           \
+            .accelerometer_offset   = {                                  \
+                [LSM6DSV16X_AXIS_X] = 0,                                 \
+                [LSM6DSV16X_AXIS_Y] = 0,                                 \
+                [LSM6DSV16X_AXIS_Z] = 0,                                 \
+            },                                                           \
+            .gyroscope_offset       = {                                  \
+                [LSM6DSV16X_AXIS_X] = 0,                                 \
+                [LSM6DSV16X_AXIS_Y] = 0,                                 \
+                [LSM6DSV16X_AXIS_Z] = 0,                                 \
+            },                                                           \
         }
 
 #define LSM6DSV16X_ACCELEROMETER_HANDLE(lsm6dsv16x_context)                   \
@@ -101,12 +161,12 @@ Bsp_Error_t Lsm6dsv16x_ReadQuaterion(Lsm6dsv16x_Context_t *const context, Gyrosc
             .read       = (Accelerometer_Read_t)Lsm6dsv16x_ReadAccelerometer, \
         }
 
-#define LSM6DSV16X_GYROSCOPE_HANDLE(lsm6dsv16x_context)                              \
-        {                                                                            \
-            .context         = (void *)&lsm6dsv16x_context,                          \
-            .initialize      = (Gyroscope_Initialize_t)Lsm6dsv16x_Initialize,        \
-            .read            = (Gyroscope_Read_t)Lsm6dsv16x_ReadGyroscope,           \
-            .read_quaternion = (Gyroscope_ReadQuaternion_t)Lsm6dsv16x_ReadQuaterion, \
+#define LSM6DSV16X_GYROSCOPE_HANDLE(lsm6dsv16x_context)                               \
+        {                                                                             \
+            .context         = (void *)&lsm6dsv16x_context,                           \
+            .initialize      = (Gyroscope_Initialize_t)Lsm6dsv16x_Initialize,         \
+            .read            = (Gyroscope_Read_t)Lsm6dsv16x_ReadGyroscope,            \
+            .read_quaternion = (Gyroscope_ReadQuaternion_t)Lsm6dsv16x_ReadQuaternion, \
         }
 
 #endif /* LSM6DSV16X_H */

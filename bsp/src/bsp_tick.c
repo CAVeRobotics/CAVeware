@@ -44,6 +44,11 @@ Bsp_Microsecond_t BspTick_GetMicroseconds(void)
     return BspTick_MicrosecondsElapsedBefore + (Bsp_Microsecond_t)BspTick_MicrosecondsOffset;
 }
 
+Bsp_Second_t BspTick_GetElapsedMicroseconds(const Bsp_Microsecond_t start, const Bsp_Microsecond_t end)
+{
+    return (Bsp_Second_t)((double)(end - start) / BSP_TICK_MICROSECONDS_PER_SECOND);
+}
+
 static void BspTick_TimerCallback(Bsp_TimerHandle_t *handle)
 {
     BSP_UNUSED(handle);

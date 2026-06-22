@@ -15,6 +15,7 @@
 typedef double   Bsp_Percent_t;
 typedef double   Bsp_Radian_t;
 typedef double   Bsp_RadiansPerSecond_t;
+typedef double   Bsp_Second_t;
 typedef uint32_t Bsp_Millisecond_t;
 typedef uint64_t Bsp_Microsecond_t;
 typedef int64_t  Bsp_EncoderPulse_t;
@@ -26,21 +27,37 @@ typedef double   Bsp_Meter_t;
 typedef double   Bsp_MetersPerSecond_t;
 typedef double   Bsp_MetersPerSecondSquared_t;
 
-typedef ADC_HandleTypeDef  Bsp_AdcHandle_t;
-typedef GPIO_TypeDef       Bsp_GpioPort_t;
-typedef SPI_HandleTypeDef  Bsp_SpiHandle_t;
-typedef TIM_HandleTypeDef  Bsp_TimerHandle_t;
+#ifdef BSP_ADC
+typedef ADC_HandleTypeDef Bsp_AdcHandle_t;
+#endif /* BSP_ADC */
+#ifdef BSP_GPIO
+typedef GPIO_TypeDef Bsp_GpioPort_t;
+#endif /* BSP_GPIO */
+#ifdef BSP_SPI
+typedef SPI_HandleTypeDef Bsp_SpiHandle_t;
+#endif /* BSP_SPI */
+typedef TIM_HandleTypeDef Bsp_TimerHandle_t;
+#ifdef BSP_UART
 typedef UART_HandleTypeDef Bsp_UartHandle_t;
+#endif/* BSP_UART */
 
 typedef struct Bsp_Callback Bsp_Callback_t;
 
-typedef struct Bsp_Adc       Bsp_Adc_t;
-typedef struct Bsp_Encoder   Bsp_Encoder_t;
-typedef struct Bsp_Gpio      Bsp_Gpio_t;
+#ifdef BSP_ADC
+typedef struct Bsp_Adc Bsp_Adc_t;
+#endif /* BSP_ADC */
+typedef struct Bsp_Encoder Bsp_Encoder_t;
+#ifdef BSP_GPIO
+typedef struct Bsp_Gpio Bsp_Gpio_t;
+#endif /* BSP_GPIO */
 typedef struct Bsp_PwmConfig Bsp_PwmConfig_t;
-typedef struct Bsp_Spi       Bsp_Spi_t;
-typedef struct Bsp_Timer     Bsp_Timer_t;
-typedef struct Bsp_Uart      Bsp_Uart_t;
+#ifdef BSP_SPI
+typedef struct Bsp_Spi Bsp_Spi_t;
+#endif /* BSP_SPI */
+typedef struct Bsp_Timer Bsp_Timer_t;
+#ifdef BSP_UART
+typedef struct Bsp_Uart Bsp_Uart_t;
+#endif/* BSP_UART */
 
 typedef enum
 {
@@ -94,6 +111,8 @@ struct Bsp_Callback
     void *arg;
 };
 
+
+#ifdef BSP_ADC
 struct Bsp_Adc
 {
     Bsp_AdcHandle_t *adc_handle;
@@ -101,6 +120,7 @@ struct Bsp_Adc
     uint16_t *shadow_buffer;
     uint8_t channels;
 };
+#endif /* BSP_ADC */
 
 struct Bsp_Encoder
 {
@@ -123,15 +143,17 @@ struct Bsp_Encoder
     Bsp_RadiansPerSecond_t angular_rate;                   /* Filtered angular rate */
 };
 
+#ifdef BSP_GPIO
 struct Bsp_Gpio
 {
     Bsp_GpioPort_t *gpio_port;
     Bsp_GpioPin_t gpio_pin;
     Bsp_GpioMode_t mode;
     Bsp_Microsecond_t debounce;
-    Bsp_Microsecond_t previous;
+    volatile Bsp_Microsecond_t previous;
     Bsp_Callback_t callback;
 };
+#endif /* BSP_GPIO */
 
 struct Bsp_PwmConfig
 {
@@ -139,16 +161,19 @@ struct Bsp_PwmConfig
     Bsp_TimerChannel_t max_channel;
 };
 
+#ifdef BSP_SPI
 struct Bsp_Spi
 {
     Bsp_SpiHandle_t *spi_handle;
     volatile bool busy;
     Bsp_Callback_t callback;
 };
+#endif /* #ifdef BSP_SPI */
 
 struct Bsp_Timer
 {
     Bsp_TimerHandle_t *timer_handle;
+    bool has_interrupt;
     volatile uint64_t counts_elapsed;
     volatile uint64_t counts_elapsed_shadow;
     volatile uint32_t counts_offset;
@@ -157,6 +182,7 @@ struct Bsp_Timer
     uint64_t counts;
 };
 
+#ifdef BSP_UART
 struct Bsp_Uart
 {
     Bsp_UartHandle_t *uart_handle;
@@ -171,10 +197,13 @@ struct Bsp_Uart
     uint32_t rx_buffer_size;
     volatile uint32_t read_pointer;
 };
+#endif/* BSP_UART */
 
 void Bsp_Initialize(void);
 void Bsp_Delay(const Bsp_Millisecond_t delay);
 double Bsp_Map(const double value, const double in_min, const double in_max, const double out_min, const double out_max);
 bool Bsp_CompareDoubleSigns(const double *const value_1, const double *const value_2);
+double Bsp_Clip(const double value, const double min, const double max);
+char *Bsp_ErrorToString(const Bsp_Error_t error);
 
 #endif /* BSP_H */

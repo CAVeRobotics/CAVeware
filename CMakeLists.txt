@@ -24,8 +24,16 @@ project(CAVeware LANGUAGES C ASM)
 # Collection functions
 include(${CMAKE_SOURCE_DIR}/collect.cmake)
 
-# CAVeTalk library
-include(${CMAKE_SOURCE_DIR}/CAVeTalk.cmake)
+################################################################################
+# External modules
+################################################################################
+set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
+set(AETHER_LOG_ENABLED OFF)
+set(AETHER_TICK_USER ON)
+set(AETHER_TRANSPORT_MTU 512)
+set(CAVETALK_BUILD_CPP OFF)
+add_subdirectory(${EXTERNAL_DIR}/Aether)
+add_subdirectory(${EXTERNAL_DIR}/CAVeTalk)
 
 ################################################################################
 # Subdirectories
@@ -73,18 +81,24 @@ endif()
 ################################################################################
 set(CAVEBOT_DIR ${CMAKE_SOURCE_DIR}/cavebot)
 set(CAVEBOT_INC_DIR ${CAVEBOT_DIR}/inc)
+set(GENERATED_INC_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
 set(CAVEBOT_SRC_DIR ${CAVEBOT_DIR}/src)
 
+set(GENERATED_VERSION_HEADER ${GENERATED_INC_DIR}/version.h)
 configure_file(
-    ${CAVEBOT_INC_DIR}/cavebot_version.h.in
-    ${CAVEBOT_INC_DIR}/cavebot_version.h
+    ${CAVEBOT_INC_DIR}/version.h.in
+    ${GENERATED_VERSION_HEADER}
+    @ONLY
 )
 
 set(CAVEBOT_SRCS
     ${CAVEBOT_SRC_DIR}/cavebot.c
-    ${CAVEBOT_SRC_DIR}/cavebot_cavetalk.c
-    ${CAVEBOT_SRC_DIR}/cavebot_motion_profile.c
-    ${CAVEBOT_SRC_DIR}/cavebot_pid.c
+    ${CAVEBOT_SRC_DIR}/comms.c
+    ${CAVEBOT_SRC_DIR}/fault_handler.c
+    ${CAVEBOT_SRC_DIR}/fsm.c
+    ${CAVEBOT_SRC_DIR}/motion.c
+    ${CAVEBOT_SRC_DIR}/pid.c
+    ${CAVEBOT_SRC_DIR}/scheduler.c
     ${CMAKE_SOURCE_DIR}/boards/${BOARD}/cavebot_user/src/cavebot_user.c
 )
 
@@ -108,6 +122,7 @@ add_executable(${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME}
     PRIVATE
         ${CAVEBOT_INC_DIR}
+        ${GENERATED_INC_DIR}
         ${CMAKE_SOURCE_DIR}/boards/${BOARD}/cavebot_user/inc
 )
 
@@ -121,7 +136,8 @@ target_link_libraries(${PROJECT_NAME}
         Bsp
         Drivers
         Bots
-        CAVeTalk-c
+        Aether::Aether
+        cavetalk::cavetalkc
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

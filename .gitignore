@@ -13,6 +13,9 @@ boards/*/generated/startup_stm32*.s
 boards/*/generated/STM32*_FLASH.ld
 boards/*/generated/stm32*_flash.ld
 
+# Test code
+_*
+
 # Version header
 cavebot/inc/cavebot_version.h
 

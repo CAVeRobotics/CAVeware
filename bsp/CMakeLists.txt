@@ -81,6 +81,10 @@ target_compile_definitions(${PROJECT_NAME}
     PUBLIC
         $<TARGET_PROPERTY:stm32cubemx,INTERFACE_COMPILE_DEFINITIONS>
         $<TARGET_PROPERTY:BspUser,INTERFACE_COMPILE_DEFINITIONS>
+        $<$<BOOL:${BSP_ADC}>:BSP_ADC>
+        $<$<BOOL:${BSP_GPIO}>:BSP_GPIO>
+        $<$<BOOL:${BSP_SPI}>:BSP_SPI>
+        $<$<BOOL:${BSP_UART}>:BSP_UART>
 )
 
 target_include_directories(${PROJECT_NAME}

@@ -24,7 +24,7 @@ set_source_files_properties(
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-        Devices
+        Bsp
 )
 
 if(COMMAND append_sources)

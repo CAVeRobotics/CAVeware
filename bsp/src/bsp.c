@@ -1,5 +1,6 @@
 #include "bsp.h"
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -51,4 +52,46 @@ bool Bsp_CompareDoubleSigns(const double *const value_1, const double *const val
 {
     /* TODO CVW-49 make portable */
     return !(bool)((*(uint64_t *)(value_1) & BSP_DOUBLE_SIGN_MASK) ^ (*(uint64_t *)(value_2) & BSP_DOUBLE_SIGN_MASK));
+}
+
+double Bsp_Clip(const double value, const double min, const double max)
+{
+    return fmin(max, fmax(min, value));
+}
+
+char *Bsp_ErrorToString(const Bsp_Error_t error)
+{
+    char *string = "BSP_ERROR_UNKNOWN";
+
+    switch (error)
+    {
+    case BSP_ERROR_NONE:
+        string = "BSP_ERROR_NONE";
+        break;
+    case BSP_ERROR_HAL:
+        string = "BSP_ERROR_HAL";
+        break;
+    case BSP_ERROR_BUSY:
+        string = "BSP_ERROR_BUSY";
+        break;
+    case BSP_ERROR_TIMEOUT:
+        string = "BSP_ERROR_TIMEOUT";
+        break;
+    case BSP_ERROR_PERIPHERAL:
+        string = "BSP_ERROR_PERIPHERAL";
+        break;
+    case BSP_ERROR_VALUE:
+        string = "BSP_ERROR_VALUE";
+        break;
+    case BSP_ERROR_NULL:
+        string = "BSP_ERROR_NULL";
+        break;
+    case BSP_ERROR_SIZE:
+        string = "BSP_ERROR_SIZE";
+        break;
+    default:
+        break;
+    }
+
+    return string;
 }
