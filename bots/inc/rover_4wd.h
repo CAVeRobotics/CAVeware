@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include "bsp.h"
+
 #include "cavebot.h"
 
 void Rover4wd_Initialize(void);
