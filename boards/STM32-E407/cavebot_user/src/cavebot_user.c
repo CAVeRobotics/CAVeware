@@ -27,6 +27,9 @@
 #include "fsm.h"
 #include "scheduler.h"
 
+#define CAVEBOT_USER_BUZZER_TIMER   BSP_PWM_USER_TIMER_4
+#define CAVEBOT_USER_BUZZER_CHANNEL BSP_TIMER_CHANNEL_1
+
 static const char *const kCavebotUser_LogTag = "CAVEBOT USER";
 
 static Lsm6dsv16x_Context_t kCavebotUser_Lsm6dsv16x = LSM6DSV16X_CONTEXT(BSP_SPI_USER_0, BSP_GPIO_USER_PIN_IMU_CS);
@@ -336,15 +339,15 @@ static void CavebotUser_ExitInitialize(void)
     {
         /* TODO CVW-67 make all sounds non-block and add error handling */
         /* Initialization sound */
-        BspPwm_Start(BSP_PWM_USER_TIMER_4, BSP_TIMER_CHANNEL_1);
-        BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_4, BSP_TIMER_CHANNEL_1, 0.5);
-        BspPwm_SetPeriod(BSP_PWM_USER_TIMER_4, 31110);
+        BspPwm_Start(CAVEBOT_USER_BUZZER_TIMER, CAVEBOT_USER_BUZZER_CHANNEL);
+        BspPwm_SetDutyCycle(CAVEBOT_USER_BUZZER_TIMER, CAVEBOT_USER_BUZZER_CHANNEL, 0.5);
+        BspPwm_SetPeriod(CAVEBOT_USER_BUZZER_TIMER, 31110);
         Bsp_Delay(100);
-        BspPwm_SetPeriod(BSP_PWM_USER_TIMER_4, 23333);
+        BspPwm_SetPeriod(CAVEBOT_USER_BUZZER_TIMER, 23333);
         Bsp_Delay(100);
-        BspPwm_SetPeriod(BSP_PWM_USER_TIMER_4, 15556);
+        BspPwm_SetPeriod(CAVEBOT_USER_BUZZER_TIMER, 15556);
         Bsp_Delay(100);
-        BspPwm_Stop(BSP_PWM_USER_TIMER_4, BSP_TIMER_CHANNEL_1);
+        BspPwm_Stop(CAVEBOT_USER_BUZZER_TIMER, CAVEBOT_USER_BUZZER_CHANNEL);
     }
 }
 
@@ -360,15 +363,15 @@ static void CavebotUser_OnArm(void)
     {
         /* TODO CVW-67 make all sounds non-block and add error handling */
         /* Arm sound */
-        BspPwm_Start(BSP_PWM_USER_TIMER_4, BSP_TIMER_CHANNEL_1);
-        BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_4, BSP_TIMER_CHANNEL_1, 0.5);
-        BspPwm_SetPeriod(BSP_PWM_USER_TIMER_4, 15556);
+        BspPwm_Start(CAVEBOT_USER_BUZZER_TIMER, CAVEBOT_USER_BUZZER_CHANNEL);
+        BspPwm_SetDutyCycle(CAVEBOT_USER_BUZZER_TIMER, CAVEBOT_USER_BUZZER_CHANNEL, 0.5);
+        BspPwm_SetPeriod(CAVEBOT_USER_BUZZER_TIMER, 15556);
         Bsp_Delay(100);
-        BspPwm_Stop(BSP_PWM_USER_TIMER_4, BSP_TIMER_CHANNEL_1);
+        BspPwm_Stop(CAVEBOT_USER_BUZZER_TIMER, CAVEBOT_USER_BUZZER_CHANNEL);
         Bsp_Delay(100);
-        BspPwm_Start(BSP_PWM_USER_TIMER_4, BSP_TIMER_CHANNEL_1);
+        BspPwm_Start(CAVEBOT_USER_BUZZER_TIMER, CAVEBOT_USER_BUZZER_CHANNEL);
         Bsp_Delay(100);
-        BspPwm_Stop(BSP_PWM_USER_TIMER_4, BSP_TIMER_CHANNEL_1);
+        BspPwm_Stop(CAVEBOT_USER_BUZZER_TIMER, CAVEBOT_USER_BUZZER_CHANNEL);
     }
 }
 
@@ -384,11 +387,11 @@ static void CavebotUser_OnDisarm(void)
     {
         /* TODO CVW-67 make all sounds non-block and add error handling */
         /* Disarm sound */
-        BspPwm_Start(BSP_PWM_USER_TIMER_4, BSP_TIMER_CHANNEL_1);
-        BspPwm_SetDutyCycle(BSP_PWM_USER_TIMER_4, BSP_TIMER_CHANNEL_1, 0.5);
-        BspPwm_SetPeriod(BSP_PWM_USER_TIMER_4, 15556);
+        BspPwm_Start(CAVEBOT_USER_BUZZER_TIMER, CAVEBOT_USER_BUZZER_CHANNEL);
+        BspPwm_SetDutyCycle(CAVEBOT_USER_BUZZER_TIMER, CAVEBOT_USER_BUZZER_CHANNEL, 0.5);
+        BspPwm_SetPeriod(CAVEBOT_USER_BUZZER_TIMER, 15556);
         Bsp_Delay(300);
-        BspPwm_Stop(BSP_PWM_USER_TIMER_4, BSP_TIMER_CHANNEL_1);
+        BspPwm_Stop(CAVEBOT_USER_BUZZER_TIMER, CAVEBOT_USER_BUZZER_CHANNEL);
     }
 }
 
