@@ -15,17 +15,6 @@
 
 typedef enum
 {
-    CAVEBOT_USER_SERVO_0,
-    CAVEBOT_USER_SERVO_1,
-    CAVEBOT_USER_SERVO_2,
-    CAVEBOT_USER_SERVO_3,
-    CAVEBOT_USER_SERVO_4,
-    CAVEBOT_USER_SERVO_5,
-    CAVEBOT_USER_SERVO_MAX
-} CavebotUser_Servo_t;
-
-typedef enum
-{
     CAVEBOT_USER_MOTOR_0,
     CAVEBOT_USER_MOTOR_1,
     CAVEBOT_USER_MOTOR_2,
@@ -42,7 +31,6 @@ typedef enum
     CAVEBOT_USER_ENCODER_MAX,
 } CavebotUser_Encoder_t;
 
-extern BspServo_Handle_t      CavebotUser_Servos[CAVEBOT_USER_SERVO_MAX];
 extern BspMotor_Handle_t      CavebotUser_Motors[CAVEBOT_USER_MOTOR_MAX];
 extern BspEncoderUser_Timer_t CavebotUser_Encoders[CAVEBOT_USER_MOTOR_MAX];
 extern Accelerometer_Handle_t CavebotUser_Accelerometer;

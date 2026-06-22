@@ -27,63 +27,12 @@
 #include "fsm.h"
 #include "scheduler.h"
 
-#define CAVEBOT_USER_BUZZER_TIMER   BSP_PWM_USER_TIMER_6
+#define CAVEBOT_USER_BUZZER_TIMER   BSP_PWM_USER_TIMER_4
 #define CAVEBOT_USER_BUZZER_CHANNEL BSP_TIMER_CHANNEL_1
 
 static const char *const kCavebotUser_LogTag = "CAVEBOT USER";
 
 static Lsm6dsv16x_Context_t kCavebotUser_Lsm6dsv16x = LSM6DSV16X_CONTEXT(BSP_SPI_USER_0, BSP_GPIO_USER_PIN_IMU_CS);
-
-BspServo_Handle_t CavebotUser_Servos[CAVEBOT_USER_SERVO_MAX] = {
-    [CAVEBOT_USER_SERVO_0] = {
-        .timer              = BSP_PWM_USER_TIMER_2,
-        .channel            = BSP_TIMER_CHANNEL_1,
-        .minimum_duty_cycle = 0.0325,
-        .maximum_duty_cycle = 0.115,
-        .minimum_angle      = BSP_DEGREES_TO_RADIANS(10),
-        .maximum_angle      = BSP_DEGREES_TO_RADIANS(170),
-    },
-    [CAVEBOT_USER_SERVO_1] = {
-        .timer              = BSP_PWM_USER_TIMER_2,
-        .channel            = BSP_TIMER_CHANNEL_2,
-        .minimum_duty_cycle = 0.0325,
-        .maximum_duty_cycle = 0.1125,
-        .minimum_angle      = BSP_DEGREES_TO_RADIANS(10),
-        .maximum_angle      = BSP_DEGREES_TO_RADIANS(170),
-    },
-    [CAVEBOT_USER_SERVO_2] = {
-        .timer              = BSP_PWM_USER_TIMER_3,
-        .channel            = BSP_TIMER_CHANNEL_1,
-        .minimum_duty_cycle = 0.03,
-        .maximum_duty_cycle = 0.1075,
-        .minimum_angle      = BSP_DEGREES_TO_RADIANS(10),
-        .maximum_angle      = BSP_DEGREES_TO_RADIANS(170),
-    },
-    [CAVEBOT_USER_SERVO_3] = {
-        .timer              = BSP_PWM_USER_TIMER_3,
-        .channel            = BSP_TIMER_CHANNEL_2,
-        .minimum_duty_cycle = 0.0325,
-        .maximum_duty_cycle = 0.1125,
-        .minimum_angle      = BSP_DEGREES_TO_RADIANS(10),
-        .maximum_angle      = BSP_DEGREES_TO_RADIANS(170),
-    },
-    [CAVEBOT_USER_SERVO_4] = {
-        .timer              = BSP_PWM_USER_TIMER_4,
-        .channel            = BSP_TIMER_CHANNEL_1,
-        .minimum_duty_cycle = 0.0325,
-        .maximum_duty_cycle = 0.115,
-        .minimum_angle      = BSP_DEGREES_TO_RADIANS(10),
-        .maximum_angle      = BSP_DEGREES_TO_RADIANS(170),
-    },
-    [CAVEBOT_USER_SERVO_5] = {
-        .timer              = BSP_PWM_USER_TIMER_5,
-        .channel            = BSP_TIMER_CHANNEL_1,
-        .minimum_duty_cycle = 0.0,
-        .maximum_duty_cycle = 0.0972,
-        .minimum_angle      = BSP_DEGREES_TO_RADIANS(0),
-        .maximum_angle      = BSP_DEGREES_TO_RADIANS(130),
-    },
-};
 
 BspMotor_Handle_t CavebotUser_Motors[CAVEBOT_USER_MOTOR_MAX] = {
     [CAVEBOT_USER_MOTOR_0] = {
@@ -119,10 +68,10 @@ BspMotor_Handle_t CavebotUser_Motors[CAVEBOT_USER_MOTOR_MAX] = {
     [CAVEBOT_USER_MOTOR_2] = {
         .forward_phase = {
             .timer   = BSP_PWM_USER_TIMER_1,
-            .channel = BSP_TIMER_CHANNEL_2,
+            .channel = BSP_TIMER_CHANNEL_1,
         },
         .reverse_phase = {
-            .timer   = BSP_PWM_USER_TIMER_1,
+            .timer   = BSP_PWM_USER_TIMER_2,
             .channel = BSP_TIMER_CHANNEL_1,
         },
         .minimum_duty_cycle = 0.0,
@@ -134,11 +83,11 @@ BspMotor_Handle_t CavebotUser_Motors[CAVEBOT_USER_MOTOR_MAX] = {
     [CAVEBOT_USER_MOTOR_3] = {
         .forward_phase = {
             .timer   = BSP_PWM_USER_TIMER_1,
-            .channel = BSP_TIMER_CHANNEL_3,
+            .channel = BSP_TIMER_CHANNEL_2,
         },
         .reverse_phase = {
-            .timer   = BSP_PWM_USER_TIMER_1,
-            .channel = BSP_TIMER_CHANNEL_4,
+            .timer   = BSP_PWM_USER_TIMER_3,
+            .channel = BSP_TIMER_CHANNEL_1,
         },
         .minimum_duty_cycle = 0.0,
         .maximum_duty_cycle = 1.0,

@@ -150,7 +150,7 @@ struct Bsp_Gpio
     Bsp_GpioPin_t gpio_pin;
     Bsp_GpioMode_t mode;
     Bsp_Microsecond_t debounce;
-    Bsp_Microsecond_t previous;
+    volatile Bsp_Microsecond_t previous;
     Bsp_Callback_t callback;
 };
 #endif /* BSP_GPIO */
@@ -204,5 +204,6 @@ void Bsp_Delay(const Bsp_Millisecond_t delay);
 double Bsp_Map(const double value, const double in_min, const double in_max, const double out_min, const double out_max);
 bool Bsp_CompareDoubleSigns(const double *const value_1, const double *const value_2);
 double Bsp_Clip(const double value, const double min, const double max);
+char *Bsp_ErrorToString(const Bsp_Error_t error);
 
 #endif /* BSP_H */

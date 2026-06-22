@@ -1,5 +1,6 @@
 #include "rgbw.h"
 
+#include "bsp.h"
 #include "bsp_gpio.h"
 
 static const Bsp_GpioState_t Rgbw_Colors[RGBW_COLOR_MAX][RGBW_CHANNEL_MAX] = {
