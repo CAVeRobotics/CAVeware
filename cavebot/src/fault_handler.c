@@ -6,7 +6,7 @@
 #include "bsp_tick.h"
 
 #define FAULT_HANDLER_ERROR_NONE    (FaultHandler_Error_t)0U
-#define FAULT_HANDLER_CRITICAL_MASK (FaultHandler_Mask_t)0x7FU
+#define FAULT_HANDLER_CRITICAL_MASK (FaultHandler_Mask_t)0xFFU
 
 static volatile FaultHandler_Mask_t FaultHandler_Mask                            = 0x00000000U;
 static FaultHandler_FaultState_t    FaultHandler_Faults[FAULT_HANDLER_FAULT_MAX] = {
@@ -35,6 +35,14 @@ static FaultHandler_FaultState_t    FaultHandler_Faults[FAULT_HANDLER_FAULT_MAX]
         .file      = NULL,
     },
     [FAULT_HANDLER_FAULT_MOTOR] = {
+        .threshold = 1U,
+        .count     = 0U,
+        .tick      = 0U,
+        .error     = FAULT_HANDLER_ERROR_NONE,
+        .line      = 0,
+        .file      = NULL,
+    },
+    [FAULT_HANDLER_FAULT_SERVO] = {
         .threshold = 1U,
         .count     = 0U,
         .tick      = 0U,

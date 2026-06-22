@@ -14,5 +14,9 @@
         <id>staticFunction</id>
         <symbolName>Lsm6dsv16x_Calibrate</symbolName>
     </suppress>
+    <suppress>
+        <id>staticFunction</id>
+        <symbolName>Cavebot_GetPose</symbolName>
+    </suppress>
 
 </suppressions>

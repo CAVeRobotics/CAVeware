@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include "bsp.h"
+
 #include "cavebot.h"
 
 bool Rover4wd_Arm(void);

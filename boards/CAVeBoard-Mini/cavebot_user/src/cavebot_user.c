@@ -4,7 +4,6 @@
 
 #include "aether.h"
 #include "cavetalk.h"
-#include "spi.h"
 
 #include "bsp.h"
 #include "bsp_encoder.h"
@@ -14,7 +13,6 @@
 #include "bsp_motor.h"
 #include "bsp_pwm.h"
 #include "bsp_pwm_user.h"
-#include "bsp_timer_user.h"
 #include "bsp_servo.h"
 #include "bsp_spi_user.h"
 
